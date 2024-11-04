@@ -1,0 +1,53 @@
+apiVersion: v1
+entries:
+  annotationengine:
+  - apiVersion: v2
+    appVersion: 4.4.0
+    created: "2024-11-04T16:39:31.088988172Z"
+    description: A Helm chart for CAVE annotationengine service on Kubernetes
+    digest: f64762b8c523f677e31ba8375b5ab33c6159f626752f555e7d474cd894fff49b
+    name: annotationengine
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/annotationengine-0.1.1/annotationengine-0.1.1.tgz
+    version: 0.1.1
+  cavecanary:
+  - apiVersion: v2
+    appVersion: 0.4.4
+    created: "2024-11-04T16:39:31.188212989Z"
+    description: A Helm chart for CAVE cavecanary service on Kubernetes
+    digest: ce2c13522c5150f6ab7dc33fa7b62c378830c9d80abc434ae85653f96081bec9
+    name: cavecanary
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/cavecanary-0.1.0/cavecanary-0.1.0.tgz
+    version: 0.1.0
+  dash:
+  - apiVersion: v1
+    appVersion: 1.12.2
+    created: "2024-11-04T16:39:31.286894892Z"
+    description: A Helm chart for CAVE dash on flask service on Kubernetes
+    digest: 976cc879fe9337c7d62a4db294498ae8d278c5e98e210fcf44cb35d27cb38687
+    name: dash
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/dash-0.1.0/dash-0.1.0.tgz
+    version: 0.1.0
+  materializationengine:
+  - apiVersion: v2
+    appVersion: 4.23.2
+    created: "2024-11-04T16:39:31.399351637Z"
+    description: A Helm chart for CAVE materialization service on Kubernetes
+    digest: c0a3c4a92d4ba1defa16f42986805da0095a304b0ed430be794292cc98d2ec24
+    name: materializationengine
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/materializationengine-0.1.0/materializationengine-0.1.0.tgz
+    version: 0.1.0
+  pychunkedgraph:
+  - apiVersion: v2
+    appVersion: 2.15.1
+    created: "2024-11-04T16:39:31.518038263Z"
+    description: A Helm chart for CAVE pychunkedgraph services on Kubernetes
+    digest: c57d315c9c3fa1685664af5ffe0ba2b89d4daf2fbd9cfc39418844c393c4c3de
+    name: pychunkedgraph
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/pychunkedgraph-0.1.0/pychunkedgraph-0.1.0.tgz
+    version: 0.1.0
+generated: "2024-11-04T16:39:31.518051308Z"
