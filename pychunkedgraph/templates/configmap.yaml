@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pychunkedgraph-config
+data:
+  config.cfg: |
+{{.Values.pychunkedgraph.config | indent 4}}
