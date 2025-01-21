@@ -20,6 +20,22 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/cavecanary-0.1.0/cavecanary-0.1.0.tgz
     version: 0.1.0
+  cert-manager-google:
+  - apiVersion: v2
+    created: "2025-01-21T22:22:41.548809904Z"
+    dependencies:
+    - condition: certManager.enabled
+      name: cert-manager
+      repository: https://charts.jetstack.io
+      tags:
+      - certManager
+      version: 1.8.0
+    description: Installs Cert-Manager an Issuer and a Certificate on google cloud
+    digest: 07799e4ee5eaab89bfd61ca02651a05c227c3ff232c1f7c6d328714c2b98ff19
+    name: cert-manager-google
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/cert-manager-google-0.1.0/cert-manager-google-0.1.0.tgz
+    version: 0.1.0
   dash:
   - apiVersion: v1
     appVersion: 1.12.2
@@ -50,4 +66,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/pychunkedgraph-0.1.0/pychunkedgraph-0.1.0.tgz
     version: 0.1.0
-generated: "2024-11-04T16:39:31.518051308Z"
+generated: "2025-01-21T22:22:41.548820915Z"
