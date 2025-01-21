@@ -1,0 +1,20 @@
+{{ required "A valid .Values.projectName is required!" .Values.projectName }}
+{{ required "A valid .Values.letsEncryptEmail is required!" .Values.letsEncryptEmail }}
+
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ .Values.issuerName }}
+spec:
+  acme:
+    server: {{ .Values.letsEncryptServer }}
+    email: {{ .Values.letsEncryptEmail }}
+    privateKeySecretRef:
+      name: {{ .Values.issuerName }}
+    solvers:
+      - dns01:
+          cloudDNS:
+            project: {{ .Values.projectName }}
+            serviceAccountSecretRef:
+              name: {{ .Values.cloudDnsServiceAccountSecret }}
+              key: {{ .Values.googleSecretFilename }}

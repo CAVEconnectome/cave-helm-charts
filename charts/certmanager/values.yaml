@@ -1,0 +1,16 @@
+issuerName: letsencrypt-issuer
+letsEncryptServer: https://acme-v02.api.letsencrypt.org/directory
+letsEncryptEmail: ""
+projectName: ""
+environment: ""
+dnsHostnames: []
+installCRDs: true
+certManager:
+  enabled: true
+  installCRDs: true
+
+  # You can override anything from the cert-manager chart’s values here,
+  # for example the default namespace, extraArgs, etc.
+  # example:
+  ingressShim.defaultIssuerName: letsencrypt-issuer
+  ingressShim.defaultIssuerKind: ClusterIssuer
