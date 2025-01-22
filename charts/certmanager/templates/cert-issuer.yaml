@@ -1,14 +1,11 @@
-{{ required "A valid .Values.projectName is required!" .Values.projectName }}
-{{ required "A valid .Values.letsEncryptEmail is required!" .Values.letsEncryptEmail }}
-
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
-  name: {{ .Values.issuerName }}
+  name: {{ required "A valid .Values.issuerName is required!" .Values.issuerName }}
 spec:
   acme:
-    server: {{ .Values.letsEncryptServer }}
-    email: {{ .Values.letsEncryptEmail }}
+    server: {{ required "A valid .Values.letsEncryptServer is required!" .Values.letsEncryptServer }}
+    email: {{ required "A valid .Values.letsEncryptEmail is required!" .Values.letsEncryptEmail }}
     privateKeySecretRef:
       name: {{ .Values.issuerName }}
     solvers:
