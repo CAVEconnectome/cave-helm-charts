@@ -1,13 +1,13 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: {{ .Values.environment }}-cert
+  name: {{ required "A valid .Values.environment is required!" .Values.environment }}-cert
 spec:
-  secretName: {{ .Values.environment }}-cert
+  secretName: {{ required "A valid .Values.environment is required!"  .Values.environment }}-cert
   renewBefore: 720h
   dnsNames:
 {{- range .Values.dnsHostnames }}
     - {{ . }}
 {{- end }}
   issuerRef:
-    name: {{ .Values.issuerName }}
+    name: {{required "A valid .Values.issuerName is required!"  .Values.issuerName }}
