@@ -22,6 +22,14 @@ entries:
     version: 0.1.0
   cert-manager-google:
   - apiVersion: v2
+    created: "2025-01-23T23:59:00.859375704Z"
+    description: Installs Cert-Manager an Issuer and a Certificate on google cloud
+    digest: abacd3d5f29396a48433f482524ca97da4521a2f44c88b9af4fe960ac7cabc1d
+    name: cert-manager-google
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/cert-manager-google-0.4.0/cert-manager-google-0.4.0.tgz
+    version: 0.4.0
+  - apiVersion: v2
     created: "2025-01-23T23:52:07.14131898Z"
     description: Installs Cert-Manager an Issuer and a Certificate on google cloud
     digest: 2ca837951eb18067741714a72ea07bed17a9fe5486238b55f37e5fddca40ea76
@@ -89,4 +97,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/pychunkedgraph-0.1.0/pychunkedgraph-0.1.0.tgz
     version: 0.1.0
-generated: "2025-01-23T23:52:07.141339598Z"
+generated: "2025-01-23T23:59:00.859397625Z"
