@@ -97,4 +97,14 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/pychunkedgraph-0.1.0/pychunkedgraph-0.1.0.tgz
     version: 0.1.0
-generated: "2025-01-23T23:59:00.859397625Z"
+  tourguide:
+  - apiVersion: v1
+    appVersion: 2.3.1
+    created: "2025-08-10T03:02:01.049775022Z"
+    description: A Helm chart for CAVE tourguide on flask service on Kubernetes
+    digest: a971e74baee0b87eae480a84a4c843f4c82c1728466bc822f37f763b9162cd22
+    name: tourguide
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-2.3.1/tourguide-2.3.1.tgz
+    version: 2.3.1
+generated: "2025-08-10T03:02:01.049789299Z"
