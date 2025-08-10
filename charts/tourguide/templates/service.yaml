@@ -1,0 +1,38 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: tourguide-scaler
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: tourguide
+  minReplicas: ${TOURGUIDE_MIN_REPLICAS}
+  maxReplicas: ${TOURGUIDE_MAX_REPLICAS}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 85
+    - type: Pods
+      pods:
+        metric:
+          name: custom.googleapis.com|http|tourguide_active_requests
+        target:
+          type: AverageValue
+          averageValue: 50
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: tourguide-service
+spec:
+  type: NodePort
+  selector:
+    app: tourguide
+  ports:
+    - port: 80
+      targetPort: 8080
+---
