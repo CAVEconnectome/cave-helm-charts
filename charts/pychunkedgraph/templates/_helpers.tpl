@@ -28,15 +28,15 @@
 - name: PROJECT_NAME
   value: "{{ .Values.cluster.googleProject }}"
 - name: PYCHUNKEDGRAPH_REMESH_QUEUE
-  value: "{{ .Values.cluster.environment }}_PCG_HIGH_PRIORITY_REMESH"
+  value: "{{ .Values.cluster.cluster_prefix }}_PCG_HIGH_PRIORITY_REMESH"
 - name: PYCHUNKEDGRAPH_EDITS_EXCHANGE
-  value: "{{ .Values.cluster.environment }}_PCG_EDIT"
+  value: "{{ .Values.cluster.cluster_prefix }}_PCG_EDIT"
 - name: PYCHUNKEDGRAPH_EDITS_LOW_PRIORITY_EXCHANGE
-  value: "{{ .Values.cluster.environment }}_PCG_LOW_PRIORITY_REMESH"
+  value: "{{ .Values.cluster.cluster_prefix }}_PCG_LOW_PRIORITY_REMESH"
 - name: PCG_SERVER_LOGS_PROJECT
   value: "{{ .Values.cluster.googleProject }}"
 - name: PCG_SERVER_LOGS_NS
-  value: "pcg_server_logs_{{ .Values.cluster.environment }}"
+  value: "pcg_server_logs_{{ .Values.cluster.cluster_prefix }}"
 - name: PCG_SERVER_ENABLE_LOGS
   value: "{{ .Values.pychunkedgraph.enableLogs | default "enable"}}"
 - name: PCG_SERVER_LOGS_LEAVES_MANY

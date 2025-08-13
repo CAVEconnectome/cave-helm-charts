@@ -1,3 +1,6 @@
+{{- $cluster_prefix := .Values.cluster.cluster_prefix | required ".Values.cluster.cluster_prefix is required." }}
+
+---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -15,7 +18,7 @@ spec:
           name: pubsub.googleapis.com|subscription|num_undelivered_messages
           selector:
             matchLabels:
-              resource.labels.subscription_id: {{ .Values.cluster.environment }}_PCG_HIGH_PRIORITY_REMESH
+              resource.labels.subscription_id: {{ .Values.cluster.cluster_prefix }}_PCG_HIGH_PRIORITY_REMESH
         target:
           type: AverageValue
           averageValue: 1
