@@ -1,7 +1,7 @@
-{{- $password := .Values.cloudsql.password | required ".Values.cloudsql.password is required." -}}
-{{- $password := .Values.materialize.redis.host | required ".Values.materialize.redis.host is required." -}}
-{{- $password := .Values.cluster.globalServer | required ".Values.cluster.globalServer is required." -}}
-{{- $password := .Values.cluster.domainName | required ".Values.cluster.domainName is required." -}}
+{{- $cloudsql_pw := .Values.cloudsql.password | required ".Values.cloudsql.password is required." }}
+{{- $redis_host := .Values.materialize.redis.host | required ".Values.materialize.redis.host is required." }}
+{{- $global_server := .Values.cluster.globalServer | required ".Values.cluster.globalServer is required." }}
+{{- $domain_name := .Values.cluster.domainName | required ".Values.cluster.domainName is required." }}
 
 ---
 apiVersion: v1
@@ -48,7 +48,23 @@ data:
             AUTH_TOKEN = json.load(f)["token"]
     else:
         AUTH_TOKEN = ""
-    BEAT_SCHEDULES = {{.Values.materialize.schedules | indent 4}}
+    {{ $raw := .Values.materialize.schedules }}
+    {{ if kindIs "string" $raw }}
+      {{ $s := trim $raw }}
+      {{ if or (hasPrefix "[" $s) (hasPrefix "{" $s) }}
+    BEAT_SCHEDULES = {{ $s | indent 4 }}
+      {{ else }}
+    BEAT_SCHEDULES = {{ $s | fromJson | toJson | indent 4 }}
+      {{ end }}
+    {{ else }}
+      {{- /* not a string: render as JSON; if empty list/map, render {} to satisfy code expecting a dict */ -}}
+      {{ $isList := kindIs "slice" $raw }}
+      {{ if and $isList (empty $raw) }}
+    BEAT_SCHEDULES = {}
+      {{ else }}
+    BEAT_SCHEDULES = {{ $raw | toJson | indent 4 }}
+      {{ end }}
+    {{ end }}
     AUTH_SHARED_EXCLUDED_GROUPS={{ .Values.annotation.excludedPermissionGroups | toJson }}
     DB_CONNECTION_POOL_SIZE = 5 
     DB_CONNECTION_MAX_OVERFLOW = 5
