@@ -1,3 +1,6 @@
+{{- $global_server := .Values.cluster.globalServer | required ".Values.cluster.globalServer is required." }}
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
