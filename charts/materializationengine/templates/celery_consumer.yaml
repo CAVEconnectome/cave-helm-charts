@@ -1,4 +1,4 @@
-{{- $raw := .Values.materialize.tag  -}}
+{{- $raw := .Values.materialize.tag | default .Values.materialize.version | default .Chart.AppVersion -}}
 {{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
 
 ---
