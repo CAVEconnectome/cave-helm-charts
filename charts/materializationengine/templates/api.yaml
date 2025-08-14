@@ -1,5 +1,5 @@
 {{- $global_server := .Values.cluster.globalServer | required ".Values.cluster.globalServer is required." }}
-{{- $raw := .Values.materialize.tag  -}}
+{{- $raw := .Values.materialize.tag | default .Values.materialize.version | default .Chart.AppVersion   -}}
 {{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
 
 ---
@@ -40,7 +40,6 @@ spec:
             secretName: mat-cloudsql-google-cloud-key
       containers:
         - name: materialize
-
           image: {{ .Values.cluster.dockerRegistry }}/materializationengine:{{ $tag }}
           imagePullPolicy: Always
           ports:
@@ -71,8 +70,8 @@ spec:
               value: /home/nginx/.cloudvolume/secrets/cave-secret.json
           resources:
             requests:
-              memory: 1000Mi
-              cpu: 200m
+              memory: {{ .Values.materialize.resources.requests.memory | default "800Mi" }}
+              cpu: {{ .Values.materialize.resources.requests.cpu | default "200m" }}
           readinessProbe:
             httpGet:
               path: /health

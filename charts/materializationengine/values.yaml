@@ -60,6 +60,10 @@ materialize:
     # likely fine
     port: "6379"
     password: ""
+  resources:
+    requests:
+      memory: "700Mi"
+      cpu: "200m"
 cluster:
   # required to fill in or choose
   globalServer: ""
