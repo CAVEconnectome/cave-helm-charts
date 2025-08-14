@@ -1,5 +1,0 @@
-apiVersion: v2
-name: cert-manager-google
-version: 0.4.0
-description: "Installs Cert-Manager an Issuer and a Certificate on google cloud"
-
