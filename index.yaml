@@ -40,6 +40,15 @@ entries:
     version: 0.1.0
   cert-manager-google:
   - apiVersion: v2
+    created: "2025-08-14T12:45:48.640909697Z"
+    description: Installs Cert-Manager ClusterIssuer on google cloud with cloud dns
+      verification
+    digest: 2459257c2bcbd5834832e79e7b49688c7c92355575aeb487a534f109764937f8
+    name: cert-manager-google
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/cert-manager-google-0.4.1/cert-manager-google-0.4.1.tgz
+    version: 0.4.1
+  - apiVersion: v2
     created: "2025-01-23T23:59:00.859375704Z"
     description: Installs Cert-Manager an Issuer and a Certificate on google cloud
     digest: abacd3d5f29396a48433f482524ca97da4521a2f44c88b9af4fe960ac7cabc1d
@@ -170,4 +179,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2025-08-14T12:35:44.589305879Z"
+generated: "2025-08-14T12:45:48.640942348Z"
