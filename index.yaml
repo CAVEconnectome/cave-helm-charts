@@ -3,6 +3,15 @@ entries:
   annotationengine:
   - apiVersion: v2
     appVersion: 4.23.1
+    created: "2025-08-14T15:09:51.820446285Z"
+    description: A Helm chart for CAVE annotationengine service on Kubernetes
+    digest: c24b3d30868082eadcd4daa7ebcc68a286c2acfdb8540d39b256146bec555cb1
+    name: annotationengine
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/annotationengine-0.2.2/annotationengine-0.2.2.tgz
+    version: 0.2.2
+  - apiVersion: v2
+    appVersion: 4.23.1
     created: "2025-08-14T12:35:43.686130738Z"
     description: A Helm chart for CAVE annotationengine service on Kubernetes
     digest: 7bca862283a065fbda82e32a53a0beea8396f88cffc01d170446d145da1bc6a2
@@ -20,6 +29,15 @@ entries:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/annotationengine-0.1.1/annotationengine-0.1.1.tgz
     version: 0.1.1
   cavecanary:
+  - apiVersion: v2
+    appVersion: 0.4.4
+    created: "2025-08-14T15:09:52.023685552Z"
+    description: A Helm chart for CAVE cavecanary service on Kubernetes
+    digest: 52d664dc1d2cfb1aa1dbb0d8dc92427bd445787870df6243fd25a1f46e679f98
+    name: cavecanary
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/cavecanary-0.2.1/cavecanary-0.2.1.tgz
+    version: 0.2.1
   - apiVersion: v2
     appVersion: 0.4.4
     created: "2025-08-14T12:35:43.840134571Z"
@@ -95,6 +113,15 @@ entries:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/cert-manager-google-0.1.0/cert-manager-google-0.1.0.tgz
     version: 0.1.0
   dash:
+  - apiVersion: v1
+    appVersion: 1.14.6
+    created: "2025-08-14T15:09:52.207159951Z"
+    description: A Helm chart for CAVE dash on flask service on Kubernetes
+    digest: 37eb4c244194e4b06dc7964c2e3346ada34af323fc5a6fed81315ef0196405fe
+    name: dash
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/dash-0.2.2/dash-0.2.2.tgz
+    version: 0.2.2
   - apiVersion: v1
     appVersion: 1.14.6
     created: "2025-08-14T12:35:43.985682639Z"
@@ -190,6 +217,15 @@ entries:
     version: 2.3.1
   - apiVersion: v1
     appVersion: 2.3.2
+    created: "2025-08-14T15:09:52.430990923Z"
+    description: A Helm chart for CAVE tourguide on flask service on Kubernetes
+    digest: 0a12ee332a302bd12af897a24882d830b4dda9f252a97ce76774f8ba5a114c08
+    name: tourguide
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.2/tourguide-0.2.2.tgz
+    version: 0.2.2
+  - apiVersion: v1
+    appVersion: 2.3.2
     created: "2025-08-14T12:35:44.589256537Z"
     description: A Helm chart for CAVE tourguide on flask service on Kubernetes
     digest: a4ab7e2960870913bb5fd9484b9514f582d4f01d4bafcabe08cfb53c582d0942
@@ -197,4 +233,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2025-08-14T14:57:34.115688576Z"
+generated: "2025-08-14T15:09:52.431042136Z"
