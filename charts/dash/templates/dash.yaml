@@ -1,3 +1,7 @@
+{{- $raw := .Values.dash.tag | default .Values.dash.version | default .Chart.AppVersion -}}
+{{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -27,8 +31,6 @@ spec:
           name: dash-config
       containers:
       - name: dash
-        {{- $raw := .Values.dash.tag | default .Values.dash.version | default .Chart.AppVersion -}}
-        {{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
         image: {{ .Values.cluster.dockerRegistry }}/dashonflask:{{ $tag }}
         imagePullPolicy: Always
         ports:

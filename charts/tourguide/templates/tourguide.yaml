@@ -1,3 +1,7 @@
+{{- $raw := .Values.tourguide.tag | default .Chart.AppVersion -}}
+{{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -45,8 +49,6 @@ spec:
               ephemeral-storage: 30Mi
       containers:
         - name: tourguide
-          {{- $raw := .Values.tourguide.tag | default .Chart.AppVersion -}}
-          {{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
           image: {{ .Values.cluster.dockerRegistry }}/tourguide:{{ $tag }}
           volumeMounts:
             - name: prometheus-data

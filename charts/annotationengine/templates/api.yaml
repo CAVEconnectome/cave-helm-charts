@@ -1,3 +1,7 @@
+{{- $raw := .Values.annotation.tag | default .Values.annotation.version | default .Chart.AppVersion -}}
+{{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -34,8 +38,6 @@ spec:
             secretName: ann-cloudsql-google-cloud-key
       containers:
         - name: annotationengine
-          {{- $raw := .Values.annotation.tag | default .Values.annotation.version | default .Chart.AppVersion -}}
-          {{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
           image: {{ .Values.cluster.dockerRegistry}}/annotationengine:{{ $tag }}
           imagePullPolicy: Always
           ports:
