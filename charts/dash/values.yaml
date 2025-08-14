@@ -1,5 +1,6 @@
 dash: 
-  version: 1.12.2
+  # image tag; if empty defaults to Chart.appVersion; legacy dash.version still honored in templates
+  tag: ""
   secretKey: "!$#!#@$!#@qadsfasdf"
   minReplicas: 1
   maxReplicas: 10

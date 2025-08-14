@@ -27,7 +27,9 @@ spec:
           name: dash-config
       containers:
       - name: dash
-        image: {{ .Values.cluster.dockerRegistry }}/dashonflask:v{{ .Values.dash.version }}
+        {{- $raw := .Values.dash.tag | default .Values.dash.version | default .Chart.AppVersion -}}
+        {{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
+        image: {{ .Values.cluster.dockerRegistry }}/dashonflask:{{ $tag }}
         imagePullPolicy: Always
         ports:
         - containerPort: 80

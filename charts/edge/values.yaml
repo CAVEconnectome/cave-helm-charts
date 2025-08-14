@@ -1,0 +1,9 @@
+cluster:
+  cluster_prefix: ""
+  domainName: ""
+edge:
+  ingressClassName: nginx
+  tlsSecretName: "le-certificate"
+  annotations: {}
+  # If you use cert-manager ingress-shim, set clusterIssuer and it will create the cert
+  clusterIssuer: "letsencrypt-staging"

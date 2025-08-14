@@ -1,0 +1,26 @@
+{{- $domain := .Values.cluster.domainName | required ".Values.cluster.domainName is required." -}}
+{{- $prefix := .Values.cluster.cluster_prefix | required ".Values.cluster.cluster_prefix is required." -}}
+{{- $host := printf "%s.%s" $prefix $domain -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: annotationengine-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "360"
+    nginx.ingress.kubernetes.io/x-forwarded-prefix: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: {{ $host }}
+    http:
+      paths:
+      - path: /annotation
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: annotation-service
+            port:
+              number: 80
+ 

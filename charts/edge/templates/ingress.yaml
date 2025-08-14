@@ -1,0 +1,28 @@
+{{- $domain := .Values.cluster.domainName | required ".Values.cluster.domainName is required." -}}
+{{- $prefix := .Values.cluster.cluster_prefix | required ".Values.cluster.cluster_prefix is required." -}}
+{{- $host := printf "%s.%s" $prefix $domain -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: edge-host-owner
+  annotations:
+    kubernetes.io/ingress.class: {{ .Values.edge.ingressClassName | default "nginx" }}
+    cert-manager.io/cluster-issuer: {{ .Values.edge.clusterIssuer | quote }}
+spec:
+  ingressClassName: {{ .Values.edge.ingressClassName | default "nginx" }}
+  rules:
+  - host: {{ $host }}
+    http:
+      paths:
+      # A dummy 404 backend; just to bind host and own TLS.
+      - path: /__edge-healthz
+        pathType: Prefix
+        backend:
+          service:
+            name: kube-dns
+            port:
+              number: 53
+  tls:
+  - hosts:
+    - {{ $host }}
+    secretName: {{ .Values.edge.tlsSecretName }}

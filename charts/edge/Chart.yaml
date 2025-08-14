@@ -1,0 +1,4 @@
+apiVersion: v2
+name: edge
+version: 0.1.0
+description: Edge ingress and TLS for shared host

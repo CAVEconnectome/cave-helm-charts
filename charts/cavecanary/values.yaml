@@ -26,6 +26,9 @@ cluster:
   standardPool: "standard-pool"
   lightweightPool: "lightweight-pool"
   dockerRegistry: "docker.io/caveconnectome"
+cavecanary:
+  # image tag; defaults to Chart.appVersion if empty; legacy .version still honored in template
+  tag: ""
 slack:
   api_token: ""
   canary_channel: ""

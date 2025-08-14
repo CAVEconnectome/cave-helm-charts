@@ -37,7 +37,9 @@ spec:
             secretName: mat-cloudsql-google-cloud-key
       containers:
         - name: celery-beat-scheduler
-          image: {{ .Values.cluster.dockerRegistry }}/materializationengine:v{{ .Values.materialize.version }}
+          {{- $raw := .Values.materialize.tag | default .Values.materialize.version | default .Chart.AppVersion -}}
+          {{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
+          image: {{ .Values.cluster.dockerRegistry }}/materializationengine:{{ $tag }}
           args:
             - su
             - nginx

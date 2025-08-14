@@ -1,4 +1,3 @@
-
 logLevel: "warning"
 pool: 
 cluster:
@@ -14,3 +13,7 @@ cluster:
   meshPool: "mesh-pool"
   standardPool: "standard-pool"
   dockerRegistry: "docker.io/caveconnectome"
+
+tourguide:
+  # image tag; defaults to Chart.appVersion if empty
+  tag: ""

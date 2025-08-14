@@ -15,8 +15,8 @@ limiter:
   redis:
     host: ""
 materialize:
-  # will change as you upgrade versions
-  version: "4.23.2"
+  # image tag; if empty defaults to Chart.appVersion; legacy .materialize.version still honored
+  tag: ""
   # need to fill in
   datastacks: 
     - ""
@@ -40,6 +40,7 @@ materialize:
   # control how many databases it will allow materialization to create
   minDatabases: 1
   maxDatabases: 3
+  querylimit: 500000
   # limits queries to the api
   limitsQueryPerMinute: 300
   limitsFastQueryPerMinute: 2000

@@ -4,7 +4,7 @@ cloudsql:
   username: "postgres"
   password: ""
 annotation:
-  version: "4.4.0"
+  tag: ""
   # add to this if you want to exclude joint membership in a group name 
   # from applying to group level permissions
   excludedPermissionGroups: 

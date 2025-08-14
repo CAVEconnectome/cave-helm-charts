@@ -1,5 +1,5 @@
 apiVersion: cert-manager.io/v1
-kind: Issuer
+kind: ClusterIssuer
 metadata:
   name: {{ required "A valid .Values.issuerName is required!" .Values.issuerName }}
 spec:

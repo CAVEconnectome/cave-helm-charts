@@ -32,7 +32,9 @@ spec:
       terminationGracePeriodSeconds: 65
       containers:
         - name: meshing
-          image: {{ .Values.cluster.dockerRegistry }}/pychunkedgraph:v{{ .Values.pychunkedgraph.version }}
+          {{- $raw := .Values.pychunkedgraph.tag | default .Values.pychunkedgraph.version | default .Chart.AppVersion -}}
+          {{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
+          image: {{ .Values.cluster.dockerRegistry }}/pychunkedgraph:{{ $tag }}
           imagePullPolicy: Always
           ports:
             - containerPort: 80

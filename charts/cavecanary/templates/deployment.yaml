@@ -34,7 +34,9 @@ spec:
             secretName: cavecanary-cloudsql-google-cloud-key
       containers:
         - name: cavecanary
-          image: {{ .Values.cluster.dockerRegistry}}/cavecanary:v{{ .Values.cavecanary.version}}
+          {{- $raw := .Values.cavecanary.tag | default .Values.cavecanary.version | default .Chart.AppVersion -}}
+          {{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
+          image: {{ .Values.cluster.dockerRegistry}}/cavecanary:{{ $tag }}
           imagePullPolicy: Always
           ports:
             - containerPort: 80

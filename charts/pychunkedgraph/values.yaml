@@ -14,7 +14,8 @@ cluster:
   standardPool: "standard-pool"
   dockerRegistry: "docker.io/caveconnectome"
 pychunkedgraph:
-  version: 2.15.1
+  # image tag; defaults to Chart.appVersion if empty; legacy .version still honored in templates
+  tag: ""
   # should be a list of graphIds seperated by commas
   graphIds: ""
   secretFiles:

@@ -3,4 +3,8 @@ letsEncryptServer: https://acme-v02.api.letsencrypt.org/directory
 letsEncryptEmail: ""
 projectName: ""
 environment: ""
-dnsHostnames: []
+
+dns:
+  # Can be a map/object (resolved by helmfile ref) or a raw JSON string
+  googleSecret: ""
+
