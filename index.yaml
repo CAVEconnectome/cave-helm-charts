@@ -125,6 +125,15 @@ entries:
   materializationengine:
   - apiVersion: v2
     appVersion: 5.7.4
+    created: "2025-08-14T14:57:33.922906015Z"
+    description: A Helm chart for CAVE materialization service on Kubernetes
+    digest: 69d04ede0e8e17b1c824394a3bca994dc8e9f3cc2a5343d339a9e34b1157cda2
+    name: materializationengine
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/materializationengine-0.2.2/materializationengine-0.2.2.tgz
+    version: 0.2.2
+  - apiVersion: v2
+    appVersion: 5.7.4
     created: "2025-08-14T12:35:44.298431716Z"
     description: A Helm chart for CAVE materialization service on Kubernetes
     digest: 72cca4f906ad25fdbefab96d36d16e8cfead33ef462987711d3f9d15752c4d25
@@ -142,6 +151,15 @@ entries:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/materializationengine-0.1.0/materializationengine-0.1.0.tgz
     version: 0.1.0
   pychunkedgraph:
+  - apiVersion: v2
+    appVersion: 2.20.0
+    created: "2025-08-14T14:57:34.115647209Z"
+    description: A Helm chart for CAVE pychunkedgraph services on Kubernetes
+    digest: a1af11218b352d170301c6fb032fe9dff4e34621fa23155bb0597e5f0f4d7685
+    name: pychunkedgraph
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/pychunkedgraph-0.2.3/pychunkedgraph-0.2.3.tgz
+    version: 0.2.3
   - apiVersion: v2
     appVersion: 2.20.0
     created: "2025-08-14T12:35:44.454671759Z"
@@ -179,4 +197,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2025-08-14T12:45:48.640942348Z"
+generated: "2025-08-14T14:57:34.115688576Z"
