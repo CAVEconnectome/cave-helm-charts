@@ -75,6 +75,12 @@ spec:
               value: {{ .Values.cluster.globalServer }}/auth
             - name: DAF_CREDENTIALS
               value: /home/nginx/.cloudvolume/secrets/cave-secret.json
+            - name: QUEUE_LENGTH_LIMIT
+              value: "5000"
+            - name: QUEUES_TO_THROTTLE
+              value: process
+            - name: THROTTLE_QUEUES
+              value: "true"
             - name: QUEUE_NAME
               value: {{ .Values.materialize.producerQueueName }}
             - name: WORKER_NAME

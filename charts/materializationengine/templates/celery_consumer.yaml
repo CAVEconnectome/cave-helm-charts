@@ -63,6 +63,12 @@ spec:
               value: {{ .Values.materialize.redis.host }}
             - name: REDIS_PASSWORD
               value: {{ .Values.materialize.redis.password }}
+            - name: QUEUE_LENGTH_LIMIT
+              value: "5000"
+            - name: QUEUES_TO_THROTTLE
+              value: process
+            - name: THROTTLE_QUEUES
+              value: "true"
             - name: CELERY_BROKER_URL
               value: redis://:{{ .Values.materialize.redis.password}}@{{ .Values.materialize.redis.host}}:{{ .Values.materialize.redis.post}}/0
             - name: GOOGLE_APPLICATION_CREDENTIALS

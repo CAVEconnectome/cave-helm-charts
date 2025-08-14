@@ -61,6 +61,12 @@ spec:
               value: {{ .Values.materialize.redis.password }}
             - name: GOOGLE_APPLICATION_CREDENTIALS
               value: /home/nginx/.cloudvolume/secrets/google-secret.json
+            - name: QUEUE_LENGTH_LIMIT
+              value: "5000"
+            - name: QUEUES_TO_THROTTLE
+              value: process
+            - name: THROTTLE_QUEUES
+              value: "true"
             - name: AUTH_URI
               value: {{ .Values.cluster.globalServer }}/auth
             - name: STICKY_AUTH_URL
