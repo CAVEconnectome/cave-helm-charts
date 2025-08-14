@@ -2,6 +2,15 @@ apiVersion: v1
 entries:
   annotationengine:
   - apiVersion: v2
+    appVersion: 4.23.1
+    created: "2025-08-14T12:35:43.686130738Z"
+    description: A Helm chart for CAVE annotationengine service on Kubernetes
+    digest: 7bca862283a065fbda82e32a53a0beea8396f88cffc01d170446d145da1bc6a2
+    name: annotationengine
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/annotationengine-0.2.1/annotationengine-0.2.1.tgz
+    version: 0.2.1
+  - apiVersion: v2
     appVersion: 4.4.0
     created: "2024-11-04T16:39:31.088988172Z"
     description: A Helm chart for CAVE annotationengine service on Kubernetes
@@ -11,6 +20,15 @@ entries:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/annotationengine-0.1.1/annotationengine-0.1.1.tgz
     version: 0.1.1
   cavecanary:
+  - apiVersion: v2
+    appVersion: 0.4.4
+    created: "2025-08-14T12:35:43.840134571Z"
+    description: A Helm chart for CAVE cavecanary service on Kubernetes
+    digest: 542d14a5f70e9ca08efb10b6bd00a746a3734676fac334f126e4cdad50581495
+    name: cavecanary
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/cavecanary-0.2.0/cavecanary-0.2.0.tgz
+    version: 0.2.0
   - apiVersion: v2
     appVersion: 0.4.4
     created: "2024-11-04T16:39:31.188212989Z"
@@ -69,6 +87,15 @@ entries:
     version: 0.1.0
   dash:
   - apiVersion: v1
+    appVersion: 1.14.6
+    created: "2025-08-14T12:35:43.985682639Z"
+    description: A Helm chart for CAVE dash on flask service on Kubernetes
+    digest: a5e8eef60ac334dc53f309cf0d47e45c8d470caa5c1d358a43abd9a895222990
+    name: dash
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/dash-0.2.1/dash-0.2.1.tgz
+    version: 0.2.1
+  - apiVersion: v1
     appVersion: 1.12.2
     created: "2024-11-04T16:39:31.286894892Z"
     description: A Helm chart for CAVE dash on flask service on Kubernetes
@@ -77,7 +104,25 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/dash-0.1.0/dash-0.1.0.tgz
     version: 0.1.0
+  edge:
+  - apiVersion: v2
+    created: "2025-08-14T12:35:44.147459675Z"
+    description: Edge ingress and TLS for shared host
+    digest: b678dd3db11fa82f63f3938680cc9b9f1f9e58b6592a8717c5935876ade0074b
+    name: edge
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/edge-0.2.0/edge-0.2.0.tgz
+    version: 0.2.0
   materializationengine:
+  - apiVersion: v2
+    appVersion: 5.7.4
+    created: "2025-08-14T12:35:44.298431716Z"
+    description: A Helm chart for CAVE materialization service on Kubernetes
+    digest: 72cca4f906ad25fdbefab96d36d16e8cfead33ef462987711d3f9d15752c4d25
+    name: materializationengine
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/materializationengine-0.2.1/materializationengine-0.2.1.tgz
+    version: 0.2.1
   - apiVersion: v2
     appVersion: 4.23.2
     created: "2024-11-04T16:39:31.399351637Z"
@@ -88,6 +133,15 @@ entries:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/materializationengine-0.1.0/materializationengine-0.1.0.tgz
     version: 0.1.0
   pychunkedgraph:
+  - apiVersion: v2
+    appVersion: 2.20.0
+    created: "2025-08-14T12:35:44.454671759Z"
+    description: A Helm chart for CAVE pychunkedgraph services on Kubernetes
+    digest: c1069788e014985faa84c3705fc992b08934e5f05bd8a36a5e84fc18967e3aca
+    name: pychunkedgraph
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/pychunkedgraph-0.2.1/pychunkedgraph-0.2.1.tgz
+    version: 0.2.1
   - apiVersion: v2
     appVersion: 2.15.1
     created: "2024-11-04T16:39:31.518038263Z"
@@ -107,4 +161,13 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-2.3.1/tourguide-2.3.1.tgz
     version: 2.3.1
-generated: "2025-08-10T03:02:01.049789299Z"
+  - apiVersion: v1
+    appVersion: 2.3.2
+    created: "2025-08-14T12:35:44.589256537Z"
+    description: A Helm chart for CAVE tourguide on flask service on Kubernetes
+    digest: a4ab7e2960870913bb5fd9484b9514f582d4f01d4bafcabe08cfb53c582d0942
+    name: tourguide
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
+    version: 0.2.1
+generated: "2025-08-14T12:35:44.589305879Z"
