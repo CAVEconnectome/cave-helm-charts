@@ -1,0 +1,9 @@
+issuerName: letsencrypt-issuer
+letsEncryptServer: https://acme-v02.api.letsencrypt.org/directory
+letsEncryptEmail: ""
+projectName: ""
+environment: ""
+
+dns:
+  # Can be a map/object (resolved by helmfile ref) or a raw JSON string
+  googleSecret: ""

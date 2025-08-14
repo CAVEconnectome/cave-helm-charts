@@ -1,0 +1,4 @@
+apiVersion: v2
+name: cert-manager-google
+version: 0.4.1
+description: "Installs Cert-Manager ClusterIssuer on google cloud with cloud dns verification"

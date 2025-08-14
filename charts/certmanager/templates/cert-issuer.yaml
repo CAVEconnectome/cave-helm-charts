@@ -1,0 +1,17 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: {{ required "A valid .Values.issuerName is required!" .Values.issuerName }}
+spec:
+  acme:
+    server: {{ required "A valid .Values.letsEncryptServer is required!" .Values.letsEncryptServer }}
+    email: {{ required "A valid .Values.letsEncryptEmail is required!" .Values.letsEncryptEmail }}
+    privateKeySecretRef:
+      name: {{ .Values.issuerName }}
+    solvers:
+      - dns01:
+          cloudDNS:
+            project: {{ .Values.projectName }}
+            serviceAccountSecretRef:
+              name: {{ .Values.cloudDnsServiceAccountSecret }}
+              key: {{ .Values.googleSecretFilename }}
