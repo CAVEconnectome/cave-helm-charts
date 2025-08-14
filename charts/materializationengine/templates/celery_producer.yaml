@@ -1,3 +1,7 @@
+{{- $raw := .Values.materialize.tag  -}}
+{{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -37,7 +41,7 @@ spec:
           emptyDir: {}
       containers:
         - name: celery
-          image: {{ .Values.cluster.dockerRegistry }}/materializationengine:v{{.Values.materialize.version}}
+          image: {{ .Values.cluster.dockerRegistry }}/materializationengine:{{ $tag }}
           args:
             - su
             - nginx
