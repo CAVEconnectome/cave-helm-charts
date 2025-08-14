@@ -1,3 +1,7 @@
+{{- $raw := .Values.materialize.tag | default .Values.materialize.version | default .Chart.AppVersion -}}
+{{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -37,8 +41,6 @@ spec:
             secretName: mat-cloudsql-google-cloud-key
       containers:
         - name: celery-beat-scheduler
-          {{- $raw := .Values.materialize.tag | default .Values.materialize.version | default .Chart.AppVersion -}}
-          {{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
           image: {{ .Values.cluster.dockerRegistry }}/materializationengine:{{ $tag }}
           args:
             - su
