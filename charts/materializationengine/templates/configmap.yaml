@@ -2,6 +2,7 @@
 {{- $redis_host := .Values.materialize.redis.host | required ".Values.materialize.redis.host is required." }}
 {{- $global_server := .Values.cluster.globalServer | required ".Values.cluster.globalServer is required." }}
 {{- $domain_name := .Values.cluster.domainName | required ".Values.cluster.domainName is required." }}
+{{- $health_aligned_volume_name := .Values.annotation.healthAlignedVolumeName | required ".Values.annotation.healthAlignedVolumeName is required." }}
 
 ---
 apiVersion: v1
