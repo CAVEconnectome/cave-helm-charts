@@ -44,6 +44,7 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 80
+            - containerPort: 9192
           volumeMounts:
             - name: google-cloud-key
               mountPath: /home/nginx/.cloudvolume/secrets
@@ -56,6 +57,12 @@ spec:
               value: /home/nginx/.cloudvolume/secrets/google-secret.json
             - name: AUTH_URI
               value: {{ .Values.cluster.globalServer }}/auth
+            - name: QUEUE_LENGTH_LIMIT
+              value: "5001"
+            - name: QUEUES_TO_THROTTLE
+              value: process
+            - name: THROTTLE_QUEUES
+              value: "true"
             - name: LIMITER_CATEGORIES
               value: '{"query":"{{ .Values.materialize.limitsFastQueryPerMinute}}/minute","fast_query":"{{ .Values.materialize.limitsQueryPerMinute}}/minute"}'
             - name: LIMITER_URI
@@ -86,6 +93,21 @@ spec:
             initialDelaySeconds: 15
             timeoutSeconds: 1
             periodSeconds: 60
+        - name: uwsgi-exporter
+          image: caveconnectome/uwsgi-export-workers:v14
+          # Exposes the metrics endpoint on 0.0.0.0:9101
+          ports:
+              - containerPort: 9101
+          env:
+          # This tells the exporter where to find the uWSGI stats server
+          - name: UWSGI_STATS_URL
+            value: "http://localhost:9192"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
         - name: cloudsql-proxy
           image: gcr.io/cloudsql-docker/gce-proxy:1.33.6
           command:
