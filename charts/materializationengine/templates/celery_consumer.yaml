@@ -30,7 +30,7 @@ spec:
       volumes:
         - name: materializationengine-config-volume
           configMap:
-            name: materializationengine-config 
+            name: materializationengine-config
         - name: google-cloud-key
           secret:
             secretName: materialize-google-cloud-key
@@ -42,11 +42,16 @@ spec:
       containers:
         - name: celery
           image: {{ .Values.cluster.dockerRegistry }}/materializationengine:{{ $tag }}
+          command: ["/bin/sh"]
           args:
-            - su
-            - nginx
             - -c
-            - "celery --app=run.celery worker --pool=prefork --hostname=worker.process@%h --queues={{ .Values.materialize.consumerQueueName}} --loglevel=info -E -Ofair --concurrency={{ .Values.materialize.celeryConsumerConcurrency }}"
+            - |
+              if command -v curl >/dev/null 2>&1; then
+                until curl -sf http://127.0.0.1:9801/readiness >/dev/null; do echo "waiting for cloudsql-proxy..."; sleep 1; done
+              else
+                until python -c 'import urllib.request,sys; sys.exit(0 if urllib.request.urlopen("http://127.0.0.1:9801/readiness", timeout=1).getcode()==200 else 1)' >/dev/null 2>&1; do echo "waiting for cloudsql-proxy..."; sleep 1; done
+              fi
+              exec su nginx -c 'celery --app=run.celery worker --loglevel=info --queues={{ .Values.materialize.consumerQueueName}} --pool=prefork -E -Ofair --concurrency={{ .Values.materialize.celeryConsumerConcurrency }}'
           volumeMounts:
             - name: materializationengine-config-volume
               mountPath: /app/materializationengine/instance/
@@ -70,7 +75,7 @@ spec:
             - name: THROTTLE_QUEUES
               value: "true"
             - name: CELERY_BROKER_URL
-              value: redis://:{{ .Values.materialize.redis.password}}@{{ .Values.materialize.redis.host}}:{{ .Values.materialize.redis.post}}/0
+              value: redis://:{{ .Values.materialize.redis.password}}@{{ .Values.materialize.redis.host}}:{{ .Values.materialize.redis.port}}/0
             - name: GOOGLE_APPLICATION_CREDENTIALS
               value: /home/nginx/.cloudvolume/secrets/google-secret.json
             - name: AUTH_URI
@@ -101,64 +106,29 @@ spec:
             preStop:
               exec:
                 command: ["/home/nginx/gracefully_shutdown_celery.sh"]
-        - name: celery-exporter
-          image: {{ .Values.cluster.dockerRegistry}}/celery-metric-exporter:v5
-          command: ["python"]
-          args:
-            - cli.py
-            - --broker-url
-            - redis://:{{ .Values.materialize.redis.password}}@{{ .Values.materialize.redis.host}}}:{{ .Values.materialize.redis.post}}/0
-            - --port
-            - "9540"
-            - -q
-            - {{ .Values.materialize.consumerQueueName}}
-          ports:
-            - containerPort: 9540
-          lifecycle:
-            preStop:
-              exec:
-                command:
-                  [
-                    "sh",
-                    "-c",
-                    "while ! [ -f /home/nginx/tmp/shutdown/kill_sidecar ]; do sleep 1; done; kill -2 1",
-                  ]
-          volumeMounts:
-            - name: graceful-shut-down
-              mountPath: /home/nginx/tmp/shutdown
-        - name: prometheus-to-sd
-          image: gcr.io/google-containers/prometheus-to-sd:v0.8.0
-          command: ["/monitor"]
-          args:
-            - --source=http://localhost:9540/metrics
-            - --stackdriver-prefix=custom.googleapis.com
-            - --pod-id=$(POD_ID)
-            - --namespace-id=$(POD_NAMESPACE)
-          env:
-            # save Kubernetes metadata as environment variables for use in metrics
-            - name: POD_ID
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.uid
-            - name: POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
-            - name: POD_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
-          volumeMounts:
-            - name: graceful-shut-down
-              mountPath: /home/nginx/tmp/shutdown
         - name: cloudsql-proxy
-          image: gcr.io/cloudsql-docker/gce-proxy:1.33.6
-          command:
-            [
-              "/cloud_sql_proxy",
-              "-instances={{ .Values.cluster.googleProject}}:{{ .Values.cluster.googleRegion}}:{{ .Values.cloudsql.sqlInstanceName}}=tcp:3306",
-              "-credential_file=/secrets/cloudsql/google-secret.json",
-            ]
+          image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.15.2
+          args:
+            - "--port=3306"
+            - "--credentials-file=/secrets/cloudsql/google-secret.json"
+            - "--max-sigterm-delay=3600s"
+            - "{{ .Values.cluster.googleProject}}:{{ .Values.cluster.googleRegion}}:{{ .Values.cloudsql.sqlInstanceName }}"
+          env:
+            - name: CSQL_PROXY_HEALTH_CHECK
+              value: "true"
+            - name: CSQL_PROXY_HTTP_PORT
+              value: "9801"
+            - name: CSQL_PROXY_HTTP_ADDRESS
+              value: 0.0.0.0
+            - name: CSQL_PROXY_QUITQUITQUIT
+              value: "true"
+            - name: CSQL_PROXY_ADMIN_PORT
+              value: "9092"
+            - name: CSQL_PROXY_STRUCTURED_LOGS
+              value: "true"
+          ports:
+            - containerPort: 9801
+              protocol: TCP
           resources:
             requests:
               memory: 8Mi
@@ -166,6 +136,33 @@ spec:
           securityContext:
             runAsUser: 2 # non-root user
             allowPrivilegeEscalation: false
+          startupProbe:
+            failureThreshold: 60
+            httpGet:
+              path: /startup
+              port: 9801
+              scheme: HTTP
+            periodSeconds: 1
+            successThreshold: 1
+            timeoutSeconds: 10
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /liveness
+              port: 9801
+              scheme: HTTP
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /readiness
+              port: 9801
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 10
+            successThreshold: 1
+            failureThreshold: 6
           lifecycle:
             preStop:
               exec:
@@ -173,7 +170,7 @@ spec:
                   [
                     "sh",
                     "-c",
-                    "while ! [ -f /home/nginx/tmp/shutdown/kill_sidecar ]; do sleep 1; done; kill -2 1",
+                    "while ! [ -f /home/nginx/tmp/shutdown/kill_sidecar ]; do sleep 1; done; curl -f -X POST http://localhost:9092/quitquitquit || kill -15 1",
                   ]
           volumeMounts:
             - name: cloudsql-instance-credentials-volume

@@ -1,0 +1,180 @@
+{{- if and .Values.keda.enabled .Values.gmp.enabled .Values.materialize.orchestrationAsJobs }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledJob
+metadata:
+  name: celery-orchestration
+spec:
+  pollingInterval: 30
+  successfulJobsHistoryLimit: 5
+  failedJobsHistoryLimit: 5
+  maxReplicaCount: {{ .Values.materialize.orchestrationMaxJobs | default 50 }}
+  rolloutStrategy: gradual
+  scalingStrategy:
+    strategy: accurate
+  jobTargetRef:
+    parallelism: 1
+    completions: 1
+    template:
+      metadata:
+        labels:
+          app: celery-orchestration
+        annotations:
+          checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+          checksum/secrets: {{ include (print $.Template.BasePath "/materialize_secret.yaml") . | sha256sum }}
+          checksum/cloudsql: {{ include (print $.Template.BasePath "/cloudsql_secret.yaml") . | sha256sum }}
+      spec:
+        restartPolicy: OnFailure
+        tolerations:
+          - key: "pool"
+            operator: "Equal"
+            value: "{{ .Values.cluster.standardPool }}"
+            effect: "NoSchedule"
+        nodeSelector:
+          cloud.google.com/gke-nodepool: {{ .Values.cluster.standardPool }}
+        volumes:
+          - name: materializationengine-config-volume
+            configMap:
+              name: materializationengine-config
+          - name: google-cloud-key
+            secret:
+              secretName: materialize-google-cloud-key
+          - name: cloudsql-instance-credentials-volume
+            secret:
+              secretName: mat-cloudsql-google-cloud-key
+          - name: graceful-shut-down
+            emptyDir: {}
+        containers:
+          - name: celery
+            image: {{ .Values.cluster.dockerRegistry }}/materializationengine:{{ .Values.materialize.tag | default .Chart.AppVersion }}
+            command: ["/bin/sh"]
+            args:
+              - -c
+              - |
+                if command -v curl >/dev/null 2>&1; then
+                  until curl -sf http://127.0.0.1:9801/readiness >/dev/null; do echo "waiting for cloudsql-proxy..."; sleep 1; done
+                else
+                  until python -c 'import urllib.request,sys; sys.exit(0 if urllib.request.urlopen("http://127.0.0.1:9801/readiness", timeout=1).getcode()==200 else 1)' >/dev/null 2>&1; do echo "waiting for cloudsql-proxy..."; sleep 1; done
+                fi
+                exec su nginx -c 'celery --app=run.celery worker --loglevel=info --pool=solo --max-tasks-per-child=1 --hostname=worker.orchestration@%h --queues={{ .Values.materialize.orchestrationQueueName | default "orchestration" }} -E -Ofair'
+            volumeMounts:
+              - name: materializationengine-config-volume
+                mountPath: /app/materializationengine/instance/
+              - name: google-cloud-key
+                mountPath: /home/nginx/.cloudvolume/secrets
+              - name: graceful-shut-down
+                mountPath: /home/nginx/tmp/shutdown
+            env:
+              - name: MATERIALIZATION_ENGINE_SETTINGS
+                value: /app/materializationengine/instance/config.cfg
+              - name: REDIS_SERVICE_HOST
+                value: {{ .Values.materialize.redis.host }}
+              - name: REDIS_HOST
+                value: {{ .Values.materialize.redis.host }}
+              - name: REDIS_PORT
+                value: "{{ .Values.materialize.redis.port }}"
+              - name: REDIS_PASSWORD
+                value: {{ .Values.materialize.redis.password }}
+              - name: CELERY_BROKER_URL
+                value: redis://:{{ .Values.materialize.redis.password}}@{{ .Values.materialize.redis.host}}:{{ .Values.materialize.redis.port}}/0
+              - name: GOOGLE_APPLICATION_CREDENTIALS
+                value: /home/nginx/.cloudvolume/secrets/google-secret.json
+              - name: AUTH_URI
+                value: {{ .Values.cluster.globalServer }}/auth
+              - name: STICKY_AUTH_URL
+                value: {{ .Values.cluster.globalServer }}/sticky_auth
+              - name: AUTH_URL
+                value: {{ .Values.cluster.globalServer }}/auth
+              - name: DAF_CREDENTIALS
+                value: /home/nginx/.cloudvolume/secrets/cave-secret.json
+              - name: QUEUE_NAME
+                value: {{ .Values.materialize.orchestrationQueueName | default "orchestration" }}
+              - name: WORKER_NAME
+                value: {{ .Values.materialize.celeryOrchestrationWorkerName | default "worker.orchestration" }}
+              - name: CELERY_CLOUDVOLUME_CACHE_BYTES
+                value: "100000000"
+            resources:
+              requests:
+                cpu: {{ .Values.materialize.celeryOrchestrationCpu | default "500m" }}
+                memory: {{ .Values.materialize.celeryOrchestrationMemory | default "2Gi" }}
+          - name: cloudsql-proxy
+            image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.15.2
+            args:
+              - "--port=3306"
+              - "--credentials-file=/secrets/cloudsql/google-secret.json"
+              - "--max-sigterm-delay=3600s"
+              - "{{ .Values.cluster.googleProject}}:{{ .Values.cluster.googleRegion}}:{{ .Values.cloudsql.sqlInstanceName }}"
+            env:
+              - name: CSQL_PROXY_HEALTH_CHECK
+                value: "true"
+              - name: CSQL_PROXY_HTTP_PORT
+                value: "9801"
+              - name: CSQL_PROXY_HTTP_ADDRESS
+                value: 0.0.0.0
+              - name: CSQL_PROXY_QUITQUITQUIT
+                value: "true"
+              - name: CSQL_PROXY_ADMIN_PORT
+                value: "9092"
+              - name: CSQL_PROXY_STRUCTURED_LOGS
+                value: "true"
+            ports:
+              - containerPort: 9801
+                protocol: TCP
+            resources:
+              requests:
+                memory: 8Mi
+                cpu: 10m
+            securityContext:
+              runAsUser: 2
+              allowPrivilegeEscalation: false
+            startupProbe:
+              failureThreshold: 60
+              httpGet:
+                path: /startup
+                port: 9801
+                scheme: HTTP
+              periodSeconds: 1
+              successThreshold: 1
+              timeoutSeconds: 10
+            livenessProbe:
+              failureThreshold: 3
+              httpGet:
+                path: /liveness
+                port: 9801
+                scheme: HTTP
+              periodSeconds: 10
+              successThreshold: 1
+              timeoutSeconds: 10
+            readinessProbe:
+              httpGet:
+                path: /readiness
+                port: 9801
+              initialDelaySeconds: 10
+              periodSeconds: 10
+              timeoutSeconds: 10
+              successThreshold: 1
+              failureThreshold: 6
+            volumeMounts:
+              - name: cloudsql-instance-credentials-volume
+                mountPath: /secrets/cloudsql
+                readOnly: true
+              - name: graceful-shut-down
+                mountPath: /home/nginx/tmp/shutdown
+  triggers:
+    - type: gcp-stackdriver
+      metadata:
+        # Use the Celery queue metric from GMP, scoped to this cluster/namespace
+        filter: resource.labels.cluster="{{ .Values.cluster.cluster }}" AND resource.labels.namespace="{{ .Release.Namespace }}" AND metric.type="prometheus.googleapis.com/celery_queue_length/gauge" AND metric.label.queue_name="{{ .Values.materialize.orchestrationQueueName | default "orchestration" }}"
+        projectId: "{{ .Values.cluster.googleProject }}"
+        # Return a single aggregated value per minute
+        alignmentPeriodSeconds: "60"
+        alignmentAligner: mean
+        alignmentReducer: sum
+        # Treat missing series as zero and use a shorter lookback
+        valueIfNull: "0"
+        filterDuration: "1"
+        # One Job per queued item
+        targetValue: "{{ .Values.materialize.orchestrationTargetQueueLength | default 1 }}"
+      authenticationRef:
+        name: keda-gcm-auth
+{{- end }}

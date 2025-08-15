@@ -1,0 +1,43 @@
+{{- if .Values.gmp.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery-exporter
+  labels:
+    app: celery-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: celery-exporter
+  template:
+    metadata:
+      labels:
+        app: celery-exporter
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: celery-exporter
+          image: {{ .Values.cluster.dockerRegistry}}/celery-metric-exporter:v5
+          command: ["python"]
+          args:
+            - cli.py
+            - --broker-url
+            - redis://:{{ .Values.materialize.redis.password}}@{{ .Values.materialize.redis.host}}:{{ .Values.materialize.redis.port}}/0
+            - --port
+            - "9540"
+            - -q
+            - {{ .Values.materialize.producerQueueName | default "process" }}
+            - -q
+            - {{ .Values.materialize.consumerQueueName | default "workflow"}}
+            - -q
+            - {{ .Values.materialize.orchestrationQueueName | default "orchestration" }}
+          ports:
+            - name: metrics
+              containerPort: 9540
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+{{- end }}

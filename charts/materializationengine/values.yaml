@@ -32,10 +32,13 @@ materialize:
   # controls autoscaling but likely fine as is
   apiMinReplicas: 1
   apiMaxReplicas: 5
-  producerMinReplicas: 2
+  producerMinReplicas: 0
   producerMaxReplicas: 5
-  consumerMinReplicas: 1
+  consumerMinReplicas: 0
   consumerMaxReplicas: 50
+  # KEDA scaling targets per-queue
+  producerTargetQueueLength: 10
+  consumerTargetQueueLength: 10
   schedulerReplicas: 1
   # control how many databases it will allow materialization to create
   minDatabases: 1
@@ -54,6 +57,8 @@ materialize:
   # name of celery queues, likely fine as defaults
   producerQueueName: "workflow"
   consumerQueueName: "process"
+  orchestrationQueueName: "orchestration"
+  orchestrationAsJobs: true
   redis:
     # need to fill in with redis IP 
     host: ""
@@ -77,3 +82,13 @@ cluster:
   meshPool: "mesh-pool"
   standardPool: "standard-pool"
   dockerRegistry: "docker.io/caveconnectome"
+
+keda:
+  enabled: true
+
+gmp:
+  enabled: true
+  scrape:
+    interval: 30s
+    path: /
+    port: 9101

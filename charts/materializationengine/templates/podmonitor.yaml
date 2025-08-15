@@ -1,0 +1,29 @@
+{{- if .Values.gmp.enabled }}
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  name: materialize-uwsgi
+  labels:
+    app.kubernetes.io/component: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: materialize
+  endpoints:
+  - port: {{ .Values.gmp.scrape.port }}
+    interval: {{ .Values.gmp.scrape.interval }}
+    path: {{ .Values.gmp.scrape.path }}
+---
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  name: celery-exporter
+spec:
+  selector:
+    matchLabels:
+      app: celery-exporter
+  endpoints:
+  - port: metrics
+    interval: {{ .Values.gmp.scrape.interval }}
+    path: /metrics
+{{- end }}

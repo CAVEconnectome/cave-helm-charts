@@ -1,0 +1,54 @@
+{{- if and .Values.keda.enabled .Values.gmp.enabled }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: keda-gcm-auth
+spec:
+  podIdentity:
+    provider: gcp
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: celery-producer-queue
+spec:
+  minReplicaCount: {{ .Values.materialize.producerMinReplicas }}
+  maxReplicaCount: {{ .Values.materialize.producerMaxReplicas }}
+  scaleTargetRef:
+    name: celery-producer
+  triggers:
+    - type: gcp-stackdriver
+      metadata:
+        # Query Cloud Monitoring for GMP-mapped Prometheus metric from celery exporter
+        # Scope to this cluster and namespace to avoid cross-cluster series
+        filter: resource.labels.cluster="{{ .Values.cluster.cluster }}" AND resource.labels.namespace="{{ .Release.Namespace }}" AND metric.type="prometheus.googleapis.com/celery_queue_length/gauge" AND metric.label.queue_name="{{ .Values.materialize.producerQueueName }}"
+        alignmentPeriod: "60s"
+        projectId: {{ .Values.cluster.googleProject}}
+        perSeriesAligner: ALIGN_MEAN
+        # Target average queue length per Pod
+        targetValue: "{{ .Values.materialize.producerTargetQueueLength }}"
+      authenticationRef:
+        name: keda-gcm-auth
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: celery-consumer-queue
+spec:
+  minReplicaCount: {{ .Values.materialize.consumerMinReplicas }}
+  maxReplicaCount: {{ .Values.materialize.consumerMaxReplicas }}
+  scaleTargetRef:
+    name: celery-consumer
+  triggers:
+    - type: gcp-stackdriver
+      metadata:
+        # Scope to this cluster and namespace to avoid cross-cluster series
+        filter:  resource.labels.cluster="{{ .Values.cluster.cluster }}" AND resource.labels.namespace="{{ .Release.Namespace }}" AND metric.type="prometheus.googleapis.com/celery_queue_length/gauge" AND metric.label.queue_name="{{ .Values.materialize.consumerQueueName }}"
+        alignmentPeriod: "60s"
+        projectId: {{ .Values.cluster.googleProject}}
+        perSeriesAligner: ALIGN_MEAN
+        targetValue: "{{ .Values.materialize.consumerTargetQueueLength }}"
+      authenticationRef:
+        name: keda-gcm-auth
+{{- end }}

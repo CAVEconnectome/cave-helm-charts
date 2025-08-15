@@ -1,29 +1,31 @@
 {{- $raw := .Values.materialize.tag | default .Values.materialize.version | default .Chart.AppVersion -}}
 {{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
 
+{{- if not .Values.materialize.orchestrationAsJobs }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: celery-producer
+  name: celery-orchestration
 spec:
+  replicas: {{ .Values.materialize.orchestrationReplicas | default 2 }}
   selector:
     matchLabels:
-      app: celery-producer
+      app: celery-orchestration
   template:
     metadata:
       labels:
-        app: celery-producer
+        app: celery-orchestration
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/secrets: {{ include (print $.Template.BasePath "/materialize_secret.yaml") . | sha256sum }}
         checksum/cloudsql: {{ include (print $.Template.BasePath "/cloudsql_secret.yaml") . | sha256sum }}
     spec:
-      terminationGracePeriodSeconds: 6000 # change grace period to one hour
+      terminationGracePeriodSeconds: 6000
       tolerations:
         - key: "pool"
           operator: "Equal"
-          value: "{{ .Values.cluster.standardPool}}"
+          value: "{{ .Values.cluster.standardPool }}"
           effect: "NoSchedule"
       nodeSelector:
         cloud.google.com/gke-nodepool: {{ .Values.cluster.standardPool }}
@@ -51,7 +53,7 @@ spec:
               else
                 until python -c 'import urllib.request,sys; sys.exit(0 if urllib.request.urlopen("http://127.0.0.1:9801/readiness", timeout=1).getcode()==200 else 1)' >/dev/null 2>&1; do echo "waiting for cloudsql-proxy..."; sleep 1; done
               fi
-              exec su nginx -c 'celery --app=run.celery worker --pool=prefork --hostname=worker.workflow@%h --queues={{ .Values.materialize.producerQueueName}} --loglevel=info -E -Ofair --concurrency={{ .Values.materialize.celeryProducerConcurrency }}'
+              exec su nginx -c 'celery --app=run.celery worker --pool=prefork --hostname=worker.workflow@%h --queues={{ .Values.materialize.orchestrationQueueName | default "workflow" }} --loglevel=info -E -Ofair --concurrency={{ .Values.materialize.celeryOrchestrationConcurrency | default 4 }}'
           volumeMounts:
             - name: materializationengine-config-volume
               mountPath: /app/materializationengine/instance/
@@ -66,6 +68,8 @@ spec:
               value: {{ .Values.materialize.redis.host }}
             - name: REDIS_HOST
               value: {{ .Values.materialize.redis.host }}
+            - name: REDIS_PORT
+              value: "{{ .Values.materialize.redis.port }}"
             - name: REDIS_PASSWORD
               value: {{ .Values.materialize.redis.password }}
             - name: CELERY_BROKER_URL
@@ -80,16 +84,18 @@ spec:
               value: {{ .Values.cluster.globalServer }}/auth
             - name: DAF_CREDENTIALS
               value: /home/nginx/.cloudvolume/secrets/cave-secret.json
+            - name: QUEUE_NAME
+              value: {{ .Values.materialize.orchestrationQueueName | default "orchestration" }}
+            - name: WORKER_NAME
+              value: {{ .Values.materialize.celeryOrchestrationWorkerName | default "worker.orchestration" }}
             - name: QUEUE_LENGTH_LIMIT
               value: "5000"
             - name: QUEUES_TO_THROTTLE
               value: process
             - name: THROTTLE_QUEUES
               value: "true"
-            - name: QUEUE_NAME
-              value: {{ .Values.materialize.producerQueueName }}
-            - name: WORKER_NAME
-              value: worker.{{ .Values.materialize.producerQueueName}}
+            - name: CELERY_CLOUDVOLUME_CACHE_BYTES
+              value: "100000000"
             - name: WORKER_HOSTNAME
               valueFrom:
                 fieldRef:
@@ -100,13 +106,12 @@ spec:
                   fieldPath: metadata.uid
           resources:
             requests:
-              cpu: {{ .Values.materialize.celeryProducerCpu }}
-              memory: {{ .Values.materialize.celeryProducerMemory }}
+              cpu: {{ .Values.materialize.celeryOrchestrationCpu | default "500m" }}
+              memory: {{ .Values.materialize.celeryOrchestrationMemory | default "2Gi" }}
           lifecycle:
             preStop:
               exec:
                 command: ["/home/nginx/gracefully_shutdown_celery.sh"]
-        # metrics exporter moved to dedicated Deployment(s)
         - name: cloudsql-proxy
           image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.15.2
           args:
@@ -180,3 +185,4 @@ spec:
             - name: graceful-shut-down
               mountPath: /home/nginx/tmp/shutdown
       restartPolicy: Always
+{{- end }}
