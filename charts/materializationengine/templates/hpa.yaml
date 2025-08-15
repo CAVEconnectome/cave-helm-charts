@@ -1,3 +1,4 @@
+
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -16,9 +17,12 @@ spec:
         target:
           type: Utilization
           averageUtilization: 75
-    - type: Resource
-      resource:
-        name: memory
+{{- if .Values.gmp.enabled }}
+    - type: Pods
+      pods:
+        metric:
+          name: prometheus.googleapis.com|uwsgi_workers_busy_percent|gauge
         target:
-          type: Utilization
-          averageUtilization: 75
+          type: AverageValue
+          averageValue: 75
+{{- end }}
