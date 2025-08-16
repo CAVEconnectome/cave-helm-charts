@@ -1,0 +1,36 @@
+{{- if and .Values.keda.enabled .Values.gmp.enabled }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: materialize-api
+  annotations:
+    validations.keda.sh/hpa-ownership: "true"
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: materialize
+  minReplicaCount: {{ .Values.materialize.apiMinReplicas }}
+  maxReplicaCount: {{ .Values.materialize.apiMaxReplicas }}
+  triggers:
+    - type: gcp-stackdriver
+      authenticationRef:
+        name: keda-gcm-auth
+      metadata:
+        projectId: "{{ .Values.cluster.googleProject }}"
+        # GMP uses prometheus_target for scraped Prometheus metrics; scope to cluster/namespace and controller
+        filter: 'resource.type="prometheus_target" AND resource.labels.cluster="{{ .Values.cluster.cluster }}" AND resource.labels.namespace="{{ .Release.Namespace }}" AND metric.type="prometheus.googleapis.com/uwsgi_perc_busy_workers/gauge" AND metric.label.top_level_controller_name="materialize"'
+        alignmentPeriodSeconds: "60"
+        alignmentAligner: mean
+        alignmentReducer: mean
+        valueIfNull: "0"
+        filterDuration: "1"
+        # Target AverageValue in percent
+        targetValue: "75"
+    - type: cpu
+      metadata:
+        type: Utilization
+        value: "75"
+        containerName: materialize
+{{- end }}

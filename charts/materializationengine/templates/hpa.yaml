@@ -1,4 +1,4 @@
-
+{{- if not .Values.keda.enabled }}
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -21,8 +21,9 @@ spec:
     - type: Pods
       pods:
         metric:
-          name: prometheus.googleapis.com|uwsgi_workers_busy_percent|gauge
+          name: prometheus.googleapis.com|uwsgi_perc_busy_workers|gauge
         target:
           type: AverageValue
           averageValue: 75
+{{- end }}
 {{- end }}
