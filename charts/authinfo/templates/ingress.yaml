@@ -8,12 +8,9 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: dash-ingress
+  name: authinfo-ingress
   annotations:
     kubernetes.io/ingress.class: nginx
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "360"
-    nginx.ingress.kubernetes.io/x-forwarded-prefix: "true"
 spec:
   ingressClassName: nginx
   rules:
@@ -21,11 +18,11 @@ spec:
   - host: {{ . }}
     http:
       paths:
-      - path: /dash
+      - path: /auth_info
         pathType: ImplementationSpecific
         backend:
           service:
-            name: dash-service
+            name: authinfo-service
             port:
               number: 80
   {{- end }}

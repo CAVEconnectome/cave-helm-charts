@@ -1,0 +1,12 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: authinfo-service
+spec:
+  type: NodePort
+  sessionAffinity: ClientIP
+  selector:
+    app: authinfo
+  ports:
+    - port: 80
+      targetPort: 80

@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: authinfo
+spec:
+  replicas: {{ .Values.authinfo.replicas | default 1 }}
+  selector:
+    matchLabels:
+      app: authinfo
+  template:
+    metadata:
+      labels:
+        app: authinfo
+      annotations:
+        checksum/config: {{ include "authinfo.configChecksum" . }}
+    spec:
+      tolerations:
+        - key: "pool"
+          operator: "Equal"
+          value: "{{ .Values.cluster.standardPool }}"
+          effect: "NoSchedule"
+      nodeSelector:
+        cloud.google.com/gke-nodepool: {{ .Values.cluster.standardPool }}
+      containers:
+        - name: nginx
+          image: {{ .Values.authinfo.image | default "nginx:stable" }}
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - mountPath: /etc/nginx
+              readOnly: true
+              name: nginx-conf
+            - mountPath: /var/log/nginx
+              name: log
+          resources:
+            requests:
+              memory: 20Mi
+              cpu: 10m
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: {{ .Values.authinfo.configName | default "authinfo-config" }}
+            items:
+              - key: nginx.conf
+                path: nginx.conf
+        - name: log
+          emptyDir: {}

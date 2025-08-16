@@ -1,6 +1,10 @@
 {{- $domain := .Values.cluster.domainName | required ".Values.cluster.domainName is required." -}}
 {{- $prefix := .Values.cluster.cluster_prefix | required ".Values.cluster.cluster_prefix is required." -}}
-{{- $host := printf "%s.%s" $prefix $domain -}}
+{{- $defaultHost := printf "%s.%s" $prefix $domain -}}
+{{- $dnsEntries := .Values.cluster.dns_entries | default (list) -}}
+{{- $raw := append (default (list) $dnsEntries) $defaultHost -}}
+{{- $hosts := uniq $raw -}}
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -8,10 +12,14 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: {{ .Values.edge.ingressClassName | default "nginx" }}
     cert-manager.io/cluster-issuer: {{ .Values.edge.clusterIssuer | quote }}
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "360"
+    nginx.ingress.kubernetes.io/x-forwarded-prefix: "true"
 spec:
   ingressClassName: {{ .Values.edge.ingressClassName | default "nginx" }}
   rules:
-  - host: {{ $host }}
+  {{- range $hosts }}
+  - host: {{ . }}
     http:
       paths:
       # A dummy 404 backend; just to bind host and own TLS.
@@ -22,7 +30,10 @@ spec:
             name: kube-dns
             port:
               number: 53
+  {{- end }}
   tls:
   - hosts:
-    - {{ $host }}
+    {{- range $hosts }}
+      - {{ . }}
+    {{- end }}
     secretName: {{ .Values.edge.tlsSecretName }}
