@@ -1,0 +1,53 @@
+{{- if .Values.tourguide.keda.enabled }}
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: tourguide-scaledobject
+spec:
+  scaleTargetRef:
+    name: tourguide
+  minReplicaCount: {{ .Values.tourguide.minReplicas | default 0 }}
+  maxReplicaCount: {{ .Values.tourguide.maxReplicas | default 10 }}
+  pollingInterval: {{ .Values.tourguide.keda.pollingSeconds | default 30 }}
+  cooldownPeriod: {{ .Values.tourguide.keda.cooldownSeconds | default 60 }}
+  triggers:
+    - type: gcp-stackdriver
+      authenticationRef:
+        name: keda-gcm-auth
+      metadata:
+        projectId: {{ .Values.cluster.googleProject | required "cluster.googleProject required" }}
+        filter: |
+          metric.type = {{ .Values.tourguide.keda.promMetricType | default "prometheus.googleapis.com/http_tourguide_active_requests/gauge" | quote }}
+          resource.type = "prometheus_target"
+          resource.label.cluster = "{{ .Values.cluster.cluster }}"
+          resource.label.namespace = "{{ .Release.Namespace }}"
+          metric.label.top_level_controller_name = "tourguide"
+        alignmentPeriod: {{ .Values.tourguide.keda.alignmentPeriod | default "60s" }}
+        perSeriesAligner: mean
+        crossSeriesReducer: mean
+        targetValue: {{ .Values.tourguide.keda.activeRequestsTarget | default 50 }}
+    - type: cpu
+      metadata:
+        type: Utilization
+        value: {{ .Values.tourguide.cpuTarget | default 85 }}
+        containerName: tourguide
+{{- else }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: tourguide-scaler
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: tourguide
+  minReplicas: {{ .Values.tourguide.minReplicas | default 1 }}
+  maxReplicas: {{ .Values.tourguide.maxReplicas | default 10 }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.tourguide.cpuTarget | default 85 }}
+{{- end }}

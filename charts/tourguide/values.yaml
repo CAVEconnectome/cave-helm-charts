@@ -17,3 +17,20 @@ cluster:
 tourguide:
   # image tag; defaults to Chart.appVersion if empty
   tag: ""
+  # HPA settings
+  minReplicas: 1
+  maxReplicas: 10
+  cpuTarget: 85
+  # App settings
+  tmpDir: "/tmp"
+  timeout: "30s"
+  keda:
+    enabled: true
+    pollingSeconds: 30
+    cooldownSeconds: 60
+    alignmentPeriod: "60s"
+  # Prometheus metric type to use from GMP
+  promMetricType: "prometheus.googleapis.com/http_tourguide_active_requests/gauge"
+  # Target average active requests across pods
+  activeRequestsTarget: 50
+  busyWorkersTarget: 75

@@ -1,0 +1,16 @@
+{{- if .Values.gmp.enabled }}
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  name: tourguide-metrics
+  labels:
+    app.kubernetes.io/component: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: tourguide
+  endpoints:
+  - port: 9090
+    interval: {{ .Values.gmp.scrape.interval | default "30s" }}
+    path: /metrics
+{{- end }}
