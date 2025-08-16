@@ -241,6 +241,16 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/materializationengine-0.1.0/materializationengine-0.1.0.tgz
     version: 0.1.0
+  pcgl2cache:
+  - apiVersion: v1
+    appVersion: 0.0.0
+    created: "2025-08-16T10:11:26.339120869Z"
+    description: PCG L2 cache API and workers
+    digest: cf51d90e3954b8df3dfad0c374bd182522b8030f6090f50d2903a755b7dd3972
+    name: pcgl2cache
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/pcgl2cache-0.1.0/pcgl2cache-0.1.0.tgz
+    version: 0.1.0
   pychunkedgraph:
   - apiVersion: v2
     appVersion: 2.20.0
@@ -306,4 +316,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2025-08-16T09:36:16.142306323Z"
+generated: "2025-08-16T10:11:26.339177465Z"
