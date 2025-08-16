@@ -1,0 +1,16 @@
+cluster:
+  globalServer: ""
+  environment: ""
+  domainName: ""
+  standardPool: "standard-pool"
+  dockerRegistry: "docker.io/caveconnectome"
+  # Use existing patterns for pool selection
+  standardPool: "standard-pool"
+
+authinfo:
+  # Fixed ConfigMap name (don’t change between releases)
+  configName: authinfo-config
+  replicas: 1
+  image: nginx:stable
+  # JSON array string, e.g. ["stack1","stack2"]
+  supportedDatastacks: []
