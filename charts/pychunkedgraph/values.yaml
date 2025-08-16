@@ -13,6 +13,8 @@ cluster:
   # likely fine as defaults
   standardPool: "standard-pool"
   dockerRegistry: "docker.io/caveconnectome"
+  # optional, used to build Pub/Sub subscription names
+  cluster_prefix: ""
 pychunkedgraph:
   # image tag; defaults to Chart.appVersion if empty; legacy .version still honored in templates
   tag: ""
@@ -43,7 +45,7 @@ pychunkedgraph:
   meshMaxReplicas: 3
   meshMemGb: 4
   meshCpuMilli: 1000
-  meshWorkerMinReplicas: 1
+  meshWorkerMinReplicas: 0
   meshWorkerMaxReplicas: 10
   remeshQueue: 
   # should be enable or left blank
@@ -52,3 +54,14 @@ pychunkedgraph:
   logsLeavesMany: ""
   limitsFastQueryPerMinute: 1000
   limitsQueryPerMinute: 100
+
+# KEDA-based scaling controls
+keda:
+  # enable KEDA scaling for meshworker; when true, HPA is disabled and KEDA ScaledObject is created
+  useForMeshWorker: true
+  meshWorker:
+    # How many messages per worker we target; 1 means aim for ~1 message per active worker
+    messagesPerWorker: 1
+    # Polling and cooldown periods (seconds)
+    pollingSeconds: 30
+    cooldownSeconds: 60

@@ -1,6 +1,7 @@
 {{- $cluster_prefix := .Values.cluster.cluster_prefix | required ".Values.cluster.cluster_prefix is required." }}
 
 ---
+{{- if not .Values.keda.useForMeshWorker }}
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -35,3 +36,4 @@ spec:
     #     target:
     #       type: Utilization
     #       averageUtilization: 75
+{{- end }}

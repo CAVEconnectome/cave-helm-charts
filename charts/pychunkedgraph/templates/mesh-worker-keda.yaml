@@ -1,0 +1,34 @@
+{{- $cluster_prefix := .Values.cluster.cluster_prefix | required ".Values.cluster.cluster_prefix is required." }}
+
+{{- if .Values.keda.useForMeshWorker }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: keda-trigger-auth-gcp-credentials
+spec:
+  podIdentity:
+    provider: gcp
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: meshworker-scaledobject
+spec:
+  scaleTargetRef:
+    name: meshworker
+  minReplicaCount: {{ .Values.pychunkedgraph.meshWorkerMinReplicas | default 0 }}
+  maxReplicaCount: {{ .Values.pychunkedgraph.meshWorkerMaxReplicas | default 10 }}
+  cooldownPeriod: {{ .Values.keda.meshWorker.cooldownSeconds | default 60 }}
+  pollingInterval: {{ .Values.keda.meshWorker.pollingSeconds | default 30 }}
+  advanced:
+    restoreToOriginalReplicaCount: false
+  triggers:
+    - type: gcp-pubsub
+      authenticationRef:
+        name: keda-trigger-auth-gcp-credentials
+      metadata:
+        mode: "SubscriptionSize"
+        value: {{ .Values.keda.meshWorker.messagesPerWorker | default 1 | quote }}
+        subscriptionName: {{ printf "%s_PCG_HIGH_PRIORITY_REMESH" $cluster_prefix | quote }}
+{{- end }}
