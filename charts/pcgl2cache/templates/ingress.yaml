@@ -1,0 +1,26 @@
+{{- $domain := .Values.cluster.domainName | required ".Values.cluster.domainName is required." -}}
+{{- $prefix := .Values.cluster.cluster_prefix | required ".Values.cluster.cluster_prefix is required." -}}
+{{- $defaultHost := printf "%s.%s" $prefix $domain -}}
+{{- $dnsEntries := .Values.cluster.dns_entries | default (list) -}}
+{{- $raw := append (default (list) $dnsEntries) $defaultHost -}}
+{{- $hosts := uniq $raw -}}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pcgl2cache
+spec:
+  rules:
+  {{- range $host := $hosts }}
+    - host: {{ $host }}
+      http:
+        paths:
+          - pathType: Prefix
+            path: /l2cache
+            backend:
+              service:
+                name: pcgl2cache-service
+                port:
+                  number: 80
+  {{- end }}
+

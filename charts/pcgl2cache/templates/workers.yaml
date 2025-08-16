@@ -1,0 +1,253 @@
+{{- $raw := .Values.image.tag | default .Chart.AppVersion -}}
+{{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pcgl2cache-worker
+spec:
+  selector:
+    matchLabels:
+      app: pcgl2cache-worker
+  template:
+    metadata:
+      labels:
+        app: pcgl2cache-worker
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      tolerations:
+        - key: "pool"
+          operator: "Equal"
+          value: "{{ .Values.cluster.meshPool }}"
+          effect: "NoSchedule"
+      nodeSelector:
+        cloud.google.com/gke-nodepool: {{ .Values.cluster.meshPool }}
+      volumes:
+        - name: google-cloud-key
+          secret:
+            secretName: {{ .Values.pcgl2cache.credentialsSecret }}
+        - name: pcg-config-volume
+          configMap:
+            name: pcgl2cache-config
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: pcgl2cache-worker
+          image: {{ .Values.cluster.dockerRegistry }}/pcgl2cache:worker_pcgv1_v{{ $tag }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: google-cloud-key
+              mountPath: /home/nginx/.cloudvolume/secrets
+            - name: pcg-config-volume
+              mountPath: /app/pcgl2cache/app/instance/
+          env:
+            - name: GRAPH_L2CACHE_CONFIG_PATH
+              value: /app/pcgl2cache/app/instance/L2_table_map.yml
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /home/nginx/.cloudvolume/secrets/{{ .Values.pcgl2cache.googleSecretFilename }}
+            - name: AUTH_URI
+              value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/auth
+            - name: STICKY_AUTH_URL
+              value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/sticky_auth
+            - name: BIGTABLE_PROJECT
+              value: {{ .Values.pcgl2cache.bigtable.project | quote }}
+            - name: BIGTABLE_INSTANCE
+              value: {{ .Values.pcgl2cache.bigtable.instance | quote }}
+            - name: AUTH_URL
+              value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/auth
+            - name: INFO_URL
+              value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/auth_info
+            - name: APP_SETTINGS
+              value: "pcgl2cache.app.config.DevelopmentConfig"
+            - name: PCGL2CACHE_URL_PREFIX
+              value: l2cache
+            - name: PROJECT_ID
+              value: {{ .Values.pcgl2cache.bigtable.project | quote }}
+            - name: PROJECT_NAME
+              value: {{ .Values.pcgl2cache.bigtable.project | quote }}
+            - name: L2CACHE_UPDATE_QUEUE
+              value: {{ .Values.pcgl2cache.queues.update | quote }}
+            - name: L2CACHE_EXCHANGE
+              value: {{ .Values.pcgl2cache.exchanges.update | quote }}
+            - name: AUTH_USE_REDIS
+              value: "false"
+            - name: DAF_CREDENTIALS
+              value: /home/nginx/.cloudvolume/secrets/{{ .Values.pcgl2cache.caveSecretFilename }}
+          resources:
+            requests:
+              memory: {{ .Values.pcgl2cache.worker.resources.requests.memory }}
+              cpu: {{ .Values.pcgl2cache.worker.resources.requests.cpu }}
+          command:
+            - su
+            - nginx
+            - -c
+            - "python -m workers.missing"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pcgl2cache-highpriority-worker
+spec:
+  selector:
+    matchLabels:
+      app: pcgl2cache-highpriority-worker
+  template:
+    metadata:
+      labels:
+        app: pcgl2cache-highpriority-worker
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      tolerations:
+        - key: "pool"
+          operator: "Equal"
+          value: "{{ .Values.cluster.meshPool }}"
+          effect: "NoSchedule"
+      nodeSelector:
+        cloud.google.com/gke-nodepool: {{ .Values.cluster.meshPool }}
+      volumes:
+        - name: google-cloud-key
+          secret:
+            secretName: {{ .Values.pcgl2cache.credentialsSecret }}
+        - name: pcg-config-volume
+          configMap:
+            name: pcgl2cache-config
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: pcgl2cache-highpriority-worker
+          image: {{ .Values.cluster.dockerRegistry }}/pcgl2cache:worker_pcgv1_v{{ $tag }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: google-cloud-key
+              mountPath: /home/nginx/.cloudvolume/secrets
+            - name: pcg-config-volume
+              mountPath: /app/pcgl2cache/app/instance/
+          env:
+            - name: GRAPH_L2CACHE_CONFIG_PATH
+              value: /app/pcgl2cache/app/instance/L2_table_map.yml
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /home/nginx/.cloudvolume/secrets/{{ .Values.pcgl2cache.googleSecretFilename }}
+            - name: AUTH_URI
+              value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/auth
+            - name: STICKY_AUTH_URL
+              value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/sticky_auth
+            - name: BIGTABLE_PROJECT
+              value: {{ .Values.pcgl2cache.bigtable.project | quote }}
+            - name: BIGTABLE_INSTANCE
+              value: {{ .Values.pcgl2cache.bigtable.instance | quote }}
+            - name: AUTH_URL
+              value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/auth
+            - name: INFO_URL
+              value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/auth_info
+            - name: APP_SETTINGS
+              value: "pcgl2cache.app.config.DevelopmentConfig"
+            - name: PCGL2CACHE_URL_PREFIX
+              value: l2cache
+            - name: PROJECT_ID
+              value: {{ .Values.pcgl2cache.bigtable.project | quote }}
+            - name: PROJECT_NAME
+              value: {{ .Values.pcgl2cache.bigtable.project | quote }}
+            - name: L2CACHE_UPDATE_QUEUE
+              value: {{ .Values.pcgl2cache.queues.high | quote }}
+            - name: L2CACHE_EXCHANGE
+              value: {{ .Values.pcgl2cache.exchanges.edits | quote }}
+            - name: AUTH_USE_REDIS
+              value: "false"
+            - name: DAF_CREDENTIALS
+              value: /home/nginx/.cloudvolume/secrets/{{ .Values.pcgl2cache.caveSecretFilename }}
+          resources:
+            requests:
+              memory: {{ .Values.pcgl2cache.worker.resources.requests.memory }}
+              cpu: {{ .Values.pcgl2cache.worker.resources.requests.cpu }}
+          command:
+            - su
+            - nginx
+            - -c
+            - "python -m workers.from_edits"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pcgl2cache-lowpriority-worker
+spec:
+  selector:
+    matchLabels:
+      app: pcgl2cache-lowpriority-worker
+  template:
+    metadata:
+      labels:
+        app: pcgl2cache-lowpriority-worker
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      tolerations:
+        - key: "pool"
+          operator: "Equal"
+          value: "{{ .Values.cluster.meshPool }}"
+          effect: "NoSchedule"
+      nodeSelector:
+        cloud.google.com/gke-nodepool: {{ .Values.cluster.meshPool }}
+      volumes:
+        - name: google-cloud-key
+          secret:
+            secretName: {{ .Values.pcgl2cache.credentialsSecret }}
+        - name: pcg-config-volume
+          configMap:
+            name: pcgl2cache-config
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: pcgl2cache-lowpriority-worker
+          image: {{ .Values.cluster.dockerRegistry }}/pcgl2cache:worker_pcgv1_v{{ $tag }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: google-cloud-key
+              mountPath: /home/nginx/.cloudvolume/secrets
+            - name: pcg-config-volume
+              mountPath: /app/pcgl2cache/app/instance/
+          env:
+            - name: GRAPH_L2CACHE_CONFIG_PATH
+              value: /app/pcgl2cache/app/instance/L2_table_map.yml
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /home/nginx/.cloudvolume/secrets/{{ .Values.pcgl2cache.googleSecretFilename }}
+            - name: AUTH_URI
+              value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/auth
+            - name: STICKY_AUTH_URL
+              value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/sticky_auth
+            - name: BIGTABLE_PROJECT
+              value: {{ .Values.pcgl2cache.bigtable.project | quote }}
+            - name: BIGTABLE_INSTANCE
+              value: {{ .Values.pcgl2cache.bigtable.instance | quote }}
+            - name: AUTH_URL
+              value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/auth
+            - name: INFO_URL
+              value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/auth_info
+            - name: APP_SETTINGS
+              value: "pcgl2cache.app.config.DevelopmentConfig"
+            - name: PCGL2CACHE_URL_PREFIX
+              value: l2cache
+            - name: PROJECT_ID
+              value: {{ .Values.pcgl2cache.bigtable.project | quote }}
+            - name: PROJECT_NAME
+              value: {{ .Values.pcgl2cache.bigtable.project | quote }}
+            - name: L2CACHE_UPDATE_QUEUE
+              value: {{ .Values.pcgl2cache.queues.low | quote }}
+            - name: L2CACHE_EXCHANGE
+              value: {{ .Values.pcgl2cache.exchanges.edits | quote }}
+            - name: AUTH_USE_REDIS
+              value: "false"
+            - name: DAF_CREDENTIALS
+              value: /home/nginx/.cloudvolume/secrets/{{ .Values.pcgl2cache.caveSecretFilename }}
+          resources:
+            requests:
+              memory: {{ .Values.pcgl2cache.worker.resources.requests.memory }}
+              cpu: {{ .Values.pcgl2cache.worker.resources.requests.cpu }}
+          command:
+            - su
+            - nginx
+            - -c
+            - "python -m workers.from_edits"

@@ -1,0 +1,16 @@
+{{- if .Values.gmp.enabled }}
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  name: pcgl2cache
+  labels:
+    app.kubernetes.io/component: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: pcgl2cache
+  endpoints:
+  - port: 80
+    interval: {{ .Values.gmp.scrape.interval | default "30s" }}
+    path: /metrics
+{{- end }}

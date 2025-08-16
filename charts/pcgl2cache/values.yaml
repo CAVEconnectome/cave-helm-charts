@@ -1,0 +1,70 @@
+cluster:
+  dockerRegistry: docker.io/caveconnectome
+  globalServer: ""
+  dns_entries: []
+  meshPool: standard-pool
+  cluster_prefix: ""
+
+image:
+  tag: "latest"
+
+pcgl2cache:
+  api:
+    enabled: true
+    hpa:
+      enabled: true
+      minReplicas: 1
+      maxReplicas: 5
+      cpuTarget: 80
+    resources:
+      requests:
+        memory: 900Mi
+        cpu: 200m
+  worker:
+    minReplicas: 0
+    maxReplicas: 50
+    cpuTarget: 90
+    resources:
+      requests:
+        memory: 2500Mi
+        cpu: 500m
+  queues:
+    update: pcg-update-sub
+    high: pcg-high-sub
+    low: pcg-low-sub
+  exchanges:
+    update: pcg-update-exchange
+    edits: pcg-edits-exchange
+  bigtable:
+    project: ""
+    instance: your-bt-instance
+  auth:
+    uri: "https://example.org/auth"
+    stickyUrl: "https://example.org/sticky_auth"
+    authUrl: "https://example.org/auth"
+    infoUrl: "https://example.org/auth_info"
+  configVersion: 1
+  config:
+    configCfg: ""
+    l2TableMap: ""
+  credentialsSecret: pcg-service-account
+  googleSecretFilename: google.json
+  caveSecretFilename: cave.json
+
+keda:
+  enabled: true
+  pollingSeconds: 15
+  cooldownSeconds: 600
+  activationValue: 0
+  timeHorizon: "2m"
+  valueIfNull: 0
+  pubsub:
+    messagesPerWorker: 1
+
+service:
+  type: NodePort
+
+gmp:
+  enabled: false
+  scrape:
+    interval: 30s

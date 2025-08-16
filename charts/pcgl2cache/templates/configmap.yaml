@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pcgl2cache-config
+  labels:
+    app: pcgl2cache
+  annotations:
+    checksum/config: {{ toJson .Values.pcgl2cache.config | sha256sum }}
+data:
+  config.cfg: |
+    # Provided via values or external tool
+    {{- /* Intentionally left for external injection */ -}}
+{{ .Values.pcgl2cache.config.configCfg | indent 4 }}
+  L2_table_map.yml: |
+    # Provided via values or external tool
+{{ .Values.pcgl2cache.config.l2TableMap | indent 4 }}

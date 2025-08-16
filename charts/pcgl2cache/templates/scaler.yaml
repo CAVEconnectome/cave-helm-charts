@@ -1,0 +1,145 @@
+{{- if .Values.keda.enabled }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: keda-trigger-auth-gcp-credentials
+spec:
+  podIdentity:
+    provider: gcp
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: pcgl2cache-worker-scaler
+spec:
+  scaleTargetRef:
+    name: pcgl2cache-worker
+  minReplicaCount: {{ .Values.pcgl2cache.worker.minReplicas | default 0 }}
+  maxReplicaCount: {{ .Values.pcgl2cache.worker.maxReplicas | default 50 }}
+  cooldownPeriod: {{ .Values.keda.cooldownSeconds | default 600 }}
+  pollingInterval: {{ .Values.keda.pollingSeconds | default 15 }}
+  advanced:
+    restoreToOriginalReplicaCount: false
+  triggers:
+    - type: gcp-pubsub
+      authenticationRef:
+        name: keda-trigger-auth-gcp-credentials
+      metadata:
+        mode: "SubscriptionSize"
+        timeHorizon: {{ .Values.keda.timeHorizon | default "2m" | quote }}
+        valueIfNull: {{ .Values.keda.valueIfNull | default 0 | quote }}
+        activationValue: {{ .Values.keda.activationValue | default 0 | quote }}
+        subscriptionName: {{ .Values.pcgl2cache.queues.update | quote }}
+        # Target ~messages per worker
+        value: {{ .Values.keda.pubsub.messagesPerWorker | default 1 | quote }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: pcgl2cache-highpriorityworker-scaler
+spec:
+  scaleTargetRef:
+    name: pcgl2cache-highpriority-worker
+  minReplicaCount: {{ .Values.pcgl2cache.worker.minReplicas | default 0 }}
+  maxReplicaCount: {{ .Values.pcgl2cache.worker.maxReplicas | default 50 }}
+  cooldownPeriod: {{ .Values.keda.cooldownSeconds | default 600 }}
+  pollingInterval: {{ .Values.keda.pollingSeconds | default 15 }}
+  advanced:
+    restoreToOriginalReplicaCount: false
+  triggers:
+    - type: gcp-pubsub
+      authenticationRef:
+        name: keda-trigger-auth-gcp-credentials
+      metadata:
+        mode: "SubscriptionSize"
+        timeHorizon: {{ .Values.keda.timeHorizon | default "2m" | quote }}
+        valueIfNull: {{ .Values.keda.valueIfNull | default 0 | quote }}
+        activationValue: {{ .Values.keda.activationValue | default 0 | quote }}
+        subscriptionName: {{ .Values.pcgl2cache.queues.high | quote }}
+        value: {{ .Values.keda.pubsub.messagesPerWorker | default 1 | quote }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: pcgl2cache-lowpriorityworker-scaler
+spec:
+  scaleTargetRef:
+    name: pcgl2cache-lowpriority-worker
+  minReplicaCount: {{ .Values.pcgl2cache.worker.minReplicas | default 0 }}
+  maxReplicaCount: {{ .Values.pcgl2cache.worker.maxReplicas | default 50 }}
+  cooldownPeriod: {{ .Values.keda.cooldownSeconds | default 600 }}
+  pollingInterval: {{ .Values.keda.pollingSeconds | default 15 }}
+  advanced:
+    restoreToOriginalReplicaCount: false
+  triggers:
+    - type: gcp-pubsub
+      authenticationRef:
+        name: keda-trigger-auth-gcp-credentials
+      metadata:
+        mode: "SubscriptionSize"
+        timeHorizon: {{ .Values.keda.timeHorizon | default "2m" | quote }}
+        valueIfNull: {{ .Values.keda.valueIfNull | default 0 | quote }}
+        activationValue: {{ .Values.keda.activationValue | default 0 | quote }}
+        subscriptionName: {{ .Values.pcgl2cache.queues.low | quote }}
+        value: {{ .Values.keda.pubsub.messagesPerWorker | default 1 | quote }}
+{{- else }}
+# HPA fallback (if KEDA disabled)
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: pcgl2cache-worker-scaler
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: pcgl2cache-worker
+  minReplicas: {{ .Values.pcgl2cache.worker.minReplicas | default 0 }}
+  maxReplicas: {{ .Values.pcgl2cache.worker.maxReplicas | default 50 }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.pcgl2cache.worker.cpuTarget | default 90 }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: pcgl2cache-highpriorityworker-scaler
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: pcgl2cache-highpriority-worker
+  minReplicas: {{ .Values.pcgl2cache.worker.minReplicas | default 0 }}
+  maxReplicas: {{ .Values.pcgl2cache.worker.maxReplicas | default 50 }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.pcgl2cache.worker.cpuTarget | default 90 }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: pcgl2cache-lowpriorityworker-scaler
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: pcgl2cache-lowpriority-worker
+  minReplicas: {{ .Values.pcgl2cache.worker.minReplicas | default 0 }}
+  maxReplicas: {{ .Values.pcgl2cache.worker.maxReplicas | default 50 }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.pcgl2cache.worker.cpuTarget | default 90 }}
+{{- end }}
