@@ -28,6 +28,16 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/annotationengine-0.1.1/annotationengine-0.1.1.tgz
     version: 0.1.1
+  authinfo:
+  - apiVersion: v2
+    appVersion: 1.0.0
+    created: "2025-08-16T08:59:34.458734554Z"
+    description: Simple auth info endpoint exposing login url and supported datastacks
+    digest: 917b55ebc31b43f781b43d824e2de9317af0738e34898bb71b46419801cbc6e6
+    name: authinfo
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/authinfo-0.1.0/authinfo-0.1.0.tgz
+    version: 0.1.0
   cavecanary:
   - apiVersion: v2
     appVersion: 0.4.4
@@ -287,4 +297,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2025-08-15T21:17:51.42353983Z"
+generated: "2025-08-16T08:59:35.255277499Z"
