@@ -57,8 +57,8 @@ pychunkedgraph:
 
 # KEDA-based scaling controls
 keda:
+  enabled: true
   # enable KEDA scaling for meshworker; when true, HPA is disabled and KEDA ScaledObject is created
-  useForMeshWorker: true
   meshWorker:
     # How many messages per worker we target; 1 means aim for ~1 message per active worker
     messagesPerWorker: 1
