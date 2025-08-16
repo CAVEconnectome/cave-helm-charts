@@ -18,8 +18,8 @@ cluster:
 pychunkedgraph:
   # image tag; defaults to Chart.appVersion if empty; legacy .version still honored in templates
   tag: ""
-  # should be a list of graphIds seperated by commas
-  graphIds: ""
+  # list of graph IDs; can also be a single comma-separated string for backwards-compatibility
+  graphIds: []
   secretFiles:
     # need to fill in with path to service account secret file
     - name: google-secret.json
@@ -65,3 +65,7 @@ keda:
     # Polling and cooldown periods (seconds)
     pollingSeconds: 30
     cooldownSeconds: 60
+  # Metric lookback window for faster detection
+  timeHorizon: "2m"
+  # When no series is returned, treat as 0
+  valueIfNull: 0

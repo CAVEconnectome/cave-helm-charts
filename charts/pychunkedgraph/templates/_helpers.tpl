@@ -42,7 +42,14 @@
 - name: PCG_SERVER_LOGS_LEAVES_MANY
   value: "{{ .Values.pychunkedgraph.logsLeavesMany }}"
 - name: PCG_GRAPH_IDS
-  value: {{ .Values.pychunkedgraph.graphIds | toJson}}
+  {{- $gids := .Values.pychunkedgraph.graphIds -}}
+  {{- if kindIs "slice" $gids }}
+  value: "{{ join "," $gids }}"
+  {{- else if $gids }}
+  value: "{{ $gids }}"
+  {{- else }}
+  value: ""
+  {{- end }}
 - name: PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION
   value: "upb"
 - name: ZSTD_THREADS
