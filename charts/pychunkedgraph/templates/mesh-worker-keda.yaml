@@ -19,8 +19,8 @@ spec:
     name: meshworker
   minReplicaCount: {{ .Values.pychunkedgraph.meshWorkerMinReplicas | default 0 }}
   maxReplicaCount: {{ .Values.pychunkedgraph.meshWorkerMaxReplicas | default 10 }}
-  cooldownPeriod: {{ .Values.keda.meshWorker.cooldownSeconds | default 60 }}
-  pollingInterval: {{ .Values.keda.meshWorker.pollingSeconds | default 30 }}
+  cooldownPeriod: {{ .Values.keda.meshWorker.cooldownSeconds | default 1200 }}
+  pollingInterval: {{ .Values.keda.meshWorker.pollingSeconds | default 15 }}
   advanced:
     restoreToOriginalReplicaCount: false
   triggers:
@@ -29,6 +29,8 @@ spec:
         name: keda-trigger-auth-gcp-credentials
       metadata:
         mode: "SubscriptionSize"
-        value: {{ .Values.keda.meshWorker.messagesPerWorker | default 1 | quote }}
+        # Narrow the window KEDA queries for fresher readings
+        timeHorizon: {{ .Values.keda.meshWorker.timeHorizon | default "2m" | quote }}
+        valueIfNull: {{ .Values.keda.meshWorker.valueIfNull | default 0 | quote }}
         subscriptionName: {{ printf "%s_PCG_HIGH_PRIORITY_REMESH" $cluster_prefix | quote }}
 {{- end }}
