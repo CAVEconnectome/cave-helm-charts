@@ -51,7 +51,7 @@ spec:
             - name: STICKY_AUTH_URL
               value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/sticky_auth
             - name: BIGTABLE_PROJECT
-              value: {{ .Values.pcgl2cache.bigtable.project | quote }}
+              value: "{{ .Values.cluster.dataProjectName | default .Values.cluster.googleProject }}"
             - name: BIGTABLE_INSTANCE
               value: {{ .Values.pcgl2cache.bigtable.instance | quote }}
             - name: AUTH_URL
@@ -63,9 +63,9 @@ spec:
             - name: PCGL2CACHE_URL_PREFIX
               value: l2cache
             - name: PROJECT_ID
-              value: {{ .Values.pcgl2cache.bigtable.project | quote }}
+              value: "{{ .Values.cluster.dataProjectName | default .Values.cluster.googleProject }}"
             - name: PROJECT_NAME
-              value: {{ .Values.pcgl2cache.bigtable.project | quote }}
+              value: "{{ .Values.cluster.googleProject }}"
             - name: L2CACHE_UPDATE_QUEUE
               value: {{ .Values.pcgl2cache.queues.update | quote }}
             - name: L2CACHE_EXCHANGE
@@ -135,7 +135,7 @@ spec:
             - name: STICKY_AUTH_URL
               value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/sticky_auth
             - name: BIGTABLE_PROJECT
-              value: {{ .Values.pcgl2cache.bigtable.project | quote }}
+              value: "{{ .Values.cluster.dataProjectName | default .Values.cluster.googleProject }}"
             - name: BIGTABLE_INSTANCE
               value: {{ .Values.pcgl2cache.bigtable.instance | quote }}
             - name: AUTH_URL
@@ -147,9 +147,9 @@ spec:
             - name: PCGL2CACHE_URL_PREFIX
               value: l2cache
             - name: PROJECT_ID
-              value: {{ .Values.pcgl2cache.bigtable.project | quote }}
+              value: "{{ .Values.cluster.dataProjectName | default .Values.cluster.googleProject }}"
             - name: PROJECT_NAME
-              value: {{ .Values.pcgl2cache.bigtable.project | quote }}
+              value: "{{ .Values.cluster.googleProject }}"
             - name: L2CACHE_UPDATE_QUEUE
               value: {{ .Values.pcgl2cache.queues.high | quote }}
             - name: L2CACHE_EXCHANGE
@@ -219,7 +219,7 @@ spec:
             - name: STICKY_AUTH_URL
               value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/sticky_auth
             - name: BIGTABLE_PROJECT
-              value: {{ .Values.pcgl2cache.bigtable.project | quote }}
+              value: "{{ .Values.cluster.dataProjectName | default .Values.cluster.googleProject }}"
             - name: BIGTABLE_INSTANCE
               value: {{ .Values.pcgl2cache.bigtable.instance | quote }}
             - name: AUTH_URL
@@ -231,9 +231,9 @@ spec:
             - name: PCGL2CACHE_URL_PREFIX
               value: l2cache
             - name: PROJECT_ID
-              value: {{ .Values.pcgl2cache.bigtable.project | quote }}
+              value: "{{ .Values.cluster.dataProjectName | default .Values.cluster.googleProject }}"
             - name: PROJECT_NAME
-              value: {{ .Values.pcgl2cache.bigtable.project | quote }}
+              value: "{{ .Values.cluster.googleProject }}"
             - name: L2CACHE_UPDATE_QUEUE
               value: {{ .Values.pcgl2cache.queues.low | quote }}
             - name: L2CACHE_EXCHANGE
