@@ -279,6 +279,16 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/pychunkedgraph-0.1.0/pychunkedgraph-0.1.0.tgz
     version: 0.1.0
+  skeletoncache:
+  - apiVersion: v1
+    appVersion: 0.0.0
+    created: "2025-08-17T14:10:26.597201174Z"
+    description: Skeleton cache API and workers
+    digest: da2e1dbe8305ae052668ba3c7f040e2354756365ca8d92f5f63cb33500f67783
+    name: skeletoncache
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/skeletoncache-0.1.0/skeletoncache-0.1.0.tgz
+    version: 0.1.0
   tourguide:
   - apiVersion: v1
     appVersion: 2.3.1
@@ -316,4 +326,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2025-08-16T10:11:26.339177465Z"
+generated: "2025-08-17T14:10:26.597267248Z"
