@@ -53,7 +53,7 @@ spec:
               else
                 until python -c 'import urllib.request,sys; sys.exit(0 if urllib.request.urlopen("http://127.0.0.1:9801/readiness", timeout=1).getcode()==200 else 1)' >/dev/null 2>&1; do echo "waiting for cloudsql-proxy..."; sleep 1; done
               fi
-              exec su nginx -c 'celery --app=run.celery worker --pool=prefork --hostname=worker.workflow@%h --queues={{ .Values.materialize.orchestrationQueueName | default "workflow" }} --loglevel=info -E -Ofair --concurrency={{ .Values.materialize.celeryOrchestrationConcurrency | default 4 }}'
+              exec su nginx -c 'celery --app=run.celery worker --pool=prefork --hostname=worker.workflow@%h --queues={{ .Values.materialize.orchestrationQueueName | default "workflow" }} --max-tasks-per-child={{ .Values.materialize.celeryOrchestrationConcurrency | default 1 }} --loglevel=info -E -Ofair --concurrency={{ .Values.materialize.celeryOrchestrationConcurrency | default 1 }}'
           volumeMounts:
             - name: materializationengine-config-volume
               mountPath: /app/materializationengine/instance/
