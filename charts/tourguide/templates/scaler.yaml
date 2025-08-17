@@ -41,7 +41,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: tourguide
-  minReplicas: {{ .Values.tourguide.minReplicas | default 1 }}
+  minReplicas: {{ max 1 (.Values.tourguide.minReplicas | default 1 | int) }}
   maxReplicas: {{ .Values.tourguide.maxReplicas | default 10 }}
   metrics:
     - type: Resource

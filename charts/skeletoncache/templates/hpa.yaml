@@ -8,7 +8,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: skeletoncache
-  minReplicas: {{ .Values.skeletoncache.api.hpa.minReplicas }}
+  minReplicas: {{ max 1 (.Values.skeletoncache.api.hpa.minReplicas | default 1 | int) }}
   maxReplicas: {{ .Values.skeletoncache.api.hpa.maxReplicas }}
   metrics:
     - type: Resource

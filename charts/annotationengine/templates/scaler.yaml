@@ -7,7 +7,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: annotationengine
-  minReplicas: {{ .Values.annotation.minReplicas | default 1 }}
+  minReplicas: {{ max 1 (.Values.annotation.minReplicas | default 1 | int) }}
   maxReplicas: {{ .Values.annotation.maxReplicas | default 5 }}
   metrics:
     - type: Resource

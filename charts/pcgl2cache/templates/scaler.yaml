@@ -95,7 +95,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: pcgl2cache-worker
-  minReplicas: {{ .Values.pcgl2cache.worker.minReplicas | default 0 }}
+  minReplicas: {{ max 1 (.Values.pcgl2cache.worker.minReplicas | default 1 | int) }}
   maxReplicas: {{ .Values.pcgl2cache.worker.maxReplicas | default 50 }}
   metrics:
     - type: Resource
@@ -114,7 +114,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: pcgl2cache-highpriority-worker
-  minReplicas: {{ .Values.pcgl2cache.worker.minReplicas | default 0 }}
+  minReplicas: {{ max 1 (.Values.pcgl2cache.worker.minReplicas | default 1 | int) }}
   maxReplicas: {{ .Values.pcgl2cache.worker.maxReplicas | default 50 }}
   metrics:
     - type: Resource
@@ -133,7 +133,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: pcgl2cache-lowpriority-worker
-  minReplicas: {{ .Values.pcgl2cache.worker.minReplicas | default 0 }}
+  minReplicas: {{ max 1 (.Values.pcgl2cache.worker.minReplicas | default 1 | int) }}
   maxReplicas: {{ .Values.pcgl2cache.worker.maxReplicas | default 50 }}
   metrics:
     - type: Resource

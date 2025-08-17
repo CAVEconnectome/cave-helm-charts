@@ -11,7 +11,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: remeshworker
-  minReplicas: {{ .Values.pychunkedgraph.remeshWorkerMinReplicas | default 0 }}
+  minReplicas: {{ max 1 (.Values.pychunkedgraph.remeshWorkerMinReplicas | default 1 | int) }}
   maxReplicas: {{ .Values.pychunkedgraph.remeshWorkerMaxReplicas | default 10 }}
   metrics:
     - external:

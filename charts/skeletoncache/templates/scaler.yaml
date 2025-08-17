@@ -69,7 +69,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: skeletoncache-worker
-  minReplicas: {{ .Values.skeletoncache.worker.minReplicas | default 0 }}
+  minReplicas: {{ max 1 (.Values.skeletoncache.worker.minReplicas | default 1 | int) }}
   maxReplicas: {{ .Values.skeletoncache.worker.maxReplicas | default 50 }}
   metrics:
     - type: Resource

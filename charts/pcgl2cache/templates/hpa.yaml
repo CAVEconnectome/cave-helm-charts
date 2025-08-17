@@ -7,7 +7,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: pcgl2cache
-  minReplicas: {{ .Values.pcgl2cache.api.hpa.minReplicas | default 1 }}
+  minReplicas: {{ max 1 (.Values.pcgl2cache.api.hpa.minReplicas | default 1 | int) }}
   maxReplicas: {{ .Values.pcgl2cache.api.hpa.maxReplicas | default 5 }}
   metrics:
     - type: Resource

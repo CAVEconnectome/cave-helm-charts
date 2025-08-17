@@ -8,7 +8,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: materialize
-  minReplicas: {{ .Values.materialize.apiMinReplicas }}
+  minReplicas: {{ max 1 (.Values.materialize.apiMinReplicas | default 1 | int) }}
   maxReplicas: {{ .Values.materialize.apiMaxReplicas }}
   metrics:
     - type: Resource
