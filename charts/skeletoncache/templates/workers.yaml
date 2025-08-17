@@ -1,0 +1,95 @@
+{{- $raw := .Values.image.tag | default .Chart.AppVersion -}}
+{{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: skeletoncache-worker
+spec:
+  replicas: {{ if .Values.keda.enabled }}0{{ else }}{{ .Values.skeletoncache.worker.minReplicas | default 0 }}{{ end }}
+  selector:
+    matchLabels:
+      app: skeletoncache-worker
+  template:
+    metadata:
+      labels:
+        app: skeletoncache-worker
+    spec:
+      tolerations:
+        - key: "pool"
+          operator: "Equal"
+          value: "{{ .Values.cluster.meshPool }}"
+          effect: "NoSchedule"
+      nodeSelector:
+        cloud.google.com/gke-nodepool: {{ .Values.cluster.meshPool }}
+      terminationGracePeriodSeconds: 10
+      volumes:
+        - name: sksv-config-volume
+          configMap:
+            name: skeletoncache-config
+      {{- if .Values.skeletoncache.credentialsSecret }}
+        - name: google-cloud-key
+          secret:
+            secretName: {{ .Values.skeletoncache.credentialsSecret }}
+      {{- end }}
+      containers:
+        - name: skeletoncache-worker
+          image: {{ .Values.cluster.dockerRegistry }}/skeletoncache:{{ $tag }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: sksv-config-volume
+              mountPath: /app/skeletoncache/app/instance/
+          {{- if .Values.skeletoncache.credentialsSecret }}
+            - name: google-cloud-key
+              mountPath: /root/.cloudvolume/secrets
+          {{- end }}
+          env:
+            - name: AUTH_URI
+              value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/auth
+            - name: STICKY_AUTH_URL
+              value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/sticky_auth
+            - name: AUTH_URL
+              value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/auth
+            - name: INFO_URL
+              value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/info
+            - name: BIGTABLE_PROJECT
+              value: "{{ .Values.cluster.dataProjectName | default .Values.cluster.googleProject }}"
+            - name: BIGTABLE_INSTANCE
+              value: {{ .Values.skeletoncache.bigtable.instance | quote }}
+            - name: APP_SETTINGS
+              value: "skeletoncache.app.config.DevelopmentConfig"
+            - name: SKELETON_CACHE_URL_PREFIX
+              value: sksv
+            - name: PROJECT_ID
+              value: "{{ .Values.cluster.dataProjectName | default .Values.cluster.googleProject }}"
+            - name: PROJECT_NAME
+              value: {{ .Values.cluster.googleProject | quote }}
+            - name: CACHE_NON_H5_SKELETONS
+              value: {{ .Values.skeletoncache.cacheNonH5 | quote }}
+            - name: SKELETON_DATASTACK_NAME_REMAPPING
+              value: {{ .Values.skeletoncache.datastackRemap | quote }}
+            - name: SKELETONCACHE_WORKER_MAX_REPLICAS
+              value: {{ .Values.skeletoncache.worker.maxReplicas | quote }}
+            - name: SKELETON_CACHE_LOW_PRIORITY_EXCHANGE
+              value: {{ .Values.skeletoncache.exchanges.low | default "" | quote }}
+            - name: SKELETON_CACHE_HIGH_PRIORITY_EXCHANGE
+              value: {{ .Values.skeletoncache.exchanges.high | default "" | quote }}
+            - name: SKELETON_CACHE_LOW_PRIORITY_RETRIEVE_QUEUE
+              value: {{ required "A valid .skeletoncache.queues.low is required!" .Values.skeletoncache.queues.low | quote }}
+            - name: SKELETON_CACHE_HIGH_PRIORITY_RETRIEVE_QUEUE
+              value: {{ required "A valid .skeletoncache.queues.high is required!" .Values.skeletoncache.queues.high | quote }}
+            - name: SKELETON_CACHE_DEAD_LETTER_RETRIEVE_QUEUE
+              value: {{ required "A valid .skeletoncache.queues.deadLetter is required!" .Values.skeletoncache.queues.deadLetter | quote }}
+            - name: VERBOSE_LEVEL
+              value: {{ .Values.skeletoncache.verboseLevel | quote }}
+            - name: DEBUG_ROOT_ID
+              value: {{ .Values.skeletoncache.debugRootId | default "" | quote }}
+          resources:
+            requests:
+              memory: {{ .Values.skeletoncache.worker.resources.requests.memory }}
+              cpu: {{ .Values.skeletoncache.worker.resources.requests.cpu }}
+          command:
+            - /bin/sh
+            - -c
+            - python -u -m skeletonservice.datasets.messaging

@@ -1,0 +1,14 @@
+{{- if .Values.gmp.enabled }}
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  name: skeletoncache
+spec:
+  selector:
+    matchLabels:
+      app: skeletoncache
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: {{ .Values.gmp.scrape.interval | default "30s" }}
+{{- end }}

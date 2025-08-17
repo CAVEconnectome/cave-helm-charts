@@ -1,0 +1,23 @@
+{{- if .Values.cluster.dns_entries }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: skeletoncache
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  {{- range $host := .Values.cluster.dns_entries }}
+    - host: {{ $host }}
+      http:
+        paths:
+          - path: /skeletoncache
+            pathType: Prefix
+            backend:
+              service:
+                name: skeletoncache
+                port:
+                  number: 80
+  {{- end }}
+{{- end }}
