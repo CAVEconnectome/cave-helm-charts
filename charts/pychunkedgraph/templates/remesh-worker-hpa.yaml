@@ -1,0 +1,27 @@
+{{- $cluster_prefix := .Values.cluster.cluster_prefix | required ".Values.cluster.cluster_prefix is required." }}
+
+---
+{{- if not .Values.keda.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: remeshworker-scaler
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: remeshworker
+  minReplicas: {{ .Values.pychunkedgraph.remeshWorkerMinReplicas | default 0 }}
+  maxReplicas: {{ .Values.pychunkedgraph.remeshWorkerMaxReplicas | default 10 }}
+  metrics:
+    - external:
+        metric:
+          name: pubsub.googleapis.com|subscription|num_undelivered_messages
+          selector:
+            matchLabels:
+              resource.labels.subscription_id: {{ $cluster_prefix }}_PCG_LOW_PRIORITY_REMESH
+        target:
+          type: AverageValue
+          averageValue: 1
+      type: External
+{{- end }}

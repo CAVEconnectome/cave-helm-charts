@@ -1,19 +1,21 @@
 {{- $raw := .Values.pychunkedgraph.tag | default .Values.pychunkedgraph.version | default .Chart.AppVersion -}}
 {{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
+{{- $cluster_prefix := .Values.cluster.cluster_prefix | required ".Values.cluster.cluster_prefix is required." -}}
+{{- $remeshSub := .Values.pychunkedgraph.remeshQueue | default (printf "%s_PCG_LOW_PRIORITY_REMESH" $cluster_prefix) -}}
 
 ---  
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: meshworker
+  name: remeshworker
 spec:
   selector:
     matchLabels:
-      app: meshworker
+      app: remeshworker
   template:
     metadata:
       labels:
-        app: meshworker
+        app: remeshworker
     spec:
       tolerations:
         - key: "pool"
@@ -28,7 +30,7 @@ spec:
             secretName: pychunkedgraph-google-cloud-key
       terminationGracePeriodSeconds: 20
       containers:
-        - name: meshworker
+        - name: remeshworker
           image: {{ .Values.cluster.dockerRegistry }}/pychunkedgraph:{{ $tag }}
           imagePullPolicy: Always
           volumeMounts:
@@ -37,10 +39,11 @@ spec:
           env: 
             - name: GOOGLE_APPLICATION_CREDENTIALS
               value: "/root/.cloudvolume/secrets/google-secret.json"
+            {{- /* Inherit base PCG envs */}}
             {{- include "pcg_env.config" . | nindent 12 }}
-            # High-priority remesh queue for the main mesh worker
+            {{- /* Override queue to low-priority remesh, allow override via values */}}
             - name: PYCHUNKEDGRAPH_REMESH_QUEUE
-              value: "{{ .Values.cluster.cluster_prefix }}_PCG_HIGH_PRIORITY_REMESH"
+              value: "{{ $remeshSub }}"
           resources:
             requests:
               memory: 3000Mi

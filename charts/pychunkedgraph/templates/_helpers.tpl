@@ -10,7 +10,7 @@
 - name: AUTH_URL
   value: "{{ .Values.cluster.globalServer }}/auth"
 - name: BIGTABLE_PROJECT
-  value: "{{ .Values.cluster.dataProjectName }}"
+  value: "{{ .Values.cluster.dataProjectName | default .Values.cluster.googleProject }}"
 - name: BIGTABLE_INSTANCE
   value: "{{ .Values.pychunkedgraph.bigtableInstanceName}}"
 - name: INFO_URL
@@ -27,8 +27,6 @@
   value: "segmentation"
 - name: PROJECT_NAME
   value: "{{ .Values.cluster.googleProject }}"
-- name: PYCHUNKEDGRAPH_REMESH_QUEUE
-  value: "{{ .Values.cluster.cluster_prefix }}_PCG_HIGH_PRIORITY_REMESH"
 - name: PYCHUNKEDGRAPH_EDITS_EXCHANGE
   value: "{{ .Values.cluster.cluster_prefix }}_PCG_EDIT"
 - name: PYCHUNKEDGRAPH_EDITS_LOW_PRIORITY_EXCHANGE

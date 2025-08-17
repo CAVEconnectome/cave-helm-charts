@@ -1,0 +1,28 @@
+{{- $cluster_prefix := .Values.cluster.cluster_prefix | required ".Values.cluster.cluster_prefix is required." }}
+{{- $remeshSub := .Values.pychunkedgraph.remeshQueue | default (printf "%s_PCG_LOW_PRIORITY_REMESH" $cluster_prefix) -}}
+
+{{- if .Values.keda.enabled }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: remeshworker-scaledobject
+spec:
+  scaleTargetRef:
+    name: remeshworker
+  minReplicaCount: {{ .Values.pychunkedgraph.remeshWorkerMinReplicas | default 0 }}
+  maxReplicaCount: {{ .Values.pychunkedgraph.remeshWorkerMaxReplicas | default 10 }}
+  cooldownPeriod: {{ .Values.keda.remeshWorker.cooldownSeconds | default 1200 }}
+  pollingInterval: {{ .Values.keda.remeshWorker.pollingSeconds | default 15 }}
+  advanced:
+    restoreToOriginalReplicaCount: false
+  triggers:
+    - type: gcp-pubsub
+      authenticationRef:
+        name: keda-trigger-auth-gcp-credentials
+      metadata:
+{{- $timeH := (.Values.keda.remeshWorker.timeHorizon | default "2m") -}}
+{{- $vin := (.Values.keda.remeshWorker.valueIfNull | default 0) -}}
+{{- $md := dict "mode" "SubscriptionSize" "timeHorizon" (printf "%v" $timeH) "valueIfNull" (printf "%v" $vin) "subscriptionName" $remeshSub -}}
+{{ toYaml $md | nindent 8 }}
+{{- end }}
