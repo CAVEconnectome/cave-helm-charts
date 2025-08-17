@@ -47,6 +47,9 @@ pychunkedgraph:
   meshCpuMilli: 1000
   meshWorkerMinReplicas: 0
   meshWorkerMaxReplicas: 10
+  # remesh worker (low-priority queue) scaling bounds
+  remeshWorkerMinReplicas: 0
+  remeshWorkerMaxReplicas: 10
   remeshQueue: 
   # should be enable or left blank
   enableLogs: "enable"
@@ -60,6 +63,13 @@ keda:
   enabled: true
   # enable KEDA scaling for meshworker; when true, HPA is disabled and KEDA ScaledObject is created
   meshWorker:
+    # How many messages per worker we target; 1 means aim for ~1 message per active worker
+    messagesPerWorker: 1
+    # Polling and cooldown periods (seconds)
+    pollingSeconds: 30
+    cooldownSeconds: 60
+  # enable KEDA scaling for remeshworker; when true, HPA is disabled and KEDA ScaledObject is created
+  remeshWorker:
     # How many messages per worker we target; 1 means aim for ~1 message per active worker
     messagesPerWorker: 1
     # Polling and cooldown periods (seconds)
