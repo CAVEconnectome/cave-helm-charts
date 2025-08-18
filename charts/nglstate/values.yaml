@@ -1,0 +1,15 @@
+cluster: {}
+redis:
+  host: ""
+nglstate:
+  # tag: ""
+  replicas: 1
+  nglstateServiceAccountSecret: ""
+  googleSecretFilename: google-secret.json
+  jsonDbTableName: "ngl_state"
+  bucketPath: ""
+  resources:
+    requests:
+      memory: 130Mi
+      cpu: 50m
+  env: {}

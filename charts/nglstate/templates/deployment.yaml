@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nglstate
+spec:
+  replicas: {{ .Values.nglstate.replicas | default 1 }}
+  selector:
+    matchLabels:
+      app: nglstate
+  template:
+    metadata:
+      labels:
+        app: nglstate
+    spec:
+      volumes:
+        - name: google-cloud-key
+          secret:
+            secretName: {{ .Values.nglstate.nglstateServiceAccountSecret | required "nglstate.nglstateServiceAccountSecret is required" }}
+      containers:
+        - name: neuroglancerjsonserver
+          {{- $raw := .Values.nglstate.tag | default .Values.nglstate.version | default .Chart.AppVersion -}}
+          {{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
+          {{- $repo := .Values.nglstate.repo | default "neuroglancerjsonserver" -}}
+          {{- $defaultImage := printf "%s/%s:%s" .Values.cluster.dockerRegistry $repo $tag -}}
+          image: {{ .Values.nglstate.image | default $defaultImage }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: google-cloud-key
+              mountPath: /home/nginx/.cloudvolume/secrets
+          env:
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: {{ printf "/home/nginx/.cloudvolume/secrets/%s" (.Values.nglstate.googleSecretFilename | default "google-secret.json") | quote }}
+            - name: REDISHOST
+              value: {{ required "redis.host required" .Values.redis.host | quote }}
+            - name: AUTH_URI
+              value: {{ .Values.cluster.globalServer | required "cluster.globalServer required" | quote }}
+            - name: STICKY_AUTH_URL
+              value: {{ printf "%s/sticky_auth" (required "cluster.globalServer required" .Values.cluster.globalServer) | quote }}
+            - name: AUTH_URL
+              value: {{ printf "%s/auth" (required "cluster.globalServer required" .Values.cluster.globalServer) | quote }}
+            - name: REDIS_SERVICE_HOST
+              value: {{ .Values.redis.host | required "redis.host required" | quote }}
+            - name: REDIS_SERVICE_PORT
+              value: "6379"
+            - name: PROJECT_ID
+              value: {{ .Values.cluster.googleProject | required "cluster.googleProject required" | quote }}
+            - name: APP_SETTINGS
+              value: "neuroglancerjsonserver.app.config.BaseConfig"
+            - name: JSON_DB_TABLE_NAME
+              value: {{ .Values.nglstate.jsonDbTableName | default "ngl_state" | quote }}
+            - name: NGLSTATE_BUCKET_PATH
+              value: {{ .Values.nglstate.bucketPath | required "nglstate.bucketPath required" | quote }}
+          resources:
+            requests:
+              memory: {{ .Values.nglstate.resources.requests.memory | default "130Mi" }}
+              cpu: {{ .Values.nglstate.resources.requests.cpu | default "50m" }}
