@@ -9,6 +9,18 @@ image:
   tag: latest
 
 skeletoncache:
+  # Per-endpoint rate limits (requests per minute).
+  # Units: per-minute. The chart renders these as "<N>/minute" for LIMITER_CATEGORIES.
+  limits:
+    get_refusal_list: 100
+    query_cache: 100
+    skeleton_exists: 100
+    get_skeleton_that_exists: 1000
+    get_skeleton_that_doesnt_exist: 10
+    get_skeleton_via_msg_that_exists: 1000
+    get_skeleton_via_msg_that_doesnt_exist: 10
+    get_skeletons_bulk: 10
+    get_skeletons_bulk_async: 10
   api:
     enabled: true
     hpa:
