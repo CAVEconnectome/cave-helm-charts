@@ -1,0 +1,27 @@
+{{- $domain := .Values.cluster.domainName | required ".Values.cluster.domainName is required." -}}
+{{- $prefix := .Values.cluster.cluster_prefix | required ".Values.cluster.cluster_prefix is required." -}}
+{{- $defaultHost := printf "%s.%s" $prefix $domain -}}
+{{- $dnsEntries := .Values.cluster.dns_entries | default (list) -}}
+{{- $raw := append (default (list) $dnsEntries) $defaultHost -}}
+{{- $hosts := uniq $raw -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: emannotationschemas-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  ingressClassName: nginx
+  rules:
+  {{- range $hosts }}
+  - host: {{ . }}
+    http:
+      paths:
+      - path: /schema
+        pathType: Prefix
+        backend:
+          service:
+            name: emannotationschemas-service
+            port:
+              number: 80
+  {{- end }}

@@ -1,0 +1,11 @@
+cluster: {}
+emannotationschemas:
+  # tag: ""
+  replicas: 1
+  serviceAccountSecret: ""
+  googleSecretFilename: google-secret.json
+  resources:
+    requests:
+      memory: 130Mi
+      cpu: 50m
+  env: {}
