@@ -5,10 +5,8 @@ cluster:
   meshPool: standard-pool
   cluster_prefix: ""
 
-image:
-  tag: "latest"
-
 pcgl2cache:
+  tag: "1.3.1"
   api:
     enabled: true
     hpa:
@@ -47,6 +45,13 @@ pcgl2cache:
   config:
     configCfg: ""
     l2TableMap: ""
+  # Files to include in the generated Kubernetes Secret. Values can be literal strings
+  # or Helmfile ref+gcpsecrets:// URIs that resolve at apply time.
+  secretFiles:
+    - name: google-secret.json
+      value: ""
+    - name: cave-secret.json
+      value: ""
   credentialsSecret: pcg-service-account
   googleSecretFilename: google.json
   caveSecretFilename: cave.json
