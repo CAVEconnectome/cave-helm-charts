@@ -1,0 +1,20 @@
+cluster: {}
+cloudsql: {}
+redis:
+  host: ""
+infoservice:
+  # tag: ""
+  replicas: 1
+  targetAvgUtilization: 80
+  cloudsqlSecretName: ""
+  caveSecretName: ""
+  googleSecretFilename: google-secret.json
+  caveSecretFilename: cave-secret.json
+  dbName: "info"
+  jsonDbTableName: "ngl_state"
+  bucketPath: ""
+  resources:
+    requests:
+      memory: 300Mi
+      cpu: 20m
+  env: {}

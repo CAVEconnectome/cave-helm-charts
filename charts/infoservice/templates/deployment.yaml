@@ -1,0 +1,76 @@
+{{- $raw := .Values.infoservice.tag | default .Values.infoservice.version | default .Chart.AppVersion -}}
+{{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
+{{- $repo := .Values.infoservice.repo | default "annotationframeworkinfoservice" -}}
+{{- $defaultImage := printf "%s/%s:%s" .Values.cluster.dockerRegistry $repo $tag -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: infoservice
+spec:
+  replicas: {{ .Values.infoservice.replicas | default 1 }}
+  annotations:
+      checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+      checksum/secrets: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+      checksum/cloudsql: {{ include (print $.Template.BasePath "/cloudsql_secret.yaml") . | sha256sum }}
+  selector:
+    matchLabels:
+      app: infoservice
+  template:
+    metadata:
+      labels:
+        app: infoservice
+    spec:
+      volumes:
+        - name: cloudsql-instance-credentials-volume
+          secret:
+            secretName: info-cloudsql-google-cloud-key
+        - name: infoservice-credentials-volume
+          secret:
+            secretName: infoservice-google-cloud-key
+      containers:
+        - name: infoservice
+          image: {{ .Values.infoservice.image | default $defaultImage }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          env:
+            - name: GLOBAL_SERVER
+              value: {{ printf "https://%s" (required "cluster.globalServer required" .Values.cluster.globalServer) | quote }}
+            - name: AUTH_URI
+              value: {{ .Values.cluster.globalServer | required "cluster.globalServer required" | quote }}
+            - name: STICKY_AUTH_URL
+              value: {{ printf "%s/sticky_auth" (required "cluster.globalServer required" .Values.cluster.globalServer) | quote }}
+            - name: AUTH_URL
+              value: {{ printf "%s/auth" (required "cluster.globalServer required" .Values.cluster.globalServer) | quote }}
+            - name: INFO_URL
+              value: {{ printf "%s/info" (required "cluster.globalServer required" .Values.cluster.globalServer) | quote }}
+            - name: DAF_CREDENTIALS
+              value: {{ printf "/home/nginx/.cloudvolume/secrets/%s" (.Values.infoservice.caveSecretFilename | default "cave-secret.json") | quote }}
+            - name: SQLALCHEMY_DATABASE_URI
+              value: {{ printf "postgres://%s:%s@127.0.0.1:5432/%s" (.Values.cloudsql.username | required "cloudsql.username required") (.Values.cloudsql.password | required "cloudsql.password required") (.Values.infoservice.dbName | default "info") | quote }}
+          volumeMounts:
+            - name: infoservice-credentials-volume
+              mountPath: /home/nginx/.cloudvolume/secrets
+          resources:
+            requests:
+              memory: {{ .Values.infoservice.resources.requests.memory | default "300Mi" }}
+              cpu: {{ .Values.infoservice.resources.requests.cpu | default "20m" }}
+        - name: cloudsql-proxy
+          image: gcr.io/cloudsql-docker/gce-proxy:1.33.6
+          command:
+            [
+              "/cloud_sql_proxy",
+              "-instances={{ .Values.cluster.googleProject}}:{{ .Values.cluster.googleRegion}}:{{ .Values.cloudsql.sqlInstanceName}}=tcp:5432",
+              "-credential_file=/secrets/cloudsql/{{ .Values.infoservice.googleSecretFilename | default "google-secret.json" }}",
+            ]
+          resources:
+            requests:
+              memory: 8Mi
+              cpu: 10m
+          securityContext:
+            runAsUser: 2
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - name: cloudsql-instance-credentials-volume
+              mountPath: /secrets/cloudsql
+              readOnly: true
