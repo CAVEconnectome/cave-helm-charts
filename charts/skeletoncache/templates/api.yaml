@@ -1,4 +1,4 @@
-{{- $raw := .Values.image.tag | default .Chart.AppVersion -}}
+{{- $raw := .Values.skeletoncache.tag | default .Chart.AppVersion -}}
 {{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
 apiVersion: apps/v1
 kind: Deployment
@@ -13,7 +13,8 @@ spec:
       labels:
         app: skeletoncache
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum | quote }}
+        checksum/secrets: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum | quote }}
     spec:
       tolerations:
         - key: "pool"
@@ -47,15 +48,7 @@ spec:
             - name: LIMITER_URI
               value: {{ .Values.skeletoncache.limiter.uri | quote }}
             - name: LIMITER_CATEGORIES
-              value: {{- if .Values.skeletoncache.limiter.categories -}}
-                {{ .Values.skeletoncache.limiter.categories | quote }}
-                {{- else -}}
-                {{- $cat := dict -}}
-                {{- range $k, $v := .Values.skeletoncache.limits }}
-                {{- $_ := set $cat $k (printf "%v/minute" $v) -}}
-                {{- end -}}
-                {{ toJson $cat | quote }}
-                {{- end }}
+              value: {{ if .Values.skeletoncache.limiter.categories }}{{ .Values.skeletoncache.limiter.categories | squote }}{{ else }}{{- $cat := dict -}}{{- range $k, $v := .Values.skeletoncache.limits }}{{- $_ := set $cat $k (printf "%v/minute" $v) -}}{{- end -}}{{ toJson $cat | squote }}{{ end }}
             - name: SKELETON_DATASTACK_NAME_REMAPPING
               value: {{ .Values.skeletoncache.datastackRemap | quote }}
             - name: SKELETONCACHE_WORKER_MAX_REPLICAS
@@ -75,7 +68,7 @@ spec:
             - name: VERBOSE_LEVEL
               value: {{ .Values.skeletoncache.verboseLevel | quote }}
             - name: DEBUG_ROOT_ID
-              value: {{ .Values.skeletoncache.debugRootId | default "" | quote }}
+              value: {{ .Values.skeletoncache.debugRootId | default "0" | quote }}
           resources:
             requests:
               memory: {{ .Values.skeletoncache.api.resources.requests.memory }}
@@ -101,6 +94,24 @@ spec:
             initialDelaySeconds: 15
             timeoutSeconds: 1
             periodSeconds: 60
+        - name: sysctl-buddy
+          image: alpine:3.4
+          command:
+            - /bin/sh
+            - -c
+            - |
+              while true; do
+                sysctl -w net.core.somaxconn=32768
+                sysctl -w net.ipv4.ip_local_port_range='1024 65535'
+                sleep 100
+              done
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 10Mi
+              cpu: 5m
       volumes:
         - name: skeleton-config-volume
           configMap:

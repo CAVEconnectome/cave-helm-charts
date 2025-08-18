@@ -1,4 +1,4 @@
-{{- $raw := .Values.image.tag | default .Chart.AppVersion -}}
+{{- $raw := .Values.skeletoncache.tag | default .Chart.AppVersion -}}
 {{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
 apiVersion: apps/v1
 kind: Deployment
@@ -13,6 +13,8 @@ spec:
     metadata:
       labels:
         app: skeletoncache-worker
+      annotations:
+        checksum/secrets: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum | quote }}
     spec:
       tolerations:
         - key: "pool"
@@ -64,15 +66,7 @@ spec:
             - name: LIMITER_URI
               value: {{ .Values.skeletoncache.limiter.uri | quote }}
             - name: LIMITER_CATEGORIES
-              value: {{- if .Values.skeletoncache.limiter.categories -}}
-                {{ .Values.skeletoncache.limiter.categories | quote }}
-                {{- else -}}
-                {{- $cat := dict -}}
-                {{- range $k, $v := .Values.skeletoncache.limits }}
-                {{- $_ := set $cat $k (printf "%v/minute" $v) -}}
-                {{- end -}}
-                {{ toJson $cat | quote }}
-                {{- end }}
+              value: {{ if .Values.skeletoncache.limiter.categories }}{{ .Values.skeletoncache.limiter.categories | squote }}{{ else }}{{- $cat := dict -}}{{- range $k, $v := .Values.skeletoncache.limits }}{{- $_ := set $cat $k (printf "%v/minute" $v) -}}{{- end -}}{{ toJson $cat | squote }}{{ end }}
             - name: CACHE_NON_H5_SKELETONS
               value: {{ .Values.skeletoncache.cacheNonH5 | quote }}
             - name: SKELETON_DATASTACK_NAME_REMAPPING
@@ -92,7 +86,7 @@ spec:
             - name: VERBOSE_LEVEL
               value: {{ .Values.skeletoncache.verboseLevel | quote }}
             - name: DEBUG_ROOT_ID
-              value: {{ .Values.skeletoncache.debugRootId | default "" | quote }}
+              value: {{ .Values.skeletoncache.debugRootId | default "0" | quote }}
           resources:
             requests:
               memory: {{ .Values.skeletoncache.worker.resources.requests.memory }}

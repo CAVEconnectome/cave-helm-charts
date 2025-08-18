@@ -4,10 +4,10 @@ metadata:
   name: skeletoncache-config
 data:
   config.cfg: |
-  import os
-  {{- if .Values.skeletoncache.cloudPath }}
-  SKELETON_CACHE_BUCKET = "{{ .Values.skeletoncache.cloudPath }}"
-  {{- else }}
-  # Fallback: read from environment variable SKELETON_CACHE_BUCKET
-  SKELETON_CACHE_BUCKET = os.environ.get("SKELETON_CACHE_BUCKET", "")
-  {{- end }}
+    import os
+    {{- if .Values.skeletoncache.cloudPath }}
+    SKELETON_CACHE_BUCKET = "{{ .Values.skeletoncache.cloudPath }}"
+    {{- else }}
+    # Fallback: read from environment variable SKELETON_CACHE_BUCKET
+    SKELETON_CACHE_BUCKET = os.environ.get("SKELETON_CACHE_BUCKET", "")
+    {{- end }}

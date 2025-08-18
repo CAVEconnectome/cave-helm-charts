@@ -26,37 +26,22 @@ spec:
       authenticationRef:
         name: skeletoncache-keda-auth
       metadata:
-  subscriptionName: {{ required "A valid .skeletoncache.queues.high is required!" .Values.skeletoncache.queues.high | quote }}
+        subscriptionName: {{ required "A valid .skeletoncache.queues.high is required!" .Values.skeletoncache.queues.high | quote }}
         mode: "SubscriptionSize"
         timeHorizon: {{ .Values.keda.timeHorizon | default "2m" | quote }}
         valueIfNull: {{ .Values.keda.valueIfNull | default 0 | quote }}
         activationValue: {{ .Values.keda.activationValue | default 0 | quote }}
-  value: {{ .Values.keda.pubsub.messagesPerWorker | default 1 | quote }}
----
-apiVersion: keda.sh/v1alpha1
-kind: ScaledObject
-metadata:
-  name: skeletoncache-worker-scaler-low
-spec:
-  scaleTargetRef:
-    name: skeletoncache-worker
-  minReplicaCount: {{ .Values.skeletoncache.worker.minReplicas | default 0 }}
-  maxReplicaCount: {{ .Values.skeletoncache.worker.maxReplicas | default 50 }}
-  cooldownPeriod: {{ .Values.keda.cooldownSeconds | default 600 }}
-  pollingInterval: {{ .Values.keda.pollingSeconds | default 15 }}
-  advanced:
-    restoreToOriginalReplicaCount: false
-  triggers:
+        value: {{ .Values.keda.pubsub.messagesPerWorker | default 1 | quote }}
     - type: gcp-pubsub
       authenticationRef:
         name: skeletoncache-keda-auth
       metadata:
-  subscriptionName: {{ required "A valid .skeletoncache.queues.low is required!" .Values.skeletoncache.queues.low | quote }}
+        subscriptionName: {{ required "A valid .skeletoncache.queues.low is required!" .Values.skeletoncache.queues.low | quote }}
         mode: "SubscriptionSize"
         timeHorizon: {{ .Values.keda.timeHorizon | default "2m" | quote }}
         valueIfNull: {{ .Values.keda.valueIfNull | default 0 | quote }}
         activationValue: {{ .Values.keda.activationValue | default 0 | quote }}
-  value: {{ .Values.keda.pubsub.messagesPerWorker | default 1 | quote }}
+        value: {{ .Values.keda.pubsub.messagesPerWorker | default 1 | quote }}
 {{- else }}
 # Fallback HPA if KEDA is disabled (CPU-based)
 ---

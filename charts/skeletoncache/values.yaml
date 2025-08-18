@@ -5,10 +5,8 @@ cluster:
   meshPool: mesh-pool
   cluster_prefix: ""
 
-image:
-  tag: latest
-
 skeletoncache:
+  tag: "0.22.36"
   # Per-endpoint rate limits (requests per minute).
   # Units: per-minute. The chart renders these as "<N>/minute" for LIMITER_CATEGORIES.
   limits:
@@ -45,7 +43,8 @@ skeletoncache:
   datastackRemap: "{}"
   cacheNonH5: "false"
   verboseLevel: "0"
-  debugRootId: ""
+  # Default debug root id; set to a non-zero root ID to enable targeted debugging
+  debugRootId: "0"
   queues:
     high: ""
     low: ""
@@ -60,6 +59,13 @@ skeletoncache:
     instance: ""
   # Optional: full gs:// cloud path (bucket and optional prefix)
   cloudPath: ""
+  # Optional secret files rendered into a Kubernetes Secret for mounting
+  # Each entry is a name and value; value can be a string or a ref+gcpsecrets:// URI
+  secretFiles:
+    - name: google-secret.json
+      value: ""
+    - name: cave-secret.json
+      value: ""
   statsExporter:
     enabled: false
     pollSeconds: 30

@@ -1,4 +1,4 @@
-{{- $raw := .Values.image.tag | default .Chart.AppVersion -}}
+{{- $raw := .Values.pcgl2cache.tag | default .Chart.AppVersion -}}
 {{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
 apiVersion: apps/v1
 kind: Deployment
@@ -13,7 +13,8 @@ spec:
       labels:
         app: pcgl2cache-worker
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum | quote }}
+        checksum/secrets: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum | quote }}
     spec:
       tolerations:
         - key: "pool"
@@ -97,7 +98,8 @@ spec:
       labels:
         app: pcgl2cache-highpriority-worker
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum | quote }}
+        checksum/secrets: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum | quote }}
     spec:
       tolerations:
         - key: "pool"
@@ -181,7 +183,8 @@ spec:
       labels:
         app: pcgl2cache-lowpriority-worker
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum | quote }}
+        checksum/secrets: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum | quote }}
     spec:
       tolerations:
         - key: "pool"
