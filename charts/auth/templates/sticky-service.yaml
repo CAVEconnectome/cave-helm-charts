@@ -1,0 +1,14 @@
+{{- if .Values.sticky.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: sticky-auth-service
+spec:
+  type: ClusterIP
+  sessionAffinity: {{ .Values.sticky.sessionAffinity | default "ClientIP" }}
+  selector:
+    app: sticky-auth
+  ports:
+    - port: 80
+      targetPort: 80
+{{- end }}

@@ -1,0 +1,70 @@
+{{- if .Values.regular.enabled }}
+{{- $raw := .Values.auth.tag | default .Values.auth.version | default .Chart.AppVersion -}}
+{{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
+{{- $repo := .Values.auth.repo | default "neuroglancer_auth" -}}
+{{- $defaultImage := printf "%s/%s:%s" .Values.cluster.dockerRegistry $repo $tag -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth
+spec:
+  replicas: {{ .Values.regular.replicas | default 10 }}
+  selector:
+    matchLabels:
+      app: auth
+  template:
+    metadata:
+      labels:
+        app: auth
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secrets: {{ include (print $.Template.BasePath "/cloudsql_secret.yaml") . | sha256sum }}
+    spec:
+      volumes:
+        - name: cloudsql-instance-credentials-volume
+          secret:
+            secretName: auth-cloudsql-google-cloud-key
+        - name: auth-uwsgi-volume
+          configMap:
+            name: auth-uwsgiconfig
+      containers:
+        - name: auth
+          image: {{ .Values.auth.image | default $defaultImage }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          env:
+            - name: REDISHOST
+              value: {{ required "redis.host required" .Values.redis.host | quote }}
+            - name: STICKY_AUTH_URL
+              value: {{ printf "%s/sticky_auth" (required "cluster.globalServer required" .Values.cluster.globalServer) | quote }}
+            - name: AUTH_URL
+              value: {{ printf "%s/auth" (required "cluster.globalServer required" .Values.cluster.globalServer) | quote }}
+            - name: SQLALCHEMY_DATABASE_URI
+              value: {{ printf "postgres://%s:%s@127.0.0.1:5432/%s" (.Values.cloudsql.username | required "cloudsql.username required") (.Values.cloudsql.password | required "cloudsql.password required") (.Values.auth.dbName | default "auth") | quote }}
+            - name: URL_PREFIX
+              value: {{ .Values.regular.urlPrefix | default "auth" | quote }}
+          volumeMounts:
+            - name: cloudsql-instance-credentials-volume
+              mountPath: /secrets/cloudsql
+              readOnly: true
+        - name: cloudsql-proxy
+          image: gcr.io/cloudsql-docker/gce-proxy:1.33.6
+          command:
+            [
+              "/cloud_sql_proxy",
+              "-instances={{ .Values.cluster.googleProject}}:{{ .Values.cluster.googleRegion}}:{{ .Values.cloudsql.sqlInstanceName}}=tcp:5432",
+              "-credential_file=/secrets/cloudsql/{{ .Values.auth.googleSecretFilename | default "google-secret.json" }}",
+            ]
+          resources:
+            requests:
+              memory: 15Mi
+              cpu: 10m
+          securityContext:
+            runAsUser: 2
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - name: cloudsql-instance-credentials-volume
+              mountPath: /secrets/cloudsql
+              readOnly: true
+{{- end }}

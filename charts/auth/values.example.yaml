@@ -1,0 +1,22 @@
+# Example overrides for unified auth chart
+redis:
+  host: "ref+tfstategs://my-tfstate-bucket/path/to/state?project=my-proj&name=my-state/output.pcg_redis_host"
+
+# Shared auth service settings
+auth:
+  image: "docker.io/caveconnectome/neuroglancer_auth:latest"
+  dbName: "auth"
+
+# Regular API-facing auth
+regular:
+  replicas: 2
+  urlPrefix: "auth"
+  oauthSecretName: "auth-oauth-secret"
+  clientSecretName: "auth-client-secret"
+
+# Sticky admin-facing auth
+sticky:
+  replicas: 1
+  urlPrefix: "sticky_auth"
+  oauthSecretName: "sticky-auth-oauth-secret"
+  clientSecretName: "sticky-auth-client-secret"

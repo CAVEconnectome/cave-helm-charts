@@ -1,0 +1,31 @@
+cluster: {}
+cloudsql: {}
+redis:
+  host: ""
+
+# Shared defaults for both deployments
+auth:
+  # tag: ""                     # optional; defaults to .Chart.AppVersion
+  googleSecretFilename: google-secret.json
+  oauthSecretFilename: oauth-secret.json
+  dbName: "auth"
+  resources:
+    requests:
+      memory: 200Mi
+      cpu: 50m
+  env: {}
+
+# Regular auth API
+regular:
+  replicas: 10
+  oauthSecretName: ""
+  clientSecretName: ""
+  urlPrefix: "auth"
+
+# Sticky auth (admin workflows)
+sticky:
+  replicas: 1
+  oauthSecretName: ""
+  clientSecretName: ""
+  urlPrefix: "sticky_auth"
+  sessionAffinity: ClientIP
