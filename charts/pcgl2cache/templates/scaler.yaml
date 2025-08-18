@@ -3,7 +3,7 @@
 apiVersion: keda.sh/v1alpha1
 kind: TriggerAuthentication
 metadata:
-  name: keda-trigger-auth-gcp-credentials
+  name: keda-l2cache-trigger-auth-gcp-credentials
 spec:
   podIdentity:
     provider: gcp
@@ -24,7 +24,7 @@ spec:
   triggers:
     - type: gcp-pubsub
       authenticationRef:
-        name: keda-trigger-auth-gcp-credentials
+        name: keda-l2cache-trigger-auth-gcp-credentials
       metadata:
         mode: "SubscriptionSize"
         timeHorizon: {{ .Values.keda.timeHorizon | default "2m" | quote }}
@@ -50,7 +50,7 @@ spec:
   triggers:
     - type: gcp-pubsub
       authenticationRef:
-        name: keda-trigger-auth-gcp-credentials
+        name: keda-l2cache-trigger-auth-gcp-credentials
       metadata:
         mode: "SubscriptionSize"
         timeHorizon: {{ .Values.keda.timeHorizon | default "2m" | quote }}
@@ -75,7 +75,7 @@ spec:
   triggers:
     - type: gcp-pubsub
       authenticationRef:
-        name: keda-trigger-auth-gcp-credentials
+        name: keda-l2cache-trigger-auth-gcp-credentials
       metadata:
         mode: "SubscriptionSize"
         timeHorizon: {{ .Values.keda.timeHorizon | default "2m" | quote }}
