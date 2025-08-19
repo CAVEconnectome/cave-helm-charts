@@ -28,6 +28,17 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/annotationengine-0.1.1/annotationengine-0.1.1.tgz
     version: 0.1.1
+  auth:
+  - apiVersion: v2
+    appVersion: 2.27.0
+    created: "2025-08-19T03:54:50.604472926Z"
+    description: Neuroglancer auth service (global)
+    digest: a2c2fcdd9a72507c2274025ae8d4c056749192cc3fac221ed20a5bd8dd11333a
+    name: auth
+    type: application
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/auth-0.1.0/auth-0.1.0.tgz
+    version: 0.1.0
   authinfo:
   - apiVersion: v2
     appVersion: 1.0.0
@@ -159,6 +170,28 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/edge-0.2.0/edge-0.2.0.tgz
     version: 0.2.0
+  emannotationschemas:
+  - apiVersion: v2
+    appVersion: 5.24.1
+    created: "2025-08-19T03:54:50.820036585Z"
+    description: EMAnnotationSchemas service (global)
+    digest: 93d304a3b5e0b62118b4a617dbd9fd0a1187764be8e010f5bd5310534c5c3913
+    name: emannotationschemas
+    type: application
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/emannotationschemas-0.1.0/emannotationschemas-0.1.0.tgz
+    version: 0.1.0
+  infoservice:
+  - apiVersion: v2
+    appVersion: 4.3.3
+    created: "2025-08-19T03:54:51.03608704Z"
+    description: Annotation Framework Info Service (global)
+    digest: c6d89db83bb62c519f7036e280cdd80added4fd154a9f79c2628f074e77c3abd
+    name: infoservice
+    type: application
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/infoservice-0.1.0/infoservice-0.1.0.tgz
+    version: 0.1.0
   materializationengine:
   - apiVersion: v2
     appVersion: 5.7.4
@@ -240,6 +273,17 @@ entries:
     name: materializationengine
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/materializationengine-0.1.0/materializationengine-0.1.0.tgz
+    version: 0.1.0
+  nglstate:
+  - apiVersion: v2
+    appVersion: 0.7.0
+    created: "2025-08-19T03:54:51.232259104Z"
+    description: Neuroglancer JSON state service (global)
+    digest: 8a63ccf1ef013c7d6fabc4009db18ef2c6b28f2e0ffa9206f88194d79fbe4b75
+    name: nglstate
+    type: application
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/nglstate-0.1.0/nglstate-0.1.0.tgz
     version: 0.1.0
   pcgl2cache:
   - apiVersion: v1
@@ -344,4 +388,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2025-08-18T04:38:07.931378464Z"
+generated: "2025-08-19T03:54:51.232344102Z"
