@@ -75,6 +75,16 @@ entries:
     version: 0.1.1
   auth:
   - apiVersion: v2
+    appVersion: 2.30.2
+    created: "2025-08-29T16:37:14.738626822Z"
+    description: Neuroglancer auth service (global)
+    digest: 3d1675cfdd560df224791e59ddc52e4fdeb8a0b8983704f8c5810c41b887842a
+    name: auth
+    type: application
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/auth-2.30.2/auth-2.30.2.tgz
+    version: 2.30.2
+  - apiVersion: v2
     appVersion: 2.27.0
     created: "2025-08-19T03:54:50.604472926Z"
     description: Neuroglancer auth service (global)
@@ -568,4 +578,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2025-08-29T16:24:20.54411265Z"
+generated: "2025-08-29T16:37:14.7387375Z"
