@@ -8,6 +8,7 @@ infoservice:
   targetAvgUtilization: 80
   cloudsqlSecretName: ""
   caveSecretName: ""
+  csrfSecretLength: 32
   googleSecretFilename: google-secret.json
   caveSecretFilename: cave-secret.json
   dbName: "info"

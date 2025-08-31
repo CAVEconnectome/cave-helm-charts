@@ -1,14 +1,19 @@
+{{- $length := .Values.infoservice.csrfSecretLength | default 32 -}}
+{{- $csrf := (randAlphaNum $length) -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: info-config
+data:
   config.cfg: |
     import json
     import os
-    CSRF_SESSION_KEY = "${INFOSERVICE_CSRF_SECRET_KEY}"
-    SECRET_KEY = "b${INFOSERVICE_SECRET_KEY}"
+  # CSRF and SECRET_KEY are provided via environment variables sourced from a Kubernetes Secret.
+  # If they are missing, default to empty strings.
+  CSRF_SESSION_KEY = os.environ.get("INFOSERVICE_CSRF_SECRET_KEY", "")
+  SECRET_KEY = os.environ.get("INFOSERVICE_SECRET_KEY", "")
     SQLALCHEMY_DATABASE_URI = {{ printf "postgres://%s:%s@127.0.0.1:5432/%s" (.Values.cloudsql.username | required "cloudsql.username required") (.Values.cloudsql.password | required "cloudsql.password required") (.Values.infoservice.dbName | default "info") | quote }}
-    NEUROGLANCER_URL =  {{ .Values.infoservice.defaultNeuroglancerUrl | default https://spelunker.cave-explorer.org }}
+    NEUROGLANCER_URL = {{ .Values.infoservice.defaultNeuroglancerUrl | default "https://spelunker.cave-explorer.org" | quote }}
     if os.environ.get("DAF_CREDENTIALS", None) is not None:
         with open(os.environ.get("DAF_CREDENTIALS"), "r") as f:
             AUTH_TOKEN = json.load(f)["token"]
