@@ -91,6 +91,12 @@ spec:
                 value: /home/nginx/.cloudvolume/secrets/cave-secret.json
               - name: QUEUE_NAME
                 value: {{ .Values.materialize.orchestrationQueueName | default "orchestration" }}
+              - name: QUEUE_LENGTH_LIMIT
+                value: "5000"
+              - name: QUEUES_TO_THROTTLE
+                value: process
+              - name: THROTTLE_QUEUES
+                value: "true"
               - name: WORKER_NAME
                 value: {{ .Values.materialize.celeryOrchestrationWorkerName | default "worker.orchestration" }}
               - name: CELERY_CLOUDVOLUME_CACHE_BYTES
