@@ -19,7 +19,7 @@ spec:
   triggers:
     - type: gcp-pubsub
       authenticationRef:
-        name: keda-trigger-auth-gcp-credentials
+        name: pcg-keda-trigger-auth-gcp-credentials
       metadata:
 {{- $timeH := (.Values.keda.remeshWorker.timeHorizon | default "2m") -}}
 {{- $vin := (.Values.keda.remeshWorker.valueIfNull | default 0) -}}

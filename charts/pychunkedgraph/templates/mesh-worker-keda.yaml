@@ -5,7 +5,7 @@
 apiVersion: keda.sh/v1alpha1
 kind: TriggerAuthentication
 metadata:
-  name: keda-trigger-auth-gcp-credentials
+  name: pcg-keda-trigger-auth-gcp-credentials
 spec:
   podIdentity:
     provider: gcp
@@ -26,7 +26,7 @@ spec:
   triggers:
     - type: gcp-pubsub
       authenticationRef:
-        name: keda-trigger-auth-gcp-credentials
+        name: pcg-keda-trigger-auth-gcp-credentials
       metadata:
         mode: "SubscriptionSize"
         # Narrow the window KEDA queries for fresher readings
