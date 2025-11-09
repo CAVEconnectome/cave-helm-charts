@@ -6,7 +6,7 @@ cluster:
   cluster_prefix: ""
 
 skeletoncache:
-  tag: "0.22.36"
+  tag: ""
   # Per-endpoint rate limits (requests per minute).
   # Units: per-minute. The chart renders these as "<N>/minute" for LIMITER_CATEGORIES.
   limits:
