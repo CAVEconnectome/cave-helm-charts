@@ -30,7 +30,7 @@ spec:
         targetValue: "75"
     - type: cpu
       metadata:
-        type: Utilization
+        metricType: Utilization
         value: "75"
         containerName: materialize
 {{- end }}
