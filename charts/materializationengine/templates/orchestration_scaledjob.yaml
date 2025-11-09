@@ -1,4 +1,6 @@
 {{- if and .Values.keda.enabled .Values.gmp.enabled .Values.materialize.orchestrationAsJobs }}
+{{- $raw := .Values.materialize.tag | default .Values.materialize.version | default .Chart.AppVersion -}}
+{{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
 ---
 apiVersion: keda.sh/v1alpha1
 kind: ScaledJob
@@ -46,7 +48,7 @@ spec:
             emptyDir: {}
         containers:
           - name: celery
-            image: {{ .Values.cluster.dockerRegistry }}/materializationengine:{{ .Values.materialize.tag | default .Chart.AppVersion }}
+            image: {{ .Values.cluster.dockerRegistry }}/materializationengine:{{ $tag }}
             command: ["/bin/sh"]
             args:
               - -c
