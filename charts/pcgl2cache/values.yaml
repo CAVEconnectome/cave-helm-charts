@@ -52,9 +52,8 @@ pcgl2cache:
       value: ""
     - name: cave-secret.json
       value: ""
-  credentialsSecret: pcg-service-account
-  googleSecretFilename: google.json
-  caveSecretFilename: cave.json
+  googleSecretFilename: google-secret.json
+  caveSecretFilename: cave-secret.json
 
 keda:
   enabled: true

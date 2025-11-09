@@ -26,7 +26,7 @@ spec:
       volumes:
         - name: google-cloud-key
           secret:
-            secretName: {{ .Values.pcgl2cache.credentialsSecret }}
+            secretName: pcgl2cache-secret
         - name: pcg-config-volume
           configMap:
             name: pcgl2cache-config
