@@ -29,7 +29,7 @@ spec:
         # Target AverageValue in percent
         targetValue: "75"
     - type: cpu
+      metricType: Utilization
       metadata:
-        metricType: Utilization
         value: "75"
 {{- end }}
