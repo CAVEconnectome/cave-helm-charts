@@ -236,6 +236,14 @@ entries:
     version: 0.1.0
   edge:
   - apiVersion: v2
+    created: "2025-11-10T23:53:04.75120258Z"
+    description: Edge ingress and TLS for shared host
+    digest: fab5b64a5aee6e045dd2d4d02f4b6a903f8019f4634b2f3fad17923b01e422a8
+    name: edge
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/edge-0.3.0/edge-0.3.0.tgz
+    version: 0.3.0
+  - apiVersion: v2
     created: "2025-08-14T12:35:44.147459675Z"
     description: Edge ingress and TLS for shared host
     digest: b678dd3db11fa82f63f3938680cc9b9f1f9e58b6592a8717c5935876ade0074b
@@ -750,4 +758,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2025-11-10T15:31:42.930355602Z"
+generated: "2025-11-10T23:53:04.7513738Z"
