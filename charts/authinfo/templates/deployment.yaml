@@ -12,7 +12,7 @@ spec:
       labels:
         app: authinfo
       annotations:
-        checksum/config: {{ include "authinfo.configChecksum" . }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
       tolerations:
         - key: "pool"
