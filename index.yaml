@@ -106,6 +106,15 @@ entries:
   authinfo:
   - apiVersion: v2
     appVersion: 1.0.0
+    created: "2025-11-10T15:31:42.930167824Z"
+    description: Simple auth info endpoint exposing login url and supported datastacks
+    digest: bc9bee5216f6d7a9d9ea9604b68445fdadc16be563c41bd00589d87cca6c1842
+    name: authinfo
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/authinfo-0.2.0/authinfo-0.2.0.tgz
+    version: 0.2.0
+  - apiVersion: v2
+    appVersion: 1.0.0
     created: "2025-08-16T08:59:34.458734554Z"
     description: Simple auth info endpoint exposing login url and supported datastacks
     digest: 917b55ebc31b43f781b43d824e2de9317af0738e34898bb71b46419801cbc6e6
@@ -741,4 +750,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2025-11-10T00:16:55.513465286Z"
+generated: "2025-11-10T15:31:42.930355602Z"
