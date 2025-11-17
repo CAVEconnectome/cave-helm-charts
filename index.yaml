@@ -394,6 +394,15 @@ entries:
     version: 5.13.4-r6
   - apiVersion: v2
     appVersion: 5.13.4
+    created: "2025-11-17T15:11:00.291467706Z"
+    description: A Helm chart for CAVE materialization service on Kubernetes
+    digest: f3c2ba1ec92454087d5f376f5cb153c9c0bb1363262e3d89d7a06ed3e4c8b86f
+    name: materializationengine
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/materializationengine-5.13.4-r6/materializationengine-5.13.4-r6.tgz
+    version: 5.13.4-r6
+  - apiVersion: v2
+    appVersion: 5.13.4
     created: "2025-11-09T23:30:56.371542747Z"
     description: A Helm chart for CAVE materialization service on Kubernetes
     digest: 502de4bf73dc7297e202340dd20600b8fc0b36d0dbcc7884aaf566afd49adf99
@@ -721,6 +730,16 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/skeletoncache-0.1.0/skeletoncache-0.1.0.tgz
     version: 0.1.0
+  swaggerui:
+  - apiVersion: v1
+    appVersion: 5.24.12
+    created: "2025-11-17T15:11:00.448496812Z"
+    description: Swagger UI code for API documentation used across services
+    digest: ea2a69171945a49960504ae190b599f798ceb2524325b6998f8c91dba0977daa
+    name: swaggerui
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/swaggerui-0.1.0/swaggerui-0.1.0.tgz
+    version: 0.1.0
   tourguide:
   - apiVersion: v1
     appVersion: 2.3.1
@@ -758,4 +777,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2025-11-10T23:53:04.7513738Z"
+generated: "2025-11-17T15:11:00.448978263Z"
