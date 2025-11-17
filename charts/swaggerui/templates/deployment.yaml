@@ -1,0 +1,65 @@
+{{- $raw := .Values.emannotationschemas.tag | default .Values.emannotationschemas.version | default .Chart.AppVersion -}}
+{{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
+{{- $repo := .Values.emannotationschemas.repo | default "emannotationschemas" -}}
+{{- $defaultImage := printf "%s/%s:%s" .Values.cluster.dockerRegistry $repo $tag -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: swaggerui-dep
+spec:
+  replicas: {{ .Values.swaggerui.replicas | default 1 }}
+  selector:
+    matchLabels:
+      app: swaggerui-app
+  template:
+    metadata:
+      labels:
+        app: swaggerui-app
+    spec:
+      containers:
+        - name: swaggerui
+          image: {{ .Values.swaggerui.image | default $defaultImage }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          env:
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: {{ printf "/home/nginx/.cloudvolume/secrets/%s" (.Values.swaggerui.googleSecretFilename | default "google-secret.json") | quote }}
+            - name: AUTH_URI
+              value: {{ .Values.cluster.globalServer | required "cluster.globalServer required" | quote }}
+            - name: STICKY_AUTH_URL
+              value: {{ printf "%s/sticky_auth" (required "cluster.globalServer required" .Values.cluster.globalServer) | quote }}
+            - name: AUTH_URL
+              value: {{ printf "%s/auth" (required "cluster.globalServer required" .Values.cluster.globalServer) | quote }}
+          readinessProbe:
+            httpGet:
+              path: /schema/views/version
+              port: 80
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
+            periodSeconds: 60
+          livenessProbe:
+            httpGet:
+              path: /schema/views/version
+              port: 80
+            initialDelaySeconds: 15
+            timeoutSeconds: 1
+            periodSeconds: 60
+        - name: sysctl-buddy
+          image: alpine:3.4
+          command:
+            - /bin/sh
+            - -c
+            - |
+              while true; do
+                sysctl -w net.core.somaxconn=32768
+                sysctl -w net.ipv4.ip_local_port_range='1024 65535'
+                sleep 10
+              done
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 10Mi
+              cpu: 5m

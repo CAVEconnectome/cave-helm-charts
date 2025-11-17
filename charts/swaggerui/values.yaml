@@ -1,0 +1,19 @@
+cluster:
+  # required to fill in or choose
+  globalServer: ""
+  environment: ""
+  domainName: ""
+  googleProject: ""
+  dataProjectName: ""
+  googleRegion: "us-east1"
+  googleZone: "us-east1-b"
+  # likely fine as defaults
+  standardPool: "standard-pool"
+  dockerRegistry: "docker.io/caveconnectome"
+  dns_entries: []
+swaggerui:
+  replicas: 1
+  googleSecretFilename: ""
+emannotationschemas:
+  tag: ""
+  repo: ""
