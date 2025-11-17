@@ -61,6 +61,7 @@ materialize:
   orchestrationAsJobs: true
   orchestrationMaxJobs: 50
   orchestrationPollingInterval: 120
+  orchestrationJobTimeout: 86400
   redis:
     # need to fill in with redis IP 
     host: ""

@@ -17,6 +17,7 @@ spec:
   jobTargetRef:
     parallelism: 1
     completions: 1
+    activeDeadlineSeconds: {{ .Values.materialize.orchestrationJobTimeout | default 86400 }}  # Default: 1 day (86400 seconds)
     template:
       metadata:
         labels:
