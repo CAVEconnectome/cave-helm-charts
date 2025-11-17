@@ -7,7 +7,7 @@ kind: ScaledJob
 metadata:
   name: celery-orchestration
 spec:
-  pollingInterval: 30
+  pollingInterval: 120
   successfulJobsHistoryLimit: 5
   failedJobsHistoryLimit: 5
   maxReplicaCount: {{ .Values.materialize.orchestrationMaxJobs | default 50 }}
