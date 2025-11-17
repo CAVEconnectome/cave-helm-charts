@@ -59,6 +59,8 @@ materialize:
   consumerQueueName: "process"
   orchestrationQueueName: "orchestration"
   orchestrationAsJobs: true
+  orchestrationMaxJobs: 50
+  orchestrationPollingInterval: 120
   redis:
     # need to fill in with redis IP 
     host: ""
