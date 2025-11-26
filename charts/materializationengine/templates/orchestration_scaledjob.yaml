@@ -23,7 +23,7 @@ spec:
         labels:
           app: celery-orchestration
         annotations:
-          checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+          checksum/config: {{ include (print $.Template.BasePath "/orchestration_configmap.yaml") . | sha256sum }}
           checksum/secrets: {{ include (print $.Template.BasePath "/materialize_secret.yaml") . | sha256sum }}
           checksum/cloudsql: {{ include (print $.Template.BasePath "/cloudsql_secret.yaml") . | sha256sum }}
       spec:
@@ -38,7 +38,7 @@ spec:
         volumes:
           - name: materializationengine-config-volume
             configMap:
-              name: materializationengine-config
+              name: materializationengine-orchestration-config
           - name: google-cloud-key
             secret:
               secretName: materialize-google-cloud-key

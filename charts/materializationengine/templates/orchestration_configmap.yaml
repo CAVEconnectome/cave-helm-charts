@@ -1,0 +1,76 @@
+{{- $cloudsql_pw := .Values.cloudsql.password | required ".Values.cloudsql.password is required." }}
+{{- $redis_host := .Values.materialize.redis.host | required ".Values.materialize.redis.host is required." }}
+{{- $global_server := .Values.cluster.globalServer | required ".Values.cluster.globalServer is required." }}
+{{- $domain_name := .Values.cluster.domainName | required ".Values.cluster.domainName is required." }}
+{{- $health_aligned_volume_name := .Values.annotation.healthAlignedVolumeName | required ".Values.annotation.healthAlignedVolumeName is required." }}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: materializationengine-orchestration-config
+data:
+  config.cfg: |
+    import os
+    import json
+    import logging
+    # Dynamic config generation
+    INFOSERVICE_ENDPOINT = "https://{{ .Values.cluster.globalServer }}/info"
+    SCHEMA_SERVICE_ENDPOINT = "https://{{ .Values.cluster.globalServer }}/schema/"
+    GLOBAL_SERVER_URL = "https://{{ .Values.cluster.globalServer }}"
+    LOCAL_SERVER_URL = "https://{{ .Values.cluster.environment | default "local" }}.{{ .Values.cluster.domainName }}"
+    TESTING = False
+    SQLALCHEMY_DATABASE_URI = "postgres://{{ .Values.cloudsql.username}}:{{ .Values.cloudsql.password}}@127.0.0.1:3306/annotation"
+    REDIS_HOST = "{{ .Values.materialize.redis.host}}"
+    REDIS_PORT = "{{ .Values.materialize.redis.port}}"
+    REDIS_PASSWORD = "{{ .Values.materialize.redis.password}}"
+    REDIS_URL = "redis://:{{ .Values.materialize.redis.password}}@{{ .Values.materialize.redis.host}}:{{ .Values.materialize.redis.post}}/0"
+    # Add all other configuration options similarly...
+    CELERY_BROKER_URL = REDIS_URL
+    CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+    MATERIALIZATION_ROW_CHUNK_SIZE = 500
+    TEST_DB_NAME = "{{ .Values.annotation.healthAlignedVolumeName }}"
+    INFO_API_VERSION = 2
+    DATASTACKS ={{ .Values.materialize.datastacks | toJson}}
+    DAYS_TO_EXPIRE = 7
+    LTS_DAYS_TO_EXPIRE = 30
+    # database number config
+    MIN_DATABASES = {{ .Values.materialize.minDatabases | default 1 }}
+    MAX_DATABASES = {{ .Values.materialize.maxDatabases | default 3 }}  
+    # celery throttling settings
+    QUERY_LIMIT_SIZE = {{ .Values.materialize.querylimit | default 500000 }}
+    QUEUE_LENGTH_LIMIT = 10000
+    QUEUES_TO_THROTTLE = ["process"]
+    THROTTLE_QUEUES = True
+    MERGE_TABLES = False
+    LOGGING_LEVEL = logging.ERROR
+    if os.environ.get("DAF_CREDENTIALS", None) is not None:
+        with open(os.environ.get("DAF_CREDENTIALS"), "r") as f:
+            AUTH_TOKEN = json.load(f)["token"]
+    else:
+        AUTH_TOKEN = ""
+    {{ $raw := .Values.materialize.schedules }}
+    {{ if kindIs "string" $raw }}
+      {{ $s := trim $raw }}
+      {{ if or (hasPrefix "[" $s) (hasPrefix "{" $s) }}
+    BEAT_SCHEDULES = {{ $s | indent 4 }}
+      {{ else }}
+    BEAT_SCHEDULES = {{ $s | fromJson | toJson | indent 4 }}
+      {{ end }}
+    {{ else }}
+      {{- /* not a string: render as JSON; if empty list/map, render {} to satisfy code expecting a dict */ -}}
+      {{ $isList := kindIs "slice" $raw }}
+      {{ if and $isList (empty $raw) }}
+    BEAT_SCHEDULES = {}
+      {{ else }}
+    BEAT_SCHEDULES = {{ $raw | toJson | indent 4 }}
+      {{ end }}
+    {{ end }}
+    AUTH_SHARED_EXCLUDED_GROUPS={{ .Values.annotation.excludedPermissionGroups | toJson }}
+    DB_CONNECTION_POOL_SIZE = 5 
+    DB_CONNECTION_MAX_OVERFLOW = 5
+    # Celery worker autoshutdown settings for orchestration pods
+    CELERY_WORKER_AUTOSHUTDOWN_ENABLED = {{ if hasKey .Values.materialize "orchestrationAutoshutdownEnabled" }}{{ if .Values.materialize.orchestrationAutoshutdownEnabled }}True{{ else }}False{{ end }}{{ else }}True{{ end }}
+    CELERY_WORKER_AUTOSHUTDOWN_MAX_TASKS = {{ .Values.materialize.orchestrationAutoshutdownMaxTasks | default 1 }}
+    CELERY_WORKER_AUTOSHUTDOWN_DELAY_SECONDS = {{ .Values.materialize.orchestrationAutoshutdownDelaySeconds | default 2 }}
+
