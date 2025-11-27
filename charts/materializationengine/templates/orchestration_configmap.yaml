@@ -69,6 +69,12 @@ data:
     AUTH_SHARED_EXCLUDED_GROUPS={{ .Values.annotation.excludedPermissionGroups | toJson }}
     DB_CONNECTION_POOL_SIZE = 5 
     DB_CONNECTION_MAX_OVERFLOW = 5
+    {{- if .Values.materialize.uploadBucketName }}
+    MATERIALIZATION_UPLOAD_BUCKET_PATH = "{{ .Values.materialize.uploadBucketName }}"
+    {{- end }}
+    {{- if .Values.materialize.dumpBucketName }}
+    MATERIALIZATION_DUMP_BUCKET_PATH = "{{ .Values.materialize.dumpBucketName }}"
+    {{- end }}
     # Celery worker autoshutdown settings for orchestration pods
     CELERY_WORKER_AUTOSHUTDOWN_ENABLED = {{ if hasKey .Values.materialize "orchestrationAutoshutdownEnabled" }}{{ if .Values.materialize.orchestrationAutoshutdownEnabled }}True{{ else }}False{{ end }}{{ else }}True{{ end }}
     CELERY_WORKER_AUTOSHUTDOWN_MAX_TASKS = {{ .Values.materialize.orchestrationAutoshutdownMaxTasks | default 1 }}
