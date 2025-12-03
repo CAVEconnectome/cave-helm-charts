@@ -375,6 +375,15 @@ entries:
     version: 0.1.0
   materializationengine:
   - apiVersion: v2
+    appVersion: 5.14.2
+    created: "2025-12-03T15:16:13.262499153Z"
+    description: A Helm chart for CAVE materialization service on Kubernetes
+    digest: 7eef01ab15c19111d4096f45f6ce338487fdd1034e5bbe393ed1330eec39f881
+    name: materializationengine
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/materializationengine-5.14.2/materializationengine-5.14.2.tgz
+    version: 5.14.2
+  - apiVersion: v2
     appVersion: 5.14.1
     created: "2025-11-26T21:37:06.657887466Z"
     description: A Helm chart for CAVE materialization service on Kubernetes
@@ -457,18 +466,18 @@ entries:
     version: 5.13.4-r6
   - apiVersion: v2
     appVersion: 5.13.4
-    created: "2025-11-17T15:12:27.98423651Z"
+    created: "2025-11-10T00:16:55.513121546Z"
     description: A Helm chart for CAVE materialization service on Kubernetes
-    digest: b5eacbd2d8f694cef020bf8a85921170580f942cf345197b493cd5284db992a2
+    digest: 8b063309b37454273e1538ef5507fe080c9c8f2a15e7152304a26726f88d6465
     name: materializationengine
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/materializationengine-5.13.4-r6/materializationengine-5.13.4-r6.tgz
     version: 5.13.4-r6
   - apiVersion: v2
     appVersion: 5.13.4
-    created: "2025-11-10T00:16:55.513121546Z"
+    created: "2025-11-17T15:12:27.98423651Z"
     description: A Helm chart for CAVE materialization service on Kubernetes
-    digest: 8b063309b37454273e1538ef5507fe080c9c8f2a15e7152304a26726f88d6465
+    digest: b5eacbd2d8f694cef020bf8a85921170580f942cf345197b493cd5284db992a2
     name: materializationengine
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/materializationengine-5.13.4-r6/materializationengine-5.13.4-r6.tgz
@@ -849,4 +858,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2025-11-27T03:13:22.723733678Z"
+generated: "2025-12-03T15:16:13.262931231Z"
