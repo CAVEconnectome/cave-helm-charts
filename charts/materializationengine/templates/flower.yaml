@@ -35,7 +35,7 @@ spec:
           image: mher/flower:0.9.5
           args:
             - flower
-            - --broker=redis://{{ .Values.materialize.redis.ip}}:{{ .Values.materialize.redis.port}}/0
+            - --broker=redis://{{ .Values.materialize.redis.host}}:{{ .Values.materialize.redis.port}}/0
             - --port=5555
             - --purge_offline_workers=1
           env:
