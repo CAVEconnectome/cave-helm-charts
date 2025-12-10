@@ -72,6 +72,6 @@ data:
     {{- if .Values.materialize.uploadBucketName }}
     MATERIALIZATION_UPLOAD_BUCKET_PATH = "{{ .Values.materialize.uploadBucketName }}"
     {{- end }}
-    {{- if .Values.materialize.dumpBucketName }}
-    MATERIALIZATION_DUMP_BUCKET_PATH = "{{ .Values.materialize.dumpBucketName }}"
+    {{- if .Values.materialize.dumpBucketPath }}
+    MATERIALIZATION_DUMP_BUCKET_PATH = "{{ .Values.materialize.dumpBucketPath }}"
     {{- end }}
