@@ -44,7 +44,7 @@ data:
     QUEUES_TO_THROTTLE = ["process"]
     THROTTLE_QUEUES = True
     MERGE_TABLES = False
-    LOGGING_LEVEL = logging.ERROR
+    LOGGING_LEVEL = logging.{{ .Values.materialize.loggingLevel | default "ERROR" | upper }}
     if os.environ.get("DAF_CREDENTIALS", None) is not None:
         with open(os.environ.get("DAF_CREDENTIALS"), "r") as f:
             AUTH_TOKEN = json.load(f)["token"]
@@ -59,10 +59,10 @@ data:
     BEAT_SCHEDULES = {{ $s | fromJson | toJson | indent 4 }}
       {{ end }}
     {{ else }}
-      {{- /* not a string: render as JSON; if empty list/map, render {} to satisfy code expecting a dict */ -}}
+      {{- /* not a string: render as JSON; if empty list, render [] to satisfy code expecting a list */ -}}
       {{ $isList := kindIs "slice" $raw }}
       {{ if and $isList (empty $raw) }}
-    BEAT_SCHEDULES = {}
+    BEAT_SCHEDULES = []
       {{ else }}
     BEAT_SCHEDULES = {{ $raw | toJson | indent 4 }}
       {{ end }}

@@ -81,6 +81,8 @@ spec:
               value: {{ .Values.cluster.globalServer }}/auth
             - name: DAF_CREDENTIALS
               value: /home/nginx/.cloudvolume/secrets/cave-secret.json
+            - name: CELERY_CLOUDVOLUME_CACHE_BYTES
+              value: "100000000"
           resources:
             requests:
               cpu: 10m

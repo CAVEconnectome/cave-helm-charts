@@ -68,6 +68,8 @@ materialize:
     # likely fine
     port: "6379"
     password: ""
+  # logging level: ERROR, WARNING, INFO, DEBUG (default: ERROR)
+  loggingLevel: "ERROR"
   resources:
     requests:
       memory: "700Mi"
