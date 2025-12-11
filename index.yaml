@@ -739,6 +739,15 @@ entries:
     version: 1.3.1-r1
   - apiVersion: v1
     appVersion: 1.3.1
+    created: "2025-12-11T00:02:19.00818276Z"
+    description: PCG L2 cache API and workers
+    digest: 005d4e6c3b42ff8ff178e664f2ca7b9ca3bc2d9ffbc64544fc9576f2f077c34f
+    name: pcgl2cache
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/pcgl2cache-1.3.1-dev.1/pcgl2cache-1.3.1-dev.1.tgz
+    version: 1.3.1-dev.1
+  - apiVersion: v1
+    appVersion: 1.3.1
     created: "2025-08-18T04:38:07.321201842Z"
     description: PCG L2 cache API and workers
     digest: 530142a6fda31a98d0290608ac087b987641cf20e7488c2f3c7bf596666eb3be
@@ -813,6 +822,15 @@ entries:
     version: 0.22.49
   - apiVersion: v1
     appVersion: 0.22.49
+    created: "2025-12-11T00:02:19.194206835Z"
+    description: Skeleton cache API and workers
+    digest: 1c28dddd2fb0ea86354e80cab693f15082f89c35d9251a4a157aac028d75a7c5
+    name: skeletoncache
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/skeletoncache-0.22.49-dev.2/skeletoncache-0.22.49-dev.2.tgz
+    version: 0.22.49-dev.2
+  - apiVersion: v1
+    appVersion: 0.22.49
     created: "2025-12-10T23:57:18.714487261Z"
     description: Skeleton cache API and workers
     digest: ccbde5bdc5b13b04084f765575a2aa8a1e729ca2ade7b42619146a99e90534a0
@@ -885,4 +903,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2025-12-10T23:57:18.71470691Z"
+generated: "2025-12-11T00:02:19.194449717Z"
