@@ -43,7 +43,7 @@ data:
     QUEUES_TO_THROTTLE = ["process"]
     THROTTLE_QUEUES = True
     MERGE_TABLES = False
-    LOGGING_LEVEL = logging.ERROR
+    LOGGING_LEVEL = logging.{{ .Values.materialize.loggingLevel | default "ERROR" | upper }}ERROR
     if os.environ.get("DAF_CREDENTIALS", None) is not None:
         with open(os.environ.get("DAF_CREDENTIALS"), "r") as f:
             AUTH_TOKEN = json.load(f)["token"]
