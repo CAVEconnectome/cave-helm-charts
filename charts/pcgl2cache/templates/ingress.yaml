@@ -17,8 +17,8 @@ spec:
     - host: {{ $host }}
       http:
         paths:
-          - pathType: Prefix
-            path: /l2cache
+          - path: /l2cache
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: pcgl2cache-service
