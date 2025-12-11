@@ -12,7 +12,7 @@ spec:
       http:
         paths:
           - path: /skeletoncache
-            pathType: Prefix
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: skeletoncache
