@@ -34,6 +34,7 @@ data:
     DATASTACKS ={{ .Values.materialize.datastacks | toJson}}
     DAYS_TO_EXPIRE = 7
     LTS_DAYS_TO_EXPIRE = 30
+    SQL_INSTANCE_NAME = "{{ .Values.cloudsql.sqlInstanceName }}"
     # database number config
     MIN_DATABASES = {{ .Values.materialize.minDatabases | default 1 }}
     MAX_DATABASES = {{ .Values.materialize.maxDatabases | default 3 }}  
