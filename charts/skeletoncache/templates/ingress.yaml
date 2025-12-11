@@ -4,7 +4,7 @@ kind: Ingress
 metadata:
   name: skeletoncache
   annotations:
-    kubernetes.io/ingress.class: "nginx"
+    kubernetes.io/ingress.class: nginx
 spec:
   rules:
   {{- range $host := .Values.cluster.dns_entries }}
