@@ -385,6 +385,15 @@ entries:
     version: 5.14.2
   - apiVersion: v2
     appVersion: 5.14.2
+    created: "2025-12-12T03:50:33.222965827Z"
+    description: A Helm chart for CAVE materialization service on Kubernetes
+    digest: 638ccd888e76485c5be0539ea8a9ab3c4ab9bac91fc5a0886192cfc9635908de
+    name: materializationengine
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/materializationengine-5.14.2-dev.12/materializationengine-5.14.2-dev.12.tgz
+    version: 5.14.2-dev.12
+  - apiVersion: v2
+    appVersion: 5.14.2
     created: "2025-12-12T03:45:37.040420643Z"
     description: A Helm chart for CAVE materialization service on Kubernetes
     digest: 0ae6b665c5179d321d286af6e55f1a0b853ec31fdda8c0834f849d562c62f244
@@ -556,9 +565,9 @@ entries:
     version: 5.13.4-r7
   - apiVersion: v2
     appVersion: 5.13.4
-    created: "2025-11-10T00:16:55.513121546Z"
+    created: "2025-11-17T15:11:00.291467706Z"
     description: A Helm chart for CAVE materialization service on Kubernetes
-    digest: 8b063309b37454273e1538ef5507fe080c9c8f2a15e7152304a26726f88d6465
+    digest: f3c2ba1ec92454087d5f376f5cb153c9c0bb1363262e3d89d7a06ed3e4c8b86f
     name: materializationengine
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/materializationengine-5.13.4-r6/materializationengine-5.13.4-r6.tgz
@@ -574,9 +583,9 @@ entries:
     version: 5.13.4-r6
   - apiVersion: v2
     appVersion: 5.13.4
-    created: "2025-11-17T15:11:00.291467706Z"
+    created: "2025-11-10T00:16:55.513121546Z"
     description: A Helm chart for CAVE materialization service on Kubernetes
-    digest: f3c2ba1ec92454087d5f376f5cb153c9c0bb1363262e3d89d7a06ed3e4c8b86f
+    digest: 8b063309b37454273e1538ef5507fe080c9c8f2a15e7152304a26726f88d6465
     name: materializationengine
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/materializationengine-5.13.4-r6/materializationengine-5.13.4-r6.tgz
@@ -1020,4 +1029,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2025-12-12T03:45:37.041009261Z"
+generated: "2025-12-12T03:50:33.223555448Z"
