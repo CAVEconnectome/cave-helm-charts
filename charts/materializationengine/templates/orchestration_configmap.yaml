@@ -79,4 +79,5 @@ data:
     CELERY_WORKER_AUTOSHUTDOWN_ENABLED = {{ if hasKey .Values.materialize "orchestrationAutoshutdownEnabled" }}{{ if .Values.materialize.orchestrationAutoshutdownEnabled }}True{{ else }}False{{ end }}{{ else }}True{{ end }}
     CELERY_WORKER_AUTOSHUTDOWN_MAX_TASKS = {{ .Values.materialize.orchestrationAutoshutdownMaxTasks | default 1 }}
     CELERY_WORKER_AUTOSHUTDOWN_DELAY_SECONDS = {{ .Values.materialize.orchestrationAutoshutdownDelaySeconds | default 2 }}
+    CELERY_WORKER_IDLE_TIMEOUT_SECONDS = {{ .Values.materialize.orchestrationIdleTimeoutSeconds | default 0 }}
 

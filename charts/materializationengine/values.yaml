@@ -66,6 +66,9 @@ materialize:
   orchestrationAutoshutdownEnabled: true
   orchestrationAutoshutdownMaxTasks: 1
   orchestrationAutoshutdownDelaySeconds: 2
+  # Idle timeout in seconds. Worker will shutdown if no tasks processed within this time.
+  # Set to 0 to disable idle timeout (default: 0 = disabled)
+  orchestrationIdleTimeoutSeconds: 0
   redis:
     # need to fill in with redis IP 
     host: ""
