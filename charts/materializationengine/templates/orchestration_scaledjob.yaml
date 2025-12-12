@@ -111,8 +111,10 @@ spec:
               requests:
                 cpu: {{ .Values.materialize.celeryOrchestrationCpu | default "500m" }}
                 memory: {{ .Values.materialize.celeryOrchestrationMemory | default "2Gi" }}
+        initContainers:
           - name: cloudsql-proxy
             image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.15.2
+            restartPolicy: Always
             args:
               - "--port=3306"
               - "--credentials-file=/secrets/cloudsql/google-secret.json"
