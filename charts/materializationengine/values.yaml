@@ -62,6 +62,7 @@ materialize:
   orchestrationMaxJobs: 50
   orchestrationPollingInterval: 120
   orchestrationJobTimeout: 86400
+  orchestrationJobTtlAfterFinished: 86400
   orchestrationAutoshutdownEnabled: true
   orchestrationAutoshutdownMaxTasks: 1
   orchestrationAutoshutdownDelaySeconds: 2
