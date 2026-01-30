@@ -253,6 +253,16 @@ entries:
     version: 0.2.0
   emannotationschemas:
   - apiVersion: v2
+    appVersion: 5.24.13
+    created: "2026-01-30T15:07:59.432962539Z"
+    description: EMAnnotationSchemas service (global)
+    digest: 1a7f1535a57f479252cde8dd3d1e7443c1ae40c480635547308550e5da248930
+    name: emannotationschemas
+    type: application
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/emannotationschemas-5.24.13/emannotationschemas-5.24.13.tgz
+    version: 5.24.13
+  - apiVersion: v2
     appVersion: 5.24.12
     created: "2025-08-29T16:58:54.842988338Z"
     description: EMAnnotationSchemas service (global)
@@ -374,6 +384,15 @@ entries:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/infoservice-0.1.0/infoservice-0.1.0.tgz
     version: 0.1.0
   materializationengine:
+  - apiVersion: v2
+    appVersion: 5.14.3
+    created: "2026-01-30T15:07:59.577470507Z"
+    description: A Helm chart for CAVE materialization service on Kubernetes
+    digest: e9ee50abdee120ca592a78b59ccd47793a23ef51edd66ca1c0edcdda63d753b1
+    name: materializationengine
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/materializationengine-5.14.3/materializationengine-5.14.3.tgz
+    version: 5.14.3
   - apiVersion: v2
     appVersion: 5.14.2
     created: "2025-12-03T15:16:13.262499153Z"
@@ -1047,4 +1066,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2025-12-13T01:58:10.800423579Z"
+generated: "2026-01-30T15:07:59.577927341Z"
