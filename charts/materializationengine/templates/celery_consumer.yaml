@@ -72,6 +72,8 @@ spec:
               value: "5000"
             - name: QUEUES_TO_THROTTLE
               value: process
+            - name: LOCAL_SERVER_URL
+              value: {{ .Values.materialize.pychunkedgraphReadServiceUrl | default "http://pychunkedgraph-read-service/" }}
             - name: THROTTLE_QUEUES
               value: "true"
             - name: CELERY_BROKER_URL
