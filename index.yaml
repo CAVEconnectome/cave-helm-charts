@@ -262,6 +262,16 @@ entries:
     version: 0.2.0
   emannotationschemas:
   - apiVersion: v2
+    appVersion: 5.25.1
+    created: "2026-02-28T00:29:43.273232791Z"
+    description: EMAnnotationSchemas service (global)
+    digest: be1198caae7757b7ecfa34c8dfec0cc74db8eb42d9ce53c2202d006a651d0332
+    name: emannotationschemas
+    type: application
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/emannotationschemas-5.25.1/emannotationschemas-5.25.1.tgz
+    version: 5.25.1
+  - apiVersion: v2
     appVersion: 5.25.0
     created: "2026-02-26T21:22:12.955423111Z"
     description: EMAnnotationSchemas service (global)
@@ -1121,4 +1131,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2026-02-27T17:20:22.564257357Z"
+generated: "2026-02-28T00:29:43.273615743Z"
