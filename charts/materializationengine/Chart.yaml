@@ -1,5 +1,5 @@
 apiVersion: v2
 name: materializationengine
 description: A Helm chart for CAVE materialization service on Kubernetes
-version: 5.16.3-1-g80e9ad8e
-appVersion: "5.16.3-1-g80e9ad8e"
+version: 5.16.4-1-g6057187c
+appVersion: "5.16.4-1-g6057187c"
