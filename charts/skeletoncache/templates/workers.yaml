@@ -41,7 +41,7 @@ spec:
             - containerPort: 80
           volumeMounts:
             - name: sksv-config-volume
-              mountPath: /app/skeletoncache/app/instance/
+              mountPath: /app/skeletonservice/instance/
           {{- if .Values.skeletoncache.credentialsSecret }}
             - name: google-cloud-key
               mountPath: /root/.cloudvolume/secrets
