@@ -75,7 +75,7 @@ spec:
               cpu: {{ .Values.skeletoncache.api.resources.requests.cpu }}
           volumeMounts:
             - name: skeleton-config-volume
-              mountPath: /app/skeletoncache/app/instance/
+              mountPath: /app/skeletonservice/instance/
           {{- if .Values.skeletoncache.credentialsSecret }}
             - name: google-cloud-key
               mountPath: /home/nginx/.cloudvolume/secrets
