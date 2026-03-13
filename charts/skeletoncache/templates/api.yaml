@@ -36,7 +36,7 @@ spec:
                 name: skeletoncache-config
           env:
             - name: GLOBAL_SERVER_URL
-              value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}
+              value: https://{{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}
             - name: AUTH_URI
               value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/auth
             - name: STICKY_AUTH_URL
