@@ -71,6 +71,8 @@ spec:
               value: {{ .Values.skeletoncache.debugRootId | default "0" | quote }}
             - name: PROJECT_NAME
               value: {{ .Values.cluster.googleProject | quote }}
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: "/home/nginx/.cloudvolume/secrets/google-secret.json"
           resources:
             requests:
               memory: {{ .Values.skeletoncache.api.resources.requests.memory }}

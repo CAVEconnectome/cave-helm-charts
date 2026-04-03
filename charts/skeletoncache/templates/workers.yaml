@@ -87,6 +87,8 @@ spec:
               value: {{ .Values.skeletoncache.verboseLevel | quote }}
             - name: DEBUG_ROOT_ID
               value: {{ .Values.skeletoncache.debugRootId | default "0" | quote }}
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: "/root/.cloudvolume/secrets/google-secret.json"
           resources:
             requests:
               memory: {{ .Values.skeletoncache.worker.resources.requests.memory }}
