@@ -75,7 +75,7 @@ keda:
   pollingSeconds: 15
   cooldownSeconds: 600
   activationValue: 0
-  timeHorizon: "2m"
+  timeHorizon: "1m"
   valueIfNull: 0
   pubsub:
     messagesPerWorker: 1
