@@ -15,7 +15,7 @@ metadata:
 spec:
   scaleTargetRef:
     name: skeletoncache-worker
-  minReplicaCount: {{ .Values.skeletoncache.worker.minReplicas | default 0 }}
+  minReplicaCount: {{ .Values.skeletoncache.worker.minReplicas | default 1 }}
   maxReplicaCount: {{ .Values.skeletoncache.worker.maxReplicas | default 50 }}
   cooldownPeriod: {{ .Values.keda.cooldownSeconds | default 600 }}
   pollingInterval: {{ .Values.keda.pollingSeconds | default 15 }}

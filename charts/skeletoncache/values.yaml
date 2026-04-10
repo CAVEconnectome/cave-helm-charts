@@ -31,7 +31,7 @@ skeletoncache:
         memory: 512Mi
         cpu: 200m
   worker:
-    minReplicas: 0
+    minReplicas: 1
     maxReplicas: 50
     resources:
       requests:
@@ -78,7 +78,7 @@ keda:
   timeHorizon: "1m"
   valueIfNull: 0
   pubsub:
-    messagesPerWorker: 1
+    messagesPerWorker: 3
 
 gmp:
   enabled: false
