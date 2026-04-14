@@ -52,7 +52,7 @@ spec:
         - name: AUTH_USE_REDIS
           value: "false"
         - name: SECRET_KEY
-          value: "{{ .Values.dash.secretKey }}"
+          value: "{{ .Values.dash.secretKey | required "dash.secretKey is required and should be a long random string" }}"
         - name: DASH_SETTINGS
           value: /app/app/instance/config.py
         resources:

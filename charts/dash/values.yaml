@@ -1,7 +1,7 @@
 dash: 
   # image tag; if empty defaults to Chart.appVersion; legacy dash.version still honored in templates
   tag: ""
-  secretKey: "!$#!#@$!#@qadsfasdf"
+  secretKey: "" # required for session security; should be a long random string
   minReplicas: 1
   maxReplicas: 10
 cluster:
