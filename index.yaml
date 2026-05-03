@@ -224,6 +224,15 @@ entries:
   cavecanary:
   - apiVersion: v2
     appVersion: 0.4.4
+    created: "2026-05-03T04:22:55.04405791Z"
+    description: A Helm chart for CAVE cavecanary service on Kubernetes
+    digest: f75f9df7d741b803469864c757b9ed4ca0b330881207e7a9d14c53b5a0ad3135
+    name: cavecanary
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/cavecanary-0.4.4/cavecanary-0.4.4.tgz
+    version: 0.4.4
+  - apiVersion: v2
+    appVersion: 0.4.4
     created: "2025-08-14T15:09:52.023685552Z"
     description: A Helm chart for CAVE cavecanary service on Kubernetes
     digest: 52d664dc1d2cfb1aa1dbb0d8dc92427bd445787870df6243fd25a1f46e679f98
@@ -1432,4 +1441,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2026-05-01T21:56:19.429064138Z"
+generated: "2026-05-03T04:22:55.257025995Z"
