@@ -3,17 +3,6 @@ cloudsql:
   googleSecret: ""
   username: "postgres"
   password: ""
-materialize:
-  # need to fill in
-  datastacks: 
-    - ""
-  secretFiles:
-    # need to fill in with path to secret file
-    - name: google-secret.json
-      value: ""
-    # need to fill in with path to secret file
-    - name: cave-secret.json
-      value: ""
 cluster:
   # required to fill in or choose
   globalServer: ""
@@ -27,8 +16,18 @@ cluster:
   lightweightPool: "lightweight-pool"
   dockerRegistry: "docker.io/caveconnectome"
 cavecanary:
-  # image tag; defaults to Chart.appVersion if empty; legacy .version still honored in template
+  # image tag; defaults to Chart.appVersion if empty
   tag: ""
+  # datastacks to monitor
+  datastacks:
+    - ""
+  secretFiles:
+    # need to fill in with path to secret file
+    - name: google-secret.json
+      value: ""
+    # need to fill in with path to secret file
+    - name: cave-secret.json
+      value: ""
 slack:
   api_token: ""
   canary_channel: ""
