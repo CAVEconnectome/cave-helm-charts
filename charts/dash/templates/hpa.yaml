@@ -16,6 +16,13 @@ spec:
       target:
         type: Utilization
         averageUtilization: 90
+  - type: Pods
+    pods:
+      metric:
+        name: custom.googleapis.com|http|uwsgi_perc_busy_workers
+      target:
+        type: AverageValue
+        averageValue: 75
   # - type: Resource
   #   resource:
   #     name: memory
