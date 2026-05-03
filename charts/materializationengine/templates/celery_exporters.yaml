@@ -31,6 +31,10 @@ spec:
             - {{ .Values.materialize.producerQueueName | default "process" }}
             - -q
             - {{ .Values.materialize.consumerQueueName | default "workflow"}}
+{{- if .Values.materialize.deltalakeEnabled }}
+            - -q
+            - {{ .Values.materialize.deltalakeQueueName | default "deltalake" }}
+{{- end }}
             - -q
             - {{ .Values.materialize.orchestrationQueueName | default "orchestration" }}
           ports:

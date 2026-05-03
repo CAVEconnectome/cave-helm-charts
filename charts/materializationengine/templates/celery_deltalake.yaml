@@ -1,33 +1,32 @@
 {{- $raw := .Values.materialize.tag | default .Values.materialize.version | default .Chart.AppVersion -}}
 {{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
-{{- if not .Values.materialize.orchestrationAsJobs }}
+{{- if .Values.materialize.deltalakeEnabled }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: celery-orchestration
+  name: celery-deltalake
 spec:
-  replicas: {{ .Values.materialize.orchestrationReplicas | default 2 }}
   selector:
     matchLabels:
-      app: celery-orchestration
+      app: celery-deltalake
   template:
     metadata:
       labels:
-        app: celery-orchestration
+        app: celery-deltalake
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/secrets: {{ include (print $.Template.BasePath "/materialize_secret.yaml") . | sha256sum }}
         checksum/cloudsql: {{ include (print $.Template.BasePath "/cloudsql_secret.yaml") . | sha256sum }}
     spec:
-      terminationGracePeriodSeconds: 6000
+      terminationGracePeriodSeconds: 30
       tolerations:
         - key: "pool"
           operator: "Equal"
-          value: "{{ $pool }}"
+          value: "{{ .Values.cluster.meshPool }}"
           effect: "NoSchedule"
       nodeSelector:
-        cloud.google.com/gke-nodepool: {{ $pool }}
+        cloud.google.com/gke-nodepool: {{ .Values.cluster.meshPool }}
       volumes:
         - name: materializationengine-config-volume
           configMap:
@@ -52,7 +51,7 @@ spec:
               else
                 until python -c 'import urllib.request,sys; sys.exit(0 if urllib.request.urlopen("http://127.0.0.1:9801/readiness", timeout=1).getcode()==200 else 1)' >/dev/null 2>&1; do echo "waiting for cloudsql-proxy..."; sleep 1; done
               fi
-              exec su nginx -c 'celery --app=run.celery worker --pool=prefork --hostname=worker.workflow@%h --queues={{ .Values.materialize.orchestrationQueueName | default "workflow" }} --max-tasks-per-child={{ .Values.materialize.celeryOrchestrationConcurrency | default 1 }} --loglevel=info -E -Ofair --concurrency={{ .Values.materialize.celeryOrchestrationConcurrency | default 1 }}'
+              exec su nginx -c 'celery --app=run.celery worker --pool=prefork --hostname=worker.{{ .Values.materialize.deltalakeQueueName }}@%h --queues={{ .Values.materialize.deltalakeQueueName }} --loglevel=info -E -Ofair --concurrency={{ .Values.materialize.celeryDeltalakeConcurrency }}'
           volumeMounts:
             - name: materializationengine-config-volume
               mountPath: /app/materializationengine/instance/
@@ -84,19 +83,25 @@ spec:
             - name: DAF_CREDENTIALS
               value: /home/nginx/.cloudvolume/secrets/cave-secret.json
             - name: QUEUE_NAME
-              value: {{ .Values.materialize.orchestrationQueueName | default "orchestration" }}
+              value: {{ .Values.materialize.deltalakeQueueName }}
             - name: WORKER_NAME
-              value: {{ .Values.materialize.celeryOrchestrationWorkerName | default "worker.orchestration" }}
-            - name: LOCAL_SERVER_URL
-              value: {{ .Values.materialize.pychunkedgraphReadServiceUrl | default "http://pychunkedgraph-read-service/" }}
+              value: {{ .Values.materialize.celeryDeltalakeWorkerName }}
             - name: QUEUE_LENGTH_LIMIT
               value: "5000"
             - name: QUEUES_TO_THROTTLE
               value: process
+            - name: LOCAL_SERVER_URL
+              value: {{ .Values.materialize.pychunkedgraphReadServiceUrl | default "http://pychunkedgraph-read-service/" }}
             - name: THROTTLE_QUEUES
               value: "true"
             - name: CELERY_CLOUDVOLUME_CACHE_BYTES
-              value: "100000000"
+              value: "{{ .Values.materialize.celeryDeltalakeCloudvolumeCacheBytes }}"
+            - name: CLOUDVOLUME_PARALLEL
+              value: "{{ .Values.materialize.celeryDeltalakeCloudvolumeParallel }}"
+            - name: BIGTABLE_PROJECT
+              value: {{ .Values.cluster.bigtableProject | default .Values.cluster.googleProject | quote }}
+            - name: BIGTABLE_INSTANCE
+              value: {{ .Values.cluster.bigtableInstance | default "" | quote }}
             - name: WORKER_HOSTNAME
               valueFrom:
                 fieldRef:
@@ -107,8 +112,8 @@ spec:
                   fieldPath: metadata.uid
           resources:
             requests:
-              cpu: {{ .Values.materialize.celeryOrchestrationCpu | default "500m" }}
-              memory: {{ .Values.materialize.celeryOrchestrationMemory | default "2Gi" }}
+              cpu: {{ .Values.materialize.celeryDeltalakeCpu }}
+              memory: {{ .Values.materialize.celeryDeltalakeMemory }}
           lifecycle:
             preStop:
               exec:

@@ -1,7 +1,7 @@
 annotation:
-  # add to this if you want to exclude joint membership in a group name 
+  # add to this if you want to exclude joint membership in a group name
   # from applying to group level permissions
-  excludedPermissionGroups: 
+  excludedPermissionGroups:
     - default
   # needs to be correspond to sql instance created
   # needs to correspond to a aligned volume that you created a database for
@@ -18,7 +18,7 @@ materialize:
   # image tag; if empty defaults to Chart.appVersion; legacy .materialize.version still honored
   tag: ""
   # need to fill in
-  datastacks: 
+  datastacks:
     - ""
   secretFiles:
     # need to fill in with path to secret file
@@ -36,9 +36,14 @@ materialize:
   producerMaxReplicas: 5
   consumerMinReplicas: 0
   consumerMaxReplicas: 50
+  # dedicated worker for deltalake queue
+  deltalakeEnabled: true
+  deltalakeMinReplicas: 1
+  deltalakeMaxReplicas: 1
   # KEDA scaling targets per-queue
   producerTargetQueueLength: 10
   consumerTargetQueueLength: 10
+  deltalakeTargetQueueLength: 2
   schedulerReplicas: 1
   # control how many databases it will allow materialization to create
   minDatabases: 1
@@ -52,12 +57,19 @@ materialize:
   celeryProducerMemory: "400Mi"
   celeryConsumerCpu: "100m"
   celeryConsumerMemory: "400Mi"
+  celeryDeltalakeCpu: "950m"
+  celeryDeltalakeMemory: "4000Mi"
   celeryProducerConcurrency: 2
   celeryConsumerConcurrency: 2
+  celeryDeltalakeConcurrency: 2
   # name of celery queues, likely fine as defaults
   producerQueueName: "workflow"
   consumerQueueName: "process"
+  deltalakeQueueName: "deltalake"
   orchestrationQueueName: "orchestration"
+  celeryDeltalakeWorkerName: "celery-deltalake"
+  celeryDeltalakeCloudvolumeCacheBytes: "100000000"
+  celeryDeltalakeCloudvolumeParallel: "10"
   orchestrationAsJobs: true
   orchestrationMaxJobs: 50
   orchestrationPollingInterval: 120
@@ -69,8 +81,9 @@ materialize:
   # Idle timeout in seconds. Worker will shutdown if no tasks processed within this time.
   # Set to 0 to disable idle timeout (default: 0 = disabled)
   orchestrationIdleTimeoutSeconds: 300
+  pychunkedgraphReadServiceUrl: "http://pychunkedgraph-read-service/"
   redis:
-    # need to fill in with redis IP 
+    # need to fill in with redis IP
     host: ""
     # likely fine
     port: "6379"
@@ -87,6 +100,10 @@ cluster:
   environment: ""
   domainName: ""
   googleProject: ""
+  # optional explicit Bigtable target for deltalake workers.
+  # if empty, deltalake worker defaults to cluster.googleProject for project and "" for instance.
+  bigtableProject: ""
+  bigtableInstance: ""
   googleRegion: "us-east1"
   googleZone: "us-east1-b"
   # likely fine as defaults

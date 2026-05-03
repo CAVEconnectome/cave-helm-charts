@@ -51,4 +51,27 @@ spec:
         targetValue: "{{ .Values.materialize.consumerTargetQueueLength }}"
       authenticationRef:
         name: keda-gcm-auth
+{{- if .Values.materialize.deltalakeEnabled }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: celery-deltalake-queue
+spec:
+  minReplicaCount: {{ .Values.materialize.deltalakeMinReplicas }}
+  maxReplicaCount: {{ .Values.materialize.deltalakeMaxReplicas }}
+  scaleTargetRef:
+    name: celery-deltalake
+  triggers:
+    - type: gcp-stackdriver
+      metadata:
+        # Scope to this cluster and namespace to avoid cross-cluster series
+        filter: resource.labels.cluster="{{ .Values.cluster.cluster }}" AND resource.labels.namespace="{{ .Release.Namespace }}" AND metric.type="prometheus.googleapis.com/celery_queue_length/gauge" AND metric.label.queue_name="{{ .Values.materialize.deltalakeQueueName }}"
+        alignmentPeriod: "60s"
+        projectId: {{ .Values.cluster.googleProject}}
+        perSeriesAligner: ALIGN_MEAN
+        targetValue: "{{ .Values.materialize.deltalakeTargetQueueLength }}"
+      authenticationRef:
+        name: keda-gcm-auth
+{{- end }}
 {{- end }}
