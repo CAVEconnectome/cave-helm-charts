@@ -1,8 +1,4 @@
-{
-  {
-    - $global_server := .Values.cluster.globalServer | required ".Values.cluster.globalServer is required.",
-  },
-}
+{{- $global_server := .Values.cluster.globalServer | required ".Values.cluster.globalServer is required." }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -13,5 +9,5 @@ data:
   MAT_ENGINE_URL: "{{ .Values.cluster.globalServer }}/materialize"
   CAVECLIENT_SERVER_ADDRESS: "{{ .Values.cluster.globalServer }}"
   AUTH_ENABLED: "true"
-  DATASTACKS: { { .Values.catalog.datastacks | toJson | quote } }
-  LOG_LEVEL: { { .Values.catalog.logLevel | default "ERROR" | quote } }
+  DATASTACKS: {{ .Values.catalog.datastacks | toJson | quote }}
+  LOG_LEVEL: {{ .Values.catalog.logLevel | default "ERROR" | quote }}
