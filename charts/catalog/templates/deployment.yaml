@@ -18,6 +18,7 @@ spec:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/secrets: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
         checksum/cloudsql: {{ include (print $.Template.BasePath "/cloudsql_secret.yaml") . | sha256sum }}
+        checksum/db-secret: {{ include (print $.Template.BasePath "/db_secret.yaml") . | sha256sum }}
     spec:
       tolerations:
         - key: "pool"
@@ -27,9 +28,6 @@ spec:
       nodeSelector:
         cloud.google.com/gke-nodepool: {{ .Values.cluster.standardPool }}
       volumes:
-        - name: catalog-config-volume
-          configMap:
-            name: catalog-config
         - name: google-cloud-key
           secret:
             secretName: catalog-google-cloud-key
@@ -48,6 +46,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: catalog-config
+            - secretRef:
+                name: catalog-db-secret
           env:
             - name: GOOGLE_APPLICATION_CREDENTIALS
               value: /home/nginx/.cloudvolume/secrets/google-secret.json

@@ -8,7 +8,6 @@ catalog:
       value: ""
     - name: cave-secret.json
       value: ""
-  authEnabled: true
   logLevel: "ERROR"
   resources:
     requests:
@@ -29,6 +28,8 @@ cluster:
   globalServer: ""
   environment: ""
   domainName: ""
+  cluster_prefix: ""
+  dns_entries: []
   googleProject: ""
   googleRegion: "us-east1"
   googleZone: "us-east1-b"
