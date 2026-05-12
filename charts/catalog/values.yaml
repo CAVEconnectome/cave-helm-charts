@@ -1,0 +1,36 @@
+catalog:
+  # image tag; if empty defaults to Chart.appVersion
+  tag: ""
+  datastacks:
+    - ""
+  secretFiles:
+    - name: google-secret.json
+      value: ""
+    - name: cave-secret.json
+      value: ""
+  authEnabled: true
+  logLevel: "ERROR"
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+  minReplicas: 1
+  maxReplicas: 3
+
+cloudsql:
+  sqlInstanceName: ""
+  googleSecret: ""
+  username: "postgres"
+  password: ""
+  database: "cave_catalog"
+  port: "5432"
+
+cluster:
+  globalServer: ""
+  environment: ""
+  domainName: ""
+  googleProject: ""
+  googleRegion: "us-east1"
+  googleZone: "us-east1-b"
+  standardPool: "standard-pool"
+  dockerRegistry: "docker.io/caveconnectome"

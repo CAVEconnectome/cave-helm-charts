@@ -1,0 +1,14 @@
+{{- $cloudsql_pw := .Values.cloudsql.password | required ".Values.cloudsql.password is required." }}
+{{- $global_server := .Values.cluster.globalServer | required ".Values.cluster.globalServer is required." }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: catalog-config
+data:
+  DATABASE_URL: "postgresql+asyncpg://{{ .Values.cloudsql.username }}:{{ .Values.cloudsql.password }}@127.0.0.1:{{ .Values.cloudsql.port | default "5432" }}/{{ .Values.cloudsql.database | default "cave_catalog" }}"
+  AUTH_SERVICE_URL: "{{ .Values.cluster.globalServer }}/auth"
+  MAT_ENGINE_URL: "{{ .Values.cluster.globalServer }}/materialize"
+  CAVECLIENT_SERVER_ADDRESS: "{{ .Values.cluster.globalServer }}"
+  DATASTACKS: {{ .Values.catalog.datastacks | toJson | quote }}
+  LOG_LEVEL: {{ .Values.catalog.logLevel | default "ERROR" | quote }}
