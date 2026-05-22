@@ -1324,6 +1324,15 @@ entries:
   skeletoncache:
   - apiVersion: v1
     appVersion: 0.22.49
+    created: "2026-05-22T17:21:58.022053761Z"
+    description: Skeleton cache API and workers
+    digest: 597989854d695ff8e11ccfeed3bec1c113ea72a8cd9519ed302031800d9ea657
+    name: skeletoncache
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/skeletoncache-0.22.50-r1/skeletoncache-0.22.50-r1.tgz
+    version: 0.22.50-r1
+  - apiVersion: v1
+    appVersion: 0.22.49
     created: "2025-08-29T16:24:20.544007052Z"
     description: Skeleton cache API and workers
     digest: 87a1d73ba471267a10e986ea695199da8ed836ec1cf5535905f55497f8a255a7
@@ -1558,4 +1567,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2026-05-22T17:18:21.501134633Z"
+generated: "2026-05-22T17:21:58.022482596Z"
