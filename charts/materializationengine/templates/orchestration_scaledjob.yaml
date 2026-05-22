@@ -83,7 +83,7 @@ spec:
               - name: REDIS_PORT
                 value: "{{ .Values.materialize.redis.port }}"
               - name: REDIS_PASSWORD
-                value: {{ .Values.materialize.redis.password }}
+                value: {{ .Values.materialize.redis.password | default "" }}
               - name: CELERY_BROKER_URL
                 value: redis://:{{ .Values.materialize.redis.password}}@{{ .Values.materialize.redis.host}}:{{ .Values.materialize.redis.port}}/0
               - name: GOOGLE_APPLICATION_CREDENTIALS
