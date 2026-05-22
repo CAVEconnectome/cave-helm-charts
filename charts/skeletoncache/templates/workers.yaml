@@ -5,7 +5,7 @@ kind: Deployment
 metadata:
   name: skeletoncache-worker
 spec:
-  replicas: {{ if .Values.keda.enabled }}0{{ else }}{{ .Values.skeletoncache.worker.minReplicas | default 0 }}{{ end }}
+  {{ if .Values.keda.enabled }}{{ else }}replicas: {{ .Values.skeletoncache.worker.minReplicas | default 1 }}{{ end }}
   selector:
     matchLabels:
       app: skeletoncache-worker
