@@ -18,6 +18,5 @@ spec:
                 name: skeletoncache
                 port:
                   number: 80
-                  targetPort: 80
   {{- end }}
 {{- end }}
