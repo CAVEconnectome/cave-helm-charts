@@ -24,10 +24,10 @@ spec:
       tolerations:
         - key: "pool"
           operator: "Equal"
-          value: "{{ $pool }}"
+          value: "{{ .Values.cluster.standardPool}}"
           effect: "NoSchedule"
       nodeSelector:
-        cloud.google.com/gke-nodepool: {{ $pool }}
+        cloud.google.com/gke-nodepool: {{ .Values.cluster.standardPool }}
       volumes:
         - name: materializationengine-config-volume
           configMap:
