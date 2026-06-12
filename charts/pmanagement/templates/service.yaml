@@ -1,0 +1,11 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: pmanagement-service
+spec:
+  type: NodePort
+  selector:
+    app: pmanagement
+  ports:
+    - port: 80
+      targetPort: 80

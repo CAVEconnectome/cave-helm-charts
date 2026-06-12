@@ -1,0 +1,5 @@
+apiVersion: v2
+name: pmanagemt
+description: A Helm chart for CAVE proofreading management services on Kubernetes
+version: 0.31.1
+appVersion: "0.31.1"

@@ -1,0 +1,100 @@
+{{- $raw := .Values.pmanagement.tag | default .Values.pmanagement.version | default .Chart.AppVersion   -}}
+{{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pmanagement
+spec:
+  selector:
+    matchLabels:
+      app: pmanagement
+  template:
+    metadata:
+      labels:
+        app: pmanagement
+    spec:
+      tolerations:
+        - key: "pool"
+          operator: "Equal"
+          value: "{{ .Values.cluster.lightweightPool }}"
+          effect: "NoSchedule"
+      nodeSelector:
+        cloud.google.com/gke-nodepool: "{{ .Values.cluster.lightweightPool }}"
+      volumes:
+        - name: google-cloud-key
+          secret:
+            secretName: "pmanagement-google-cloud-key"
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: pmanagement
+          image: {{ .Values.cluster.dockerRegistry }}/proofreadingmanagement:{{ $tag }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: google-cloud-key
+              mountPath: /home/nginx/.cloudvolume/secrets
+          env:
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /home/nginx/.cloudvolume/secrets/google-secret.json
+            - name: AUTH_URI
+              value: {{ .Values.cluster.globalServer | required "Values.cluster.globalServer is required" }}/auth
+            - name: STICKY_AUTH_URL
+              value: {{ .Values.cluster.globalServer | required "Values.cluster.globalServer is required" }}/sticky_auth
+            - name: AUTH_URL
+              value: {{ .Values.cluster.globalServer | required "Values.cluster.globalServer is required" }}/auth
+            - name: INFO_URL
+              value: {{ .Values.cluster.globalServer | required "Values.cluster.globalServer is required" }}/info
+            - name: PROJECT_ID
+              value: {{ .Values.cluster.dataProjectName }}
+            - name: PROJECT_NAME
+              value: {{ .Values.cluster.projectName }}
+            - name: PMANAGEMENT_URL_PREFIX
+              value: neurons
+            - name: AUTH_DATABASE_NAME
+              value: {{ .Values.pmanagement.authDataset | required "Values.pmanagement.authDataset is required" }}
+            - name: AUTH_USE_REDIS
+              value: "false"
+            - name: DAF_CREDENTIALS
+              value: /home/nginx/.cloudvolume/secrets/cave-secret.json
+            - name: PMANAGEMENT_PROOFREADING_TABLE
+              value: {{ .Values.pmanagement.proofreadingTable | required "Values.pmanagement.proofreadingTable is required" }}
+            - name: PMANAGEMENT_NEURONINFORMATION_TABLE
+              value: {{ .Values.pmanagement.neuronInformationTable | required "Values.pmanagement.neuronInformationTable is required" }}
+          resources:
+            requests:
+              memory: {{ .Values.pmanagement.memMi }}Mi
+              cpu: {{ .Values.pmanagement.cpuMilli }}m
+          readinessProbe:
+            httpGet:
+              path: /neurons/api/v1
+              port: 80
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
+            periodSeconds: 60
+          livenessProbe:
+            httpGet:
+              path: /neurons/api/v1
+              port: 80
+            initialDelaySeconds: 15
+            timeoutSeconds: 1
+            periodSeconds: 60
+        - name: sysctl-buddy
+          image: alpine:3.4
+          command:
+            - /bin/sh
+            - -c
+            - |
+              while true; do
+                sysctl -w net.core.somaxconn=32768
+                sysctl -w net.ipv4.ip_local_port_range='1024 65535'
+                sleep 100
+              done
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 10Mi
+              cpu: 5m
