@@ -1,0 +1,92 @@
+{{- $global_server := .Values.cluster.globalServer | required ".Values.cluster.globalServer is required." }}
+{{- $raw := .Values.catalog.tag | default .Chart.AppVersion -}}
+{{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalog
+spec:
+  selector:
+    matchLabels:
+      app: catalog
+  template:
+    metadata:
+      labels:
+        app: catalog
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secrets: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        checksum/cloudsql: {{ include (print $.Template.BasePath "/cloudsql_secret.yaml") . | sha256sum }}
+        checksum/db-secret: {{ include (print $.Template.BasePath "/db_secret.yaml") . | sha256sum }}
+    spec:
+      tolerations:
+        - key: "pool"
+          operator: "Equal"
+          value: "{{ .Values.cluster.standardPool }}"
+          effect: "NoSchedule"
+      nodeSelector:
+        cloud.google.com/gke-nodepool: {{ .Values.cluster.standardPool }}
+      volumes:
+        - name: google-cloud-key
+          secret:
+            secretName: catalog-google-cloud-key
+        - name: cloudsql-instance-credentials-volume
+          secret:
+            secretName: catalog-cloudsql-google-cloud-key
+      containers:
+        - name: catalog
+          image: {{ .Values.cluster.dockerRegistry }}/cave-catalog:{{ $tag }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: google-cloud-key
+              mountPath: /home/nginx/.cloudvolume/secrets
+          envFrom:
+            - configMapRef:
+                name: catalog-config
+            - secretRef:
+                name: catalog-db-secret
+          env:
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /home/nginx/.cloudvolume/secrets/google-secret.json
+            - name: DAF_CREDENTIALS
+              value: /home/nginx/.cloudvolume/secrets/cave-secret.json
+          resources:
+            requests:
+              memory: {{ .Values.catalog.resources.requests.memory | default "256Mi" }}
+              cpu: {{ .Values.catalog.resources.requests.cpu | default "100m" }}
+          readinessProbe:
+            httpGet:
+              path: /catalog/health
+              port: 80
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
+            periodSeconds: 60
+          livenessProbe:
+            httpGet:
+              path: /catalog/health
+              port: 80
+            initialDelaySeconds: 15
+            timeoutSeconds: 1
+            periodSeconds: 60
+        - name: cloudsql-proxy
+          image: gcr.io/cloudsql-docker/gce-proxy:1.33.6
+          command:
+            [
+              "/cloud_sql_proxy",
+              "-instances={{ .Values.cluster.googleProject}}:{{ .Values.cluster.googleRegion}}:{{ .Values.cloudsql.sqlInstanceName}}=tcp:{{ .Values.cloudsql.port | default "5432" }}",
+              "-credential_file=/secrets/cloudsql/google-secret.json",
+            ]
+          resources:
+            requests:
+              memory: 8Mi
+              cpu: 10m
+          securityContext:
+            runAsUser: 2
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - name: cloudsql-instance-credentials-volume
+              mountPath: /secrets/cloudsql
+              readOnly: true

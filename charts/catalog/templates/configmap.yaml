@@ -1,0 +1,13 @@
+{{- $global_server := .Values.cluster.globalServer | required ".Values.cluster.globalServer is required." }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: catalog-config
+data:
+  AUTH_SERVICE_URL: "{{ .Values.cluster.globalServer }}/auth"
+  MAT_ENGINE_URL: "{{ .Values.cluster.globalServer }}/materialize"
+  CAVECLIENT_SERVER_ADDRESS: "{{ .Values.cluster.globalServer }}"
+  AUTH_ENABLED: "true"
+  DATASTACKS: {{ .Values.catalog.datastacks | toJson | quote }}
+  LOG_LEVEL: {{ .Values.catalog.logLevel | default "ERROR" | quote }}
