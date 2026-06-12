@@ -1,0 +1,17 @@
+limiter:
+  redis:
+    host: ""
+cluster:
+  # required to fill in or choose
+  globalServer: ""
+  environment: ""
+  domainName: ""
+  googleProject: ""
+  dataProjectName: ""
+  googleRegion: "us-east1"
+  googleZone: "us-east1-b"
+  # likely fine as defaults
+  lightweightPool: "lightweight-pool"
+  dockerRegistry: "docker.io/caveconnectome"
+  # optional, used to build Pub/Sub subscription names
+  cluster_prefix: ""
