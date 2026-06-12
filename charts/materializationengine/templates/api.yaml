@@ -1,7 +1,7 @@
 {{- $global_server := .Values.cluster.globalServer | required ".Values.cluster.globalServer is required." }}
 {{- $raw := .Values.materialize.tag | default .Values.materialize.version | default .Chart.AppVersion   -}}
 {{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
-{{- $apipool := .Values.materialize.apipool | default .Values.cluster.standardPool | required "materialize.apipool or cluster.standardPool is required" -}}
+{{- $apipool := .Values.materialize.apipool | default .Values.cluster.lightweightPool | required "materialize.apipool or cluster.lightweightPool is required" -}}
 ---
 apiVersion: apps/v1
 kind: Deployment
