@@ -1302,6 +1302,16 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/pcgl2cache-0.1.0/pcgl2cache-0.1.0.tgz
     version: 0.1.0
+  pmanagemt:
+  - apiVersion: v2
+    appVersion: 0.31.1
+    created: "2026-06-12T16:10:25.511059258Z"
+    description: A Helm chart for CAVE proofreading management services on Kubernetes
+    digest: d71621ae37219887b8417bb7fc4de53baea9d996d14c1f313f22d8453b054c55
+    name: pmanagemt
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/pmanagemt-0.31.1/pmanagemt-0.31.1.tgz
+    version: 0.31.1
   pychunkedgraph:
   - apiVersion: v2
     appVersion: 2.20.0
@@ -1594,4 +1604,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2026-06-05T21:10:40.79926002Z"
+generated: "2026-06-12T16:10:25.511396695Z"
