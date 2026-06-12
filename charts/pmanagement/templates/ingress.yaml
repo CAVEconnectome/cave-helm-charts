@@ -21,7 +21,7 @@ spec:
   - host: {{ . }}
     http:
       paths:
-      - path: /pmanagement
+      - path: /neurons
         pathType: ImplementationSpecific
         backend:
           service:
