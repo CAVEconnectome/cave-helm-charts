@@ -89,7 +89,7 @@ spec:
             requests:
               cpu: 10m
               memory: 150Mi
-        initContainers:
+      initContainers:
           - name: cloudsql-proxy
             image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.15.2
             restartPolicy: Always
