@@ -90,76 +90,76 @@ spec:
               cpu: 10m
               memory: 150Mi
       initContainers:
-          - name: cloudsql-proxy
-            image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.15.2
-            restartPolicy: Always
-            args:
-              - "--port=3306"
-              - "--credentials-file=/secrets/cloudsql/google-secret.json"
-              - "--max-sigterm-delay=3600s"
-              - "{{ .Values.cluster.googleProject}}:{{ .Values.cluster.googleRegion}}:{{ .Values.cloudsql.sqlInstanceName }}"
-            env:
-              - name: CSQL_PROXY_HEALTH_CHECK
-                value: "true"
-              - name: CSQL_PROXY_HTTP_PORT
-                value: "9801"
-              - name: CSQL_PROXY_HTTP_ADDRESS
-                value: 0.0.0.0
-              - name: CSQL_PROXY_QUITQUITQUIT
-                value: "true"
-              - name: CSQL_PROXY_ADMIN_PORT
-                value: "9092"
-              - name: CSQL_PROXY_STRUCTURED_LOGS
-                value: "true"
-            ports:
-              - containerPort: 9801
-                protocol: TCP
-            resources:
-              requests:
-                memory: 8Mi
-                cpu: 10m
-            securityContext:
-              runAsUser: 2
-              allowPrivilegeEscalation: false
-            startupProbe:
-              failureThreshold: 60
-              httpGet:
-                path: /startup
-                port: 9801
-                scheme: HTTP
-              periodSeconds: 1
-              successThreshold: 1
-              timeoutSeconds: 10
-            livenessProbe:
-              failureThreshold: 3
-              httpGet:
-                path: /liveness
-                port: 9801
-                scheme: HTTP
-              periodSeconds: 10
-              successThreshold: 1
-              timeoutSeconds: 10
-            readinessProbe:
-              httpGet:
-                path: /readiness
-                port: 9801
-              initialDelaySeconds: 10
-              periodSeconds: 10
-              timeoutSeconds: 10
-              successThreshold: 1
-              failureThreshold: 6
-            volumeMounts:
-              - name: cloudsql-instance-credentials-volume
-                mountPath: /secrets/cloudsql
-                readOnly: true
-              - name: graceful-shut-down
-                mountPath: /home/nginx/tmp/shutdown
-            lifecycle:
-              preStop:
-                exec:
-                  command:
-                    [
-                      "sh",
-                      "-c",
-                      "while ! [ -f /home/nginx/tmp/shutdown/kill_sidecar ]; do sleep 1; done; curl -f -X POST http://localhost:9092/quitquitquit || kill -15 1",
-                    ]
+        - name: cloudsql-proxy
+          image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.15.2
+          restartPolicy: Always
+          args:
+            - "--port=3306"
+            - "--credentials-file=/secrets/cloudsql/google-secret.json"
+            - "--max-sigterm-delay=3600s"
+            - "{{ .Values.cluster.googleProject}}:{{ .Values.cluster.googleRegion}}:{{ .Values.cloudsql.sqlInstanceName }}"
+          env:
+            - name: CSQL_PROXY_HEALTH_CHECK
+              value: "true"
+            - name: CSQL_PROXY_HTTP_PORT
+              value: "9801"
+            - name: CSQL_PROXY_HTTP_ADDRESS
+              value: 0.0.0.0
+            - name: CSQL_PROXY_QUITQUITQUIT
+              value: "true"
+            - name: CSQL_PROXY_ADMIN_PORT
+              value: "9092"
+            - name: CSQL_PROXY_STRUCTURED_LOGS
+              value: "true"
+          ports:
+            - containerPort: 9801
+              protocol: TCP
+          resources:
+            requests:
+              memory: 8Mi
+              cpu: 10m
+          securityContext:
+            runAsUser: 2
+            allowPrivilegeEscalation: false
+          startupProbe:
+            failureThreshold: 60
+            httpGet:
+              path: /startup
+              port: 9801
+              scheme: HTTP
+            periodSeconds: 1
+            successThreshold: 1
+            timeoutSeconds: 10
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /liveness
+              port: 9801
+              scheme: HTTP
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /readiness
+              port: 9801
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 10
+            successThreshold: 1
+            failureThreshold: 6
+          volumeMounts:
+            - name: cloudsql-instance-credentials-volume
+              mountPath: /secrets/cloudsql
+              readOnly: true
+            - name: graceful-shut-down
+              mountPath: /home/nginx/tmp/shutdown
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  [
+                    "sh",
+                    "-c",
+                    "while ! [ -f /home/nginx/tmp/shutdown/kill_sidecar ]; do sleep 1; done; curl -f -X POST http://localhost:9092/quitquitquit || kill -15 1",
+                  ]
