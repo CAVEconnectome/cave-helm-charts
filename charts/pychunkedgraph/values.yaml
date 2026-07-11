@@ -41,6 +41,13 @@ pychunkedgraph:
   readMaxReplicas: 10
   readMemGb: 1.8
   readCpuMilli: 125
+  # VerticalPodAutoscaler for pychunkedgraph-read; requires the VPA
+  # admission controller on the cluster (GKE: vertical pod autoscaling enabled).
+  # readMemGb/readCpuMilli above act as the floor (minAllowed).
+  readVpa:
+    enabled: true
+    maxMemGb: 5
+    maxCpuMilli: 1500
   meshMinReplicas: 1
   meshMaxReplicas: 3
   meshMemGb: 4

@@ -1,0 +1,33 @@
+{{- if .Values.pychunkedgraph.readVpa.enabled }}
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: pychunkedgraph-read-vpa
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: pychunkedgraph-read
+  updatePolicy:
+    updateMode: Auto
+  resourcePolicy:
+    containerPolicies:
+      - containerName: 'pychunkedgraph'
+        minAllowed:
+          cpu: {{ .Values.pychunkedgraph.readCpuMilli }}m
+          memory: {{ .Values.pychunkedgraph.readMemGb }}Gi
+        maxAllowed:
+          cpu: {{ .Values.pychunkedgraph.readVpa.maxCpuMilli }}m
+          memory: {{ .Values.pychunkedgraph.readVpa.maxMemGb }}Gi
+        controlledResources: ["cpu", "memory"]
+      # cap the sidecar explicitly: without a policy the VPA controls it
+      # uncapped, and node-level OOM events ratchet its recommendation up
+      # until the pod no longer fits on any node
+      - containerName: 'sysctl-buddy'
+        minAllowed:
+          memory: 10Mi
+        maxAllowed:
+          cpu: 10m
+          memory: 64Mi
+        controlledResources: ["cpu", "memory"]
+{{- end }}
