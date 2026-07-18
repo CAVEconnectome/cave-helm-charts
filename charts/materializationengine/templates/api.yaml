@@ -20,6 +20,10 @@ spec:
         checksum/secrets: {{ include (print $.Template.BasePath "/materialize_secret.yaml") . | sha256sum }}
         checksum/cloudsql: {{ include (print $.Template.BasePath "/cloudsql_secret.yaml") . | sha256sum }}
     spec:
+      securityContext:
+        sysctls:
+          - name: net.ipv4.ip_local_port_range
+            value: "1024 65535"
       tolerations:
         - key: "pool"
           operator: "Equal"
@@ -115,17 +119,13 @@ spec:
               port: 8080
             initialDelaySeconds: 5
             periodSeconds: 5
+      initContainers:
         - name: sysctl-buddy
           image: alpine:3.4
           command:
             - /bin/sh
             - -c
-            - |
-              while true; do
-                sysctl -w net.core.somaxconn=32768
-                sysctl -w net.ipv4.ip_local_port_range='1024 65535'
-                sleep 10
-              done
+            - sysctl -w net.core.somaxconn=32768
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -133,7 +133,6 @@ spec:
             requests:
               memory: 10Mi
               cpu: 5m
-      initContainers:
         - name: cloudsql-proxy
           image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.23.0
           restartPolicy: Always
