@@ -187,20 +187,15 @@ spec:
                       "while ! [ -f /home/nginx/tmp/shutdown/kill_sidecar ]; do sleep 1; done; curl -f -X POST http://localhost:9092/quitquitquit || kill -15 1",
                     ]
   triggers:
-    - type: gcp-stackdriver
+    - type: prometheus
       metadata:
-        # Use the Celery queue metric from GMP, scoped to this cluster/namespace
-        filter: resource.labels.cluster="{{ .Values.cluster.cluster }}" AND resource.labels.namespace="{{ .Release.Namespace }}" AND metric.type="prometheus.googleapis.com/celery_queue_length/gauge" AND metric.label.queue_name="{{ .Values.materialize.orchestrationQueueName | default "orchestration" }}"
-        projectId: "{{ .Values.cluster.googleProject }}"
-        # Return a single aggregated value per minute
-        alignmentPeriodSeconds: "60"
-        alignmentAligner: mean
-        alignmentReducer: sum
-        # Treat missing series as zero and use a shorter lookback
-        valueIfNull: "0"
-        filterDuration: "1"
+        serverAddress: https://monitoring.googleapis.com/v1/projects/{{ .Values.cluster.googleProject }}/location/global/prometheus
+        # Use the Celery queue metric from GMP, scoped to this cluster/namespace.
+        # Mean-align to 1m buckets, sum across matching series, treat no data as 0.
+        query: >-
+          sum(avg_over_time({"__name__"="prometheus.googleapis.com/celery_queue_length/gauge","cluster"="{{ .Values.cluster.cluster }}","namespace"="{{ .Release.Namespace }}","queue_name"="{{ .Values.materialize.orchestrationQueueName | default "orchestration" }}"}[1m])) or vector(0)
         # One Job per queued item
-        targetValue: "{{ .Values.materialize.orchestrationTargetQueueLength | default 1 }}"
+        threshold: "{{ .Values.materialize.orchestrationTargetQueueLength | default 1 }}"
       authenticationRef:
         name: keda-gcm-auth
 {{- end }}

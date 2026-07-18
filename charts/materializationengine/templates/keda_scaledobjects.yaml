@@ -18,16 +18,14 @@ spec:
   scaleTargetRef:
     name: celery-producer
   triggers:
-    - type: gcp-stackdriver
+    - type: prometheus
       metadata:
-        # Query Cloud Monitoring for GMP-mapped Prometheus metric from celery exporter
-        # Scope to this cluster and namespace to avoid cross-cluster series
-        filter: resource.labels.cluster="{{ .Values.cluster.cluster }}" AND resource.labels.namespace="{{ .Release.Namespace }}" AND metric.type="prometheus.googleapis.com/celery_queue_length/gauge" AND metric.label.queue_name="{{ .Values.materialize.producerQueueName }}"
-        alignmentPeriod: "60s"
-        projectId: {{ .Values.cluster.googleProject}}
-        perSeriesAligner: ALIGN_MEAN
+        serverAddress: https://monitoring.googleapis.com/v1/projects/{{ .Values.cluster.googleProject }}/location/global/prometheus
+        # Query GMP-mapped Prometheus metric from celery exporter, scoped to this cluster and namespace
+        query: >-
+          avg(avg_over_time({"__name__"="prometheus.googleapis.com/celery_queue_length/gauge","cluster"="{{ .Values.cluster.cluster }}","namespace"="{{ .Release.Namespace }}","queue_name"="{{ .Values.materialize.producerQueueName }}"}[1m])) or vector(0)
         # Target average queue length per Pod
-        targetValue: "{{ .Values.materialize.producerTargetQueueLength }}"
+        threshold: "{{ .Values.materialize.producerTargetQueueLength }}"
       authenticationRef:
         name: keda-gcm-auth
 ---
@@ -41,14 +39,13 @@ spec:
   scaleTargetRef:
     name: celery-consumer
   triggers:
-    - type: gcp-stackdriver
+    - type: prometheus
       metadata:
+        serverAddress: https://monitoring.googleapis.com/v1/projects/{{ .Values.cluster.googleProject }}/location/global/prometheus
         # Scope to this cluster and namespace to avoid cross-cluster series
-        filter:  resource.labels.cluster="{{ .Values.cluster.cluster }}" AND resource.labels.namespace="{{ .Release.Namespace }}" AND metric.type="prometheus.googleapis.com/celery_queue_length/gauge" AND metric.label.queue_name="{{ .Values.materialize.consumerQueueName }}"
-        alignmentPeriod: "60s"
-        projectId: {{ .Values.cluster.googleProject}}
-        perSeriesAligner: ALIGN_MEAN
-        targetValue: "{{ .Values.materialize.consumerTargetQueueLength }}"
+        query: >-
+          avg(avg_over_time({"__name__"="prometheus.googleapis.com/celery_queue_length/gauge","cluster"="{{ .Values.cluster.cluster }}","namespace"="{{ .Release.Namespace }}","queue_name"="{{ .Values.materialize.consumerQueueName }}"}[1m])) or vector(0)
+        threshold: "{{ .Values.materialize.consumerTargetQueueLength }}"
       authenticationRef:
         name: keda-gcm-auth
 {{- if .Values.materialize.deltalakeEnabled }}
@@ -63,14 +60,13 @@ spec:
   scaleTargetRef:
     name: celery-deltalake
   triggers:
-    - type: gcp-stackdriver
+    - type: prometheus
       metadata:
+        serverAddress: https://monitoring.googleapis.com/v1/projects/{{ .Values.cluster.googleProject }}/location/global/prometheus
         # Scope to this cluster and namespace to avoid cross-cluster series
-        filter: resource.labels.cluster="{{ .Values.cluster.cluster }}" AND resource.labels.namespace="{{ .Release.Namespace }}" AND metric.type="prometheus.googleapis.com/celery_queue_length/gauge" AND metric.label.queue_name="{{ .Values.materialize.deltalakeQueueName }}"
-        alignmentPeriod: "60s"
-        projectId: {{ .Values.cluster.googleProject}}
-        perSeriesAligner: ALIGN_MEAN
-        targetValue: "{{ .Values.materialize.deltalakeTargetQueueLength }}"
+        query: >-
+          avg(avg_over_time({"__name__"="prometheus.googleapis.com/celery_queue_length/gauge","cluster"="{{ .Values.cluster.cluster }}","namespace"="{{ .Release.Namespace }}","queue_name"="{{ .Values.materialize.deltalakeQueueName }}"}[1m])) or vector(0)
+        threshold: "{{ .Values.materialize.deltalakeTargetQueueLength }}"
       authenticationRef:
         name: keda-gcm-auth
 {{- end }}
