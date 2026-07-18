@@ -21,7 +21,7 @@ spec:
         serverAddress: https://monitoring.googleapis.com/v1/projects/{{ .Values.cluster.googleProject }}/location/global/prometheus
         # GMP uses prometheus_target for scraped Prometheus metrics; scope to cluster/namespace and controller
         query: >-
-          avg(avg_over_time({"__name__"="prometheus.googleapis.com/uwsgi_perc_busy_workers/gauge","monitored_resource"="prometheus_target","cluster"="{{ .Values.cluster.cluster }}","namespace"="{{ .Release.Namespace }}","top_level_controller_name"="materialize"}[1m])) or vector(0)
+          avg(avg_over_time(uwsgi_perc_busy_workers{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",top_level_controller_name="materialize"}[1m])) or vector(0)
         # Target AverageValue in percent
         threshold: "75"
     - type: cpu

@@ -23,7 +23,7 @@ spec:
         serverAddress: https://monitoring.googleapis.com/v1/projects/{{ .Values.cluster.googleProject }}/location/global/prometheus
         # Query GMP-mapped Prometheus metric from celery exporter, scoped to this cluster and namespace
         query: >-
-          avg(avg_over_time({"__name__"="prometheus.googleapis.com/celery_queue_length/gauge","cluster"="{{ .Values.cluster.cluster }}","namespace"="{{ .Release.Namespace }}","queue_name"="{{ .Values.materialize.producerQueueName }}"}[1m])) or vector(0)
+          avg(avg_over_time(celery_queue_length{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",queue_name="{{ .Values.materialize.producerQueueName }}"}[1m])) or vector(0)
         # Target average queue length per Pod
         threshold: "{{ .Values.materialize.producerTargetQueueLength }}"
       authenticationRef:
@@ -44,7 +44,7 @@ spec:
         serverAddress: https://monitoring.googleapis.com/v1/projects/{{ .Values.cluster.googleProject }}/location/global/prometheus
         # Scope to this cluster and namespace to avoid cross-cluster series
         query: >-
-          avg(avg_over_time({"__name__"="prometheus.googleapis.com/celery_queue_length/gauge","cluster"="{{ .Values.cluster.cluster }}","namespace"="{{ .Release.Namespace }}","queue_name"="{{ .Values.materialize.consumerQueueName }}"}[1m])) or vector(0)
+          avg(avg_over_time(celery_queue_length{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",queue_name="{{ .Values.materialize.consumerQueueName }}"}[1m])) or vector(0)
         threshold: "{{ .Values.materialize.consumerTargetQueueLength }}"
       authenticationRef:
         name: keda-gcm-auth
@@ -65,7 +65,7 @@ spec:
         serverAddress: https://monitoring.googleapis.com/v1/projects/{{ .Values.cluster.googleProject }}/location/global/prometheus
         # Scope to this cluster and namespace to avoid cross-cluster series
         query: >-
-          avg(avg_over_time({"__name__"="prometheus.googleapis.com/celery_queue_length/gauge","cluster"="{{ .Values.cluster.cluster }}","namespace"="{{ .Release.Namespace }}","queue_name"="{{ .Values.materialize.deltalakeQueueName }}"}[1m])) or vector(0)
+          avg(avg_over_time(celery_queue_length{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",queue_name="{{ .Values.materialize.deltalakeQueueName }}"}[1m])) or vector(0)
         threshold: "{{ .Values.materialize.deltalakeTargetQueueLength }}"
       authenticationRef:
         name: keda-gcm-auth
