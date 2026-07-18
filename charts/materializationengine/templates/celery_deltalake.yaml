@@ -37,8 +37,6 @@ spec:
         - name: cloudsql-instance-credentials-volume
           secret:
             secretName: mat-cloudsql-google-cloud-key
-        - name: graceful-shut-down
-          emptyDir: {}
       containers:
         - name: celery
           image: {{ .Values.cluster.dockerRegistry }}/materializationengine:{{ $tag }}
@@ -46,19 +44,12 @@ spec:
           args:
             - -c
             - |
-              if command -v curl >/dev/null 2>&1; then
-                until curl -sf http://127.0.0.1:9801/readiness >/dev/null; do echo "waiting for cloudsql-proxy..."; sleep 1; done
-              else
-                until python -c 'import urllib.request,sys; sys.exit(0 if urllib.request.urlopen("http://127.0.0.1:9801/readiness", timeout=1).getcode()==200 else 1)' >/dev/null 2>&1; do echo "waiting for cloudsql-proxy..."; sleep 1; done
-              fi
               exec su nginx -c 'celery --app=run.celery worker --pool=prefork --hostname=worker.{{ .Values.materialize.deltalakeQueueName }}@%h --queues={{ .Values.materialize.deltalakeQueueName }} --loglevel=info -E -Ofair --concurrency={{ .Values.materialize.celeryDeltalakeConcurrency }}'
           volumeMounts:
             - name: materializationengine-config-volume
               mountPath: /app/materializationengine/instance/
             - name: google-cloud-key
               mountPath: /home/nginx/.cloudvolume/secrets
-            - name: graceful-shut-down
-              mountPath: /home/nginx/tmp/shutdown
           env:
             - name: MATERIALIZATION_ENGINE_SETTINGS
               value: /app/materializationengine/instance/config.cfg
@@ -118,8 +109,10 @@ spec:
             preStop:
               exec:
                 command: ["/home/nginx/gracefully_shutdown_celery.sh"]
+      initContainers:
         - name: cloudsql-proxy
           image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.15.2
+          restartPolicy: Always
           args:
             - "--port=3306"
             - "--credentials-file=/secrets/cloudsql/google-secret.json"
@@ -178,17 +171,10 @@ spec:
           lifecycle:
             preStop:
               exec:
-                command:
-                  [
-                    "sh",
-                    "-c",
-                    "while ! [ -f /home/nginx/tmp/shutdown/kill_sidecar ]; do sleep 1; done; curl -f -X POST http://localhost:9092/quitquitquit || kill -15 1",
-                  ]
+                command: ["sh", "-c", "curl -f -X POST http://localhost:9092/quitquitquit || kill -15 1"]
           volumeMounts:
             - name: cloudsql-instance-credentials-volume
               mountPath: /secrets/cloudsql
               readOnly: true
-            - name: graceful-shut-down
-              mountPath: /home/nginx/tmp/shutdown
       restartPolicy: Always
 {{- end }}

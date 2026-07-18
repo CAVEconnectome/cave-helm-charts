@@ -115,25 +115,6 @@ spec:
               port: 8080
             initialDelaySeconds: 5
             periodSeconds: 5
-        - name: cloudsql-proxy
-          image: gcr.io/cloudsql-docker/gce-proxy:1.33.6
-          command:
-            [
-              "/cloud_sql_proxy",
-              "-instances={{ .Values.cluster.googleProject}}:{{ .Values.cluster.googleRegion}}:{{ .Values.cloudsql.sqlInstanceName}}=tcp:3306",
-              "-credential_file=/secrets/cloudsql/google-secret.json",
-            ]
-          resources:
-            requests:
-              memory: 8Mi
-              cpu: 10m
-          securityContext:
-            runAsUser: 2 # non-root user
-            allowPrivilegeEscalation: false
-          volumeMounts:
-            - name: cloudsql-instance-credentials-volume
-              mountPath: /secrets/cloudsql
-              readOnly: true
         - name: sysctl-buddy
           image: alpine:3.4
           command:
@@ -152,3 +133,24 @@ spec:
             requests:
               memory: 10Mi
               cpu: 5m
+      initContainers:
+        - name: cloudsql-proxy
+          image: gcr.io/cloudsql-docker/gce-proxy:1.33.6
+          restartPolicy: Always
+          command:
+            [
+              "/cloud_sql_proxy",
+              "-instances={{ .Values.cluster.googleProject}}:{{ .Values.cluster.googleRegion}}:{{ .Values.cloudsql.sqlInstanceName}}=tcp:3306",
+              "-credential_file=/secrets/cloudsql/google-secret.json",
+            ]
+          resources:
+            requests:
+              memory: 8Mi
+              cpu: 10m
+          securityContext:
+            runAsUser: 2 # non-root user
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - name: cloudsql-instance-credentials-volume
+              mountPath: /secrets/cloudsql
+              readOnly: true
