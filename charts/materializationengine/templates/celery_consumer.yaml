@@ -101,7 +101,7 @@ spec:
                 command: ["/home/nginx/gracefully_shutdown_celery.sh"]
       initContainers:
         - name: cloudsql-proxy
-          image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.15.2
+          image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.23.0
           restartPolicy: Always
           args:
             - "--port=3306"
