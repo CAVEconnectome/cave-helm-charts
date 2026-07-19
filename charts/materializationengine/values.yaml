@@ -40,6 +40,9 @@ materialize:
   deltalakeEnabled: true
   deltalakeMinReplicas: 1
   deltalakeMaxReplicas: 1
+  # Output bucket for deltalake exports. If empty, defaults to
+  # "<dumpBucketPath>/deltalake_exports". Set to override the location.
+  deltalakeOutputBucket: ""
   # KEDA scaling targets per-queue
   producerTargetQueueLength: 10
   consumerTargetQueueLength: 10

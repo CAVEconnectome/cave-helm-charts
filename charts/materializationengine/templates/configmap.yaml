@@ -76,3 +76,8 @@ data:
     {{- if .Values.materialize.dumpBucketPath }}
     MATERIALIZATION_DUMP_BUCKET = "{{ .Values.materialize.dumpBucketPath }}"
     {{- end }}
+    {{- if .Values.materialize.deltalakeOutputBucket }}
+    DELTALAKE_OUTPUT_BUCKET = "{{ .Values.materialize.deltalakeOutputBucket }}"
+    {{- else if .Values.materialize.dumpBucketPath }}
+    DELTALAKE_OUTPUT_BUCKET = "{{ .Values.materialize.dumpBucketPath }}/deltalake_exports"
+    {{- end }}
