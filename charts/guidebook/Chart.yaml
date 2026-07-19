@@ -1,5 +1,5 @@
 apiVersion: v2
 name: guidebook
 description: A Helm chart for CAVE guidebook service on Kubernetes
-version: 0.1.0
+version: 0.3.2
 appVersion: "0.3.2"
