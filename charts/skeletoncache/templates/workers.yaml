@@ -70,7 +70,7 @@ spec:
             - name: CACHE_NON_H5_SKELETONS
               value: {{ .Values.skeletoncache.cacheNonH5 | quote }}
             - name: SKELETON_DATASTACK_NAME_REMAPPING
-              value: {{ .Values.skeletoncache.datastackRemap | quote }}
+              value: {{ if .Values.skeletoncache.datastackRemap }}{{ .Values.skeletoncache.datastackRemap | squote }}{{ else }}{{ toJson .Values.skeletoncache.datastackRemapping | squote }}{{ end }}
             - name: SKELETONCACHE_WORKER_MAX_REPLICAS
               value: {{ .Values.skeletoncache.worker.maxReplicas | quote }}
             - name: SKELETON_CACHE_LOW_PRIORITY_EXCHANGE

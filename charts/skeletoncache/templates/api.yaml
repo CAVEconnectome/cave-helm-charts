@@ -50,7 +50,7 @@ spec:
             - name: LIMITER_CATEGORIES
               value: {{ if .Values.skeletoncache.limiter.categories }}{{ .Values.skeletoncache.limiter.categories | squote }}{{ else }}{{- $cat := dict -}}{{- range $k, $v := .Values.skeletoncache.limits }}{{- $_ := set $cat $k (printf "%v/minute" $v) -}}{{- end -}}{{ toJson $cat | squote }}{{ end }}
             - name: SKELETON_DATASTACK_NAME_REMAPPING
-              value: {{ .Values.skeletoncache.datastackRemap | quote }}
+              value: {{ if .Values.skeletoncache.datastackRemap }}{{ .Values.skeletoncache.datastackRemap | squote }}{{ else }}{{ toJson .Values.skeletoncache.datastackRemapping | squote }}{{ end }}
             - name: SKELETONCACHE_WORKER_MAX_REPLICAS
               value: {{ .Values.skeletoncache.worker.maxReplicas | quote }}
             - name: SKELETON_CACHE_LOW_PRIORITY_EXCHANGE

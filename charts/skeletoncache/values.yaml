@@ -40,7 +40,11 @@ skeletoncache:
   limiter:
     uri: ""
     categories: ""
-  datastackRemap: "{}"
+  # Public-facing datastack name remapping (SKELETON_DATASTACK_NAME_REMAPPING).
+  # Set entries here as normal key/value pairs; the chart converts them to a JSON string.
+  datastackRemapping: {}
+  # Raw string override; when set, used as-is instead of datastackRemapping.
+  datastackRemap: ""
   cacheNonH5: "false"
   verboseLevel: "0"
   # Default debug root id; set to a non-zero root ID to enable targeted debugging

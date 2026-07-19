@@ -22,7 +22,21 @@ skeletoncache:
     get_skeletons_bulk: 20
     get_skeletons_bulk_async: 20
 
+## Datastack name remapping
+
+This chart exposes public-facing datastack name remapping via `skeletoncache.datastackRemapping` (a normal map). At render time, the chart converts this to the `SKELETON_DATASTACK_NAME_REMAPPING` environment variable as a JSON string.
+
+- Override by creating your own values file and editing `skeletoncache.datastackRemapping`.
+- You can still provide a raw string override via `skeletoncache.datastackRemap` if you need full control (e.g. non-JSON syntax); when set, that string is used instead of the map.
+
+Example override (values.yaml):
+
+skeletoncache:
+  datastackRemapping:
+    minnie65_public: minnie65_phase3_v1
+
 ## Environment variables impacted
 
 - `LIMITER_CATEGORIES`: computed from `skeletoncache.limits` unless `skeletoncache.limiter.categories` is explicitly provided.
 - `LIMITER_URI`: set via `skeletoncache.limiter.uri`.
+- `SKELETON_DATASTACK_NAME_REMAPPING`: computed from `skeletoncache.datastackRemapping` unless `skeletoncache.datastackRemap` is explicitly provided.
