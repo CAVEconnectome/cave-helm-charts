@@ -58,7 +58,7 @@ spec:
             - name: AUTH_URL
               value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/auth
             - name: INFO_URL
-              value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/auth_info
+              value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/info
             - name: APP_SETTINGS
               value: "pcgl2cache.app.config.DevelopmentConfig"
             - name: L2CACHE_UPDATE_QUEUE
@@ -67,6 +67,10 @@ spec:
               value: {{ .Values.pcgl2cache.exchanges.update | quote }}
             - name: PCGL2CACHE_URL_PREFIX
               value: l2cache
+            - name: PROJECT_ID
+              value: "{{ .Values.cluster.dataProjectName | default .Values.cluster.googleProject }}"
+            - name: PROJECT_NAME
+              value: "{{ .Values.cluster.googleProject }}"
             - name: AUTH_USE_REDIS
               value: "false"
             - name: DAF_CREDENTIALS

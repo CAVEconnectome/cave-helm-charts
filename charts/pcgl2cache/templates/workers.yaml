@@ -58,7 +58,7 @@ spec:
             - name: AUTH_URL
               value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/auth
             - name: INFO_URL
-              value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/auth_info
+              value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/info
             - name: APP_SETTINGS
               value: "pcgl2cache.app.config.DevelopmentConfig"
             - name: PCGL2CACHE_URL_PREFIX
@@ -143,7 +143,7 @@ spec:
             - name: AUTH_URL
               value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/auth
             - name: INFO_URL
-              value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/auth_info
+              value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/info
             - name: APP_SETTINGS
               value: "pcgl2cache.app.config.DevelopmentConfig"
             - name: PCGL2CACHE_URL_PREFIX
@@ -203,7 +203,7 @@ spec:
       terminationGracePeriodSeconds: 10
       containers:
         - name: pcgl2cache-lowpriority-worker
-          image: {{ .Values.cluster.dockerRegistry }}/pcgl2cache:worker_pcgv1_v{{ $tag }}
+          image: {{ .Values.cluster.dockerRegistry }}/pcgl2cache:worker_pcgv1_{{ $tag }}
           imagePullPolicy: Always
           ports:
             - containerPort: 80
@@ -228,7 +228,7 @@ spec:
             - name: AUTH_URL
               value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/auth
             - name: INFO_URL
-              value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/auth_info
+              value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/info
             - name: APP_SETTINGS
               value: "pcgl2cache.app.config.DevelopmentConfig"
             - name: PCGL2CACHE_URL_PREFIX
