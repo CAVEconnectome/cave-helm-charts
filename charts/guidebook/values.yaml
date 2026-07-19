@@ -1,0 +1,42 @@
+cluster:
+  # required to fill in or choose
+  globalServer: ""
+  googleProject: ""
+  # likely fine as defaults
+  lightweightPool: "lightweight-pool"
+  dockerRegistry: "docker.io/caveconnectome"
+
+# name of the CAVE data project (used for PROJECT_ID env var)
+dataProjectName: "seung-lab"
+
+guidebook:
+  # image tag; if empty defaults to Chart.appVersion
+  tag: ""
+  minReplicas: 1
+  maxReplicas: 5
+  cpuTarget: 125
+  # need to fill in
+  csrfKey: ""
+  datastack: "minnie65_phase3_v1"
+  nParallel: 1
+  expectedResolution: "4,4,40"
+  invalidationD: 3
+  # set true if a pcgl2cache worker deployment exists for this datastack
+  enableL2cache: false
+  showPathTool: true
+  worker:
+    minReplicas: 1
+    maxReplicas: 2
+    cpuTarget: 25
+
+redis:
+  # need to fill in; e.g. output of `gcloud redis instances describe <name> --region=<region>`
+  host: ""
+  password: ""
+
+secrets:
+  # k8s Secret name holding both google-secret.json and cave-secret.json
+  # (matches PYCG_SERVICE_ACCOUNT_SECRET, e.g. daf-pychunkedgraph-<environment>-cred)
+  googleCloudKeySecret: ""
+  googleSecretFilename: "google-secret.json"
+  caveSecretFilename: "cave-secret.json"

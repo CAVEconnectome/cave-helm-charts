@@ -1,0 +1,92 @@
+{{- $raw := .Values.guidebook.tag | default .Chart.AppVersion -}}
+{{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: guidebook-worker-scaler
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: guidebook-worker
+  minReplicas: {{ .Values.guidebook.worker.minReplicas | default 1 }}
+  maxReplicas: {{ .Values.guidebook.worker.maxReplicas | default 2 }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.guidebook.worker.cpuTarget | default 25 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: guidebook-worker
+spec:
+  selector:
+    matchLabels:
+      app: guidebook-worker
+  template:
+    metadata:
+      labels:
+        app: guidebook-worker
+    spec:
+      tolerations:
+        - key: "pool"
+          operator: "Equal"
+          value: "{{ .Values.cluster.lightweightPool }}"
+          effect: "NoSchedule"
+      nodeSelector:
+        cloud.google.com/gke-nodepool: {{ .Values.cluster.lightweightPool }}
+      volumes:
+        - name: google-cloud-key
+          secret:
+            secretName: {{ required "guidebook: secrets.googleCloudKeySecret is required" .Values.secrets.googleCloudKeySecret }}
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: guidebook-worker
+          image: {{ .Values.cluster.dockerRegistry }}/guidebook:{{ $tag }}
+          args:
+            - su
+            - nginx
+            - -c
+            - "python guidebook/worker.py"
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: google-cloud-key
+              mountPath: /home/nginx/.cloudvolume/secrets
+          env:
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /home/nginx/.cloudvolume/secrets/{{ .Values.secrets.googleSecretFilename }}
+            - name: REDISHOST
+              value: {{ required "guidebook: redis.host is required" .Values.redis.host }}
+            - name: AUTH_URI
+              value: {{ required "guidebook: cluster.globalServer is required" .Values.cluster.globalServer }}/auth
+            - name: GLOBAL_SERVER_ADDRESS
+              value: https://{{ .Values.cluster.globalServer }}
+            - name: STICKY_AUTH_URL
+              value: {{ .Values.cluster.globalServer }}/sticky_auth
+            - name: AUTH_URL
+              value: {{ .Values.cluster.globalServer }}/auth
+            - name: REDIS_SERVICE_HOST
+              value: {{ .Values.redis.host }}
+            - name: REDIS_SERVICE_PORT
+              value: "6379"
+            - name: REDIS_PASSWORD
+              value: {{ .Values.redis.password | default "" | quote }}
+            - name: PROJECT_ID
+              value: {{ .Values.dataProjectName }}
+            - name: AUTH_USE_REDIS
+              value: "false"
+            - name: GUIDEBOOK_EXPECTED_RESOLUTION
+              value: {{ .Values.guidebook.expectedResolution | quote }}
+            - name: GUIDEBOOK_INVALIDATION_D
+              value: {{ .Values.guidebook.invalidationD | default 3 | quote }}
+            - name: DAF_CREDENTIALS
+              value: /home/nginx/.cloudvolume/secrets/{{ .Values.secrets.caveSecretFilename }}
+          resources:
+            requests:
+              memory: 500Mi
+              cpu: 200m

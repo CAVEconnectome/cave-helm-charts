@@ -1,0 +1,11 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: guidebook-service
+spec:
+  type: NodePort
+  selector:
+    app: guidebook
+  ports:
+    - port: 80
+      targetPort: 80

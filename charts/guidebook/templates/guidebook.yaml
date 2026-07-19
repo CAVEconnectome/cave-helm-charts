@@ -1,0 +1,131 @@
+{{- $raw := .Values.guidebook.tag | default .Chart.AppVersion -}}
+{{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: guidebook-scaler
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: guidebook
+  minReplicas: {{ .Values.guidebook.minReplicas | default 1 }}
+  maxReplicas: {{ .Values.guidebook.maxReplicas | default 5 }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.guidebook.cpuTarget | default 125 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: guidebook
+spec:
+  selector:
+    matchLabels:
+      app: guidebook
+  template:
+    metadata:
+      labels:
+        app: guidebook
+    spec:
+      securityContext:
+        sysctls:
+          - name: net.ipv4.ip_local_port_range
+            value: "1024 65535"
+      tolerations:
+        - key: "pool"
+          operator: "Equal"
+          value: "{{ .Values.cluster.lightweightPool }}"
+          effect: "NoSchedule"
+      nodeSelector:
+        cloud.google.com/gke-nodepool: {{ .Values.cluster.lightweightPool }}
+      volumes:
+        - name: google-cloud-key
+          secret:
+            secretName: {{ required "guidebook: secrets.googleCloudKeySecret is required" .Values.secrets.googleCloudKeySecret }}
+      terminationGracePeriodSeconds: 10
+      initContainers:
+        - name: sysctl-buddy
+          image: alpine:3.4
+          command:
+            - /bin/sh
+            - -c
+            - sysctl -w net.core.somaxconn=32768
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 10Mi
+              cpu: 5m
+      containers:
+        - name: guidebook
+          image: {{ .Values.cluster.dockerRegistry }}/guidebook:{{ $tag }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: google-cloud-key
+              mountPath: /home/nginx/.cloudvolume/secrets
+          env:
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /home/nginx/.cloudvolume/secrets/{{ .Values.secrets.googleSecretFilename }}
+            - name: AUTH_URI
+              value: {{ required "guidebook: cluster.globalServer is required" .Values.cluster.globalServer }}/auth
+            - name: STICKY_AUTH_URL
+              value: {{ .Values.cluster.globalServer }}/sticky_auth
+            - name: AUTH_URL
+              value: {{ .Values.cluster.globalServer }}/auth
+            - name: REDIS_SERVICE_HOST
+              value: {{ required "guidebook: redis.host is required" .Values.redis.host }}
+            - name: REDIS_PASSWORD
+              value: {{ .Values.redis.password | default "" | quote }}
+            - name: REDIS_SERVICE_PORT
+              value: "6379"
+            - name: PROJECT_ID
+              value: {{ .Values.dataProjectName }}
+            - name: AUTH_USE_REDIS
+              value: "false"
+            - name: GUIDEBOOK_CSRF_KEY
+              value: {{ required "guidebook: guidebook.csrfKey is required" .Values.guidebook.csrfKey | quote }}
+            - name: GUIDEBOOK_DATASTACK
+              value: {{ .Values.guidebook.datastack | quote }}
+            - name: GUIDEBOOK_N_PARALLEL
+              value: {{ .Values.guidebook.nParallel | default 1 | quote }}
+            - name: GUIDEBOOK_EXPECTED_RESOLUTION
+              value: {{ .Values.guidebook.expectedResolution | quote }}
+            - name: GUIDEBOOK_INVALIDATION_D
+              value: {{ .Values.guidebook.invalidationD | default 3 | quote }}
+            - name: GLOBAL_SERVER_ADDRESS
+              value: https://{{ .Values.cluster.globalServer }}
+            - name: DAF_CREDENTIALS
+              value: /home/nginx/.cloudvolume/secrets/{{ .Values.secrets.caveSecretFilename }}
+            - name: USE_L2CACHE
+              value: {{ .Values.guidebook.enableL2cache | default false | quote }}
+            - name: CV_USE_HTTPS
+              value: "false"
+            - name: GUIDEBOOK_SHOW_PATH_TOOL
+              value: {{ .Values.guidebook.showPathTool | default true | quote }}
+          resources:
+            requests:
+              memory: 300Mi
+              cpu: 80m
+          readinessProbe:
+            httpGet:
+              path: /guidebook/version
+              port: 80
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
+            periodSeconds: 15
+          livenessProbe:
+            httpGet:
+              path: /guidebook/version
+              port: 80
+            initialDelaySeconds: 15
+            timeoutSeconds: 1
+            periodSeconds: 60
