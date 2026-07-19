@@ -4,6 +4,16 @@ cluster:
 edge:
   ingressClassName: nginx
   tlsSecretName: "le-certificate"
-  annotations: {}
+  # Extra nginx-ingress annotations merged onto the host-owner Ingress.
+  # Restored from the legacy monolithic ingress (CAVEdeployment/kubetemplates/ingress.yml).
+  # NOTE: these apply to the edge Ingress object; per-service body-size/upstream behavior
+  # is best set cluster-wide in the nginx-ingress controller ConfigMap (see values comment).
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/enable-cors: "false"
+    nginx.ingress.kubernetes.io/enable-access-log: "true"
+    nginx.ingress.kubernetes.io/proxy-next-upstream: "error timeout invalid_header http_502 http_503 http_504"
+    nginx.ingress.kubernetes.io/proxy-next-upstream-tries: "3"
   # If you use cert-manager ingress-shim, set clusterIssuer and it will create the cert
   clusterIssuer: "letsencrypt-staging"
