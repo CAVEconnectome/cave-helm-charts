@@ -15,6 +15,9 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "360"
     nginx.ingress.kubernetes.io/x-forwarded-prefix: "true"
+    {{- with .Values.edge.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
 spec:
   ingressClassName: {{ .Values.edge.ingressClassName | default "nginx" }}
   rules:
