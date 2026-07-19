@@ -59,9 +59,34 @@
 - name: DAF_CREDENTIALS
   value: "/home/nginx/.cloudvolume/secrets/cave-secret.json"
 - name: LIMITER_CATEGORIES
-  value: '{"query":"{{ .Values.pychunkedgraph.limitsFastQueryPerMinute | default 2000}}/minute","fast_query":"{{ .Values.pychunkedgraph.limitsQueryPerMinute | default 100}}/minute"}'
+  value: '{"query":"{{ .Values.pychunkedgraph.limitsQueryPerMinute | default 100}}/minute","fast_query":"{{ .Values.pychunkedgraph.limitsFastQueryPerMinute | default 2000}}/minute"}'
 - name: LIMITER_URI
   value: "redis://{{ .Values.limiter.redis.host }}/0"
+{{- end -}}
+
+{{- define "pcg.uwsgiExporter" -}}
+- name: uwsgi-exporter
+  image: caveconnectome/uwsgi-export-workers:v14
+  # Exposes the metrics endpoint on 0.0.0.0:9101
+  ports:
+    - containerPort: 9101
+  env:
+  # This tells the exporter where to find the uWSGI stats server
+  - name: UWSGI_STATS_URL
+    value: "http://localhost:9192"
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 50m
+      memory: 64Mi
+  readinessProbe:
+    httpGet:
+      path: /
+      port: 8080
+    initialDelaySeconds: 5
+    periodSeconds: 5
 {{- end -}}
 
 {{- define "sysctl.config" -}}

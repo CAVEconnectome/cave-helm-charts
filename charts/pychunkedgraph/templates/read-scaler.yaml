@@ -1,3 +1,34 @@
+{{- if and .Values.keda.enabled .Values.gmp.enabled }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: pychunkedgraph-read-scaler
+  annotations:
+    validations.keda.sh/hpa-ownership: "true"
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: pychunkedgraph-read
+  minReplicaCount: {{ .Values.pychunkedgraph.readMinReplicas | default 1 }}
+  maxReplicaCount: {{ .Values.pychunkedgraph.readMaxReplicas | default 10 }}
+  triggers:
+    - type: prometheus
+      authenticationRef:
+        name: pcg-keda-trigger-auth-gcp-credentials
+      metadata:
+        serverAddress: https://monitoring.googleapis.com/v1/projects/{{ .Values.cluster.googleProject }}/location/global/prometheus
+        # GMP-mapped Prometheus metric; scope to cluster/namespace and controller
+        query: >-
+          avg(avg_over_time(uwsgi_perc_busy_workers{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",top_level_controller_name="pychunkedgraph-read"}[1m])) or vector(0)
+        # Target AverageValue in percent
+        threshold: "{{ .Values.pychunkedgraph.apiBusyWorkersTarget | default 75 }}"
+    - type: cpu
+      metricType: Utilization
+      metadata:
+        value: "{{ .Values.pychunkedgraph.apiCpuTarget | default 110 }}"
+{{- else }}
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -16,3 +47,4 @@ spec:
         target:
           type: Utilization
           averageUtilization: 110
+{{- end }}

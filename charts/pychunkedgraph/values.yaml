@@ -33,6 +33,12 @@ pychunkedgraph:
     host: ""
     port: 6379
   bigtableInstanceName: "pychunkedgraph"
+  # Autoscaling targets for the write/read API tiers (used by KEDA ScaledObjects
+  # and the plain-CPU HPA fallback).
+  # apiBusyWorkersTarget: target percent of busy uWSGI workers (prometheus trigger)
+  # apiCpuTarget: target CPU utilization percent (cpu trigger / HPA)
+  apiBusyWorkersTarget: 75
+  apiCpuTarget: 110
   writeMinReplicas: 1
   writeMaxReplicas: 3
   writeMemGb: 4
@@ -50,8 +56,15 @@ pychunkedgraph:
     maxCpuMilli: 1500
   meshMinReplicas: 1
   meshMaxReplicas: 3
-  meshMemGb: 4
-  meshCpuMilli: 1000
+  # mesh-api pod resource requests (full k8s quantities so small defaults are expressible).
+  # Default to the lightweight legacy sizing; raise per-deployment as needed.
+  meshMemory: "200Mi"
+  meshCpu: "100m"
+  # Periodic restart of the meshing Deployment (legacy meshing_pod_recycler CronJob)
+  meshPodRecycler:
+    enabled: true
+    schedule: "@monthly"
+    image: "bitnami/kubectl"
   meshWorkerMinReplicas: 0
   meshWorkerMaxReplicas: 10
   # remesh worker (low-priority queue) scaling bounds
@@ -86,3 +99,11 @@ keda:
   timeHorizon: "2m"
   # When no series is returned, treat as 0
   valueIfNull: 0
+
+# Google Managed Prometheus (GMP) scraping for uWSGI busy-workers metrics
+gmp:
+  enabled: true
+  scrape:
+    interval: 30s
+    path: /
+    port: 9101

@@ -1,0 +1,31 @@
+{{- if .Values.gmp.enabled }}
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  name: pychunkedgraph-uwsgi
+  labels:
+    app.kubernetes.io/component: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: pychunkedgraph
+  endpoints:
+  - port: {{ .Values.gmp.scrape.port }}
+    interval: {{ .Values.gmp.scrape.interval }}
+    path: {{ .Values.gmp.scrape.path }}
+---
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  name: pychunkedgraph-read-uwsgi
+  labels:
+    app.kubernetes.io/component: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: pychunkedgraph-read
+  endpoints:
+  - port: {{ .Values.gmp.scrape.port }}
+    interval: {{ .Values.gmp.scrape.interval }}
+    path: {{ .Values.gmp.scrape.path }}
+{{- end }}

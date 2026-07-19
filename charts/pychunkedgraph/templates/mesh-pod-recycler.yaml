@@ -1,0 +1,50 @@
+{{- if .Values.pychunkedgraph.meshPodRecycler.enabled }}
+# Periodically restarts the meshing Deployment (legacy meshing_pod_recycler.yml).
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: meshing-restart
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: meshing-restart
+rules:
+  - apiGroups: ["apps", "extensions"]
+    resources: ["deployments"]
+    resourceNames: ["meshing"]
+    verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: meshing-restart
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: meshing-restart
+subjects:
+  - kind: ServiceAccount
+    name: meshing-restart
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: meshing-restart
+spec:
+  schedule: {{ .Values.pychunkedgraph.meshPodRecycler.schedule | default "@monthly" | quote }}
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 300
+      template:
+        spec:
+          serviceAccountName: meshing-restart
+          restartPolicy: Never
+          containers:
+            - name: kubectl
+              image: {{ .Values.pychunkedgraph.meshPodRecycler.image | default "bitnami/kubectl" }}
+              command: ["kubectl", "rollout", "restart", "deploy/meshing"]
+{{- end }}

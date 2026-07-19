@@ -30,4 +30,12 @@ spec:
           cpu: 10m
           memory: 64Mi
         controlledResources: ["cpu", "memory"]
+      # cap the uwsgi-exporter sidecar too (same rationale as sysctl-buddy)
+      - containerName: 'uwsgi-exporter'
+        minAllowed:
+          memory: 32Mi
+        maxAllowed:
+          cpu: 50m
+          memory: 64Mi
+        controlledResources: ["cpu", "memory"]
 {{- end }}

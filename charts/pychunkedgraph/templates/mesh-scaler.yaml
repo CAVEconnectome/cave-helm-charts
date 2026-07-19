@@ -8,8 +8,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: meshing
-  minReplicas: {{ .Values.pychunkedgraph.meshingMinReplicas | default 1}}
-  maxReplicas: {{ .Values.pychunkedgraph.meshingMaxReplicas | default 10}}
+  minReplicas: {{ .Values.pychunkedgraph.meshMinReplicas | default 1}}
+  maxReplicas: {{ .Values.pychunkedgraph.meshMaxReplicas | default 10}}
   metrics:
     - type: Resource
       resource:

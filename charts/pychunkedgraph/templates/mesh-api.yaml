@@ -51,8 +51,8 @@ spec:
             {{- include "pcg_env.config" . | nindent 12 }}
           resources:
             requests:
-              memory: 200Mi
-              cpu: 100m
+              memory: {{ .Values.pychunkedgraph.meshMemory | default "200Mi" }}
+              cpu: {{ .Values.pychunkedgraph.meshCpu | default "100m" }}
           readinessProbe:
             httpGet:
               path: /meshing/api/v1

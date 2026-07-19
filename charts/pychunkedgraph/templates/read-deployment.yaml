@@ -39,6 +39,7 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 80
+            - containerPort: 9192
           volumeMounts:
             - name: google-cloud-key
               mountPath: /home/nginx/.cloudvolume/secrets
@@ -68,4 +69,5 @@ spec:
             initialDelaySeconds: 15
             timeoutSeconds: 1
             periodSeconds: 60
+        {{- include "pcg.uwsgiExporter" . | nindent 8 }}
         {{- include "sysctl.config" . | nindent 8 -}}
