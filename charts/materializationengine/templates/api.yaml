@@ -68,7 +68,7 @@ spec:
             - name: THROTTLE_QUEUES
               value: "true"
             - name: LIMITER_CATEGORIES
-              value: '{"query":"{{ .Values.materialize.limitsFastQueryPerMinute}}/minute","fast_query":"{{ .Values.materialize.limitsQueryPerMinute}}/minute"}'
+              value: '{"query":"{{ .Values.materialize.limitsQueryPerMinute}}/minute","fast_query":"{{ .Values.materialize.limitsFastQueryPerMinute}}/minute"}'
             - name: LIMITER_URI
               value: redis://{{ .Values.limiter.redis.host }}/0 
             - name: STICKY_AUTH_URL
