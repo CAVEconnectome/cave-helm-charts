@@ -51,11 +51,11 @@ spec:
             - name: GOOGLE_APPLICATION_CREDENTIALS
               value: /home/nginx/.cloudvolume/secrets/google-secret.json
             - name: LIMITER_CATEGORIES
-              value: '{"query":"{{ .Values.annotation.limitsFastQueryPerMinute}}/minute","fast_query":"{{ .Values.annotation.limitsQueryPerMinute}}/minute"}'
+              value: {{ if .Values.annotation.limiterCategories }}{{ .Values.annotation.limiterCategories | squote }}{{ else }}{{- $cat := dict -}}{{- range $k, $v := .Values.annotation.limits }}{{- $_ := set $cat $k (printf "%v/minute" $v) -}}{{- end -}}{{ toJson $cat | squote }}{{ end }}
             - name: LIMITER_URI
-              value: redis://{{ .Values.limiter.redis.host }}/0 
+              value: redis://{{ .Values.limiter.redis.host }}/0
             - name: AUTH_URI
-              value: {{ .Values.globalServer }}/auth
+              value: {{ .Values.cluster.globalServer }}/auth
             - name: STICKY_AUTH_URL
               value: {{ .Values.cluster.globalServer }}/sticky_auth
             - name: AUTH_URL

@@ -9,6 +9,7 @@ data:
     INFOSERVICE_ENDPOINT = "https://{{ .Values.cluster.globalServer }}/info"
     SCHEMA_SERVICE_ENDPOINT = "https://{{ .Values.cluster.globalServer }}/schema/"
     GLOBAL_SERVER_URL = "https://{{ .Values.cluster.globalServer }}"
+    GLOBAL_SERVER = "https://{{ .Values.cluster.globalServer }}"
     NEUROGLANCER_URL = "https://neuroglancer-demo.appspot.com"
     SQLALCHEMY_DATABASE_URI = "postgres://{{ .Values.cloudsql.username}}:{{ .Values.cloudsql.password}}@127.0.0.1:3306/annotation"
     TESTING = False

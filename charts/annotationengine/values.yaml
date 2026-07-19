@@ -14,6 +14,13 @@ annotation:
   healthAlignedVolumeName: ""
   minReplicas:  1
   maxReplicas: 10
+  # Per-category rate limits (requests per minute). The chart renders these as
+  # "<N>/minute" into the LIMITER_CATEGORIES env var.
+  limits:
+    query: 300
+    fast_query: 2000
+  # Raw string override; when set, used as-is instead of the limits map.
+  limiterCategories: ""
   secretFiles:
     # need to fill in with path to secret file
     - name: google-secret.json
