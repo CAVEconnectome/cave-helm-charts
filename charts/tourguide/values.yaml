@@ -1,5 +1,9 @@
 logLevel: "warning"
-pool: 
+pool:
+gmp:
+  enabled: true
+  scrape:
+    interval: 30s
 cluster:
   # required to fill in or choose
   globalServer: ""
@@ -29,8 +33,8 @@ tourguide:
     pollingSeconds: 30
     cooldownSeconds: 60
     alignmentPeriod: "60s"
-  # Prometheus metric type to use from GMP
-  promMetricType: "prometheus.googleapis.com/http_tourguide_active_requests/gauge"
+  # Bare Prometheus metric name as scraped by the tourguide-metrics PodMonitoring
+  promMetricName: "http_tourguide_active_requests"
   # Target average active requests across pods
   activeRequestsTarget: 50
   busyWorkersTarget: 75

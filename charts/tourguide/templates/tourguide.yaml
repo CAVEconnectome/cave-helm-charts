@@ -58,13 +58,13 @@ spec:
             - containerPort: 8080
           env:
             - name: AUTH_URI
-              value: {{ required "A valid .cluster.globalServer is required!".Values.cluster.globalServer }}/auth
+              value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/auth
             - name: STICKY_AUTH_URL
-              value: {{ required "A valid .cluster.globalServer is required!".Values.cluster.globalServer }}/sticky_auth
+              value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/sticky_auth
             - name: AUTH_URL
-              value: {{ required "A valid .cluster.globalServer is required!".Values.cluster.globalServer }}/auth
+              value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/auth
             - name: TOURGUIDE_SERVER_ADDRESS
-              value: {{ required "A valid .cluster.globalServer is required!".Values.cluster.globalServer }}
+              value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}
             - name: TOURGUIDE_LOG_LEVEL
               value: {{.Values.logLevel }}
             - name: TOURGUIDE_TMP_DIR
