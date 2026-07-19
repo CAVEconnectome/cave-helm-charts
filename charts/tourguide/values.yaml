@@ -33,6 +33,8 @@ tourguide:
     pollingSeconds: 30
     cooldownSeconds: 60
     alignmentPeriod: "60s"
+  # Neuroglancer URL passed to the app (TOURGUIDE_NEUROGLANCER_URL); omitted if empty
+  neuroglancerUrl: "https://spelunker.cave-explorer.org"
   # Bare Prometheus metric name as scraped by the tourguide-metrics PodMonitoring
   promMetricName: "http_tourguide_active_requests"
   # Target average active requests across pods

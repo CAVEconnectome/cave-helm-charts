@@ -71,6 +71,10 @@ spec:
               value: {{ .Values.tourguide.tmpDir | default "/tmp" | quote }}
             - name: TOURGUIDE_TIMEOUT
               value: {{ .Values.tourguide.timeout | default "30" | quote }}
+            {{- if .Values.tourguide.neuroglancerUrl }}
+            - name: TOURGUIDE_NEUROGLANCER_URL
+              value: {{ .Values.tourguide.neuroglancerUrl | quote }}
+            {{- end }}
             - name: PROMETHEUS_MULTIPROC_DIR
               value: /tmp/prometheus_multiproc
           resources:
