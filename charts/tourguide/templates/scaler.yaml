@@ -24,7 +24,7 @@ spec:
     - type: cpu
       metadata:
         type: Utilization
-        value: {{ .Values.tourguide.cpuTarget | default 85 }}
+        value: "{{ .Values.tourguide.cpuTarget | default 85 }}"
         containerName: tourguide
 {{- else }}
 apiVersion: autoscaling/v2
