@@ -1,0 +1,31 @@
+{{- if and .Values.keda.enabled .Values.gmp.enabled }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: skeletoncache-api
+  annotations:
+    validations.keda.sh/hpa-ownership: "true"
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: skeletoncache
+  minReplicaCount: {{ .Values.skeletoncache.api.hpa.minReplicas }}
+  maxReplicaCount: {{ .Values.skeletoncache.api.hpa.maxReplicas }}
+  triggers:
+    - type: prometheus
+      authenticationRef:
+        name: skeletoncache-keda-auth
+      metadata:
+        serverAddress: https://monitoring.googleapis.com/v1/projects/{{ .Values.cluster.googleProject }}/location/global/prometheus
+        # GMP uses prometheus_target for scraped Prometheus metrics; scope to cluster/namespace and controller
+        query: >-
+          avg(avg_over_time(uwsgi_perc_busy_workers{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",top_level_controller_name="skeletoncache"}[1m])) or vector(0)
+        # Target AverageValue in percent
+        threshold: {{ .Values.skeletoncache.api.busyWorkersTarget | quote }}
+    - type: cpu
+      metricType: Utilization
+      metadata:
+        value: {{ .Values.skeletoncache.api.hpa.cpuTarget | quote }}
+{{- end }}

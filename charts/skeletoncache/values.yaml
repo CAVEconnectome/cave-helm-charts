@@ -26,6 +26,9 @@ skeletoncache:
       minReplicas: 1
       maxReplicas: 3
       cpuTarget: 80
+    # Target percent of busy uWSGI workers for the KEDA prometheus trigger
+    # (used only when keda.enabled and gmp.enabled).
+    busyWorkersTarget: 75
     resources:
       requests:
         memory: 512Mi
@@ -37,6 +40,14 @@ skeletoncache:
       requests:
         memory: 1000Mi
         cpu: 200m
+    # VerticalPodAutoscaler for the worker (legacy skeleton-worker-vpa)
+    vpa:
+      enabled: true
+      updateMode: "Auto"
+      minCpu: "50m"
+      minMemory: "200Mi"
+      maxCpu: "1000m"
+      maxMemory: "2Gi"
   limiter:
     uri: ""
     categories: ""
@@ -61,6 +72,19 @@ skeletoncache:
     low: ""
   bigtable:
     instance: ""
+  # One-shot integration-test Job (legacy skeletoncache_integrationtests_only.yml).
+  # Disabled by default; enable + fill server/datastack to run after a deploy.
+  integrationTester:
+    enabled: false
+    server: ""            # e.g. https://minniev7.microns-daf.com
+    datastack: ""         # test datastack definition dict (SKELETON_INTEGRATION_TEST_DATASTACK__*)
+    verboseLevel: "2"
+    devSlackWebhookId: ""
+    prodSlackWebhookId: ""
+    resources:
+      requests:
+        memory: 500Mi
+        cpu: 50m
   # Optional: full gs:// cloud path (bucket and optional prefix)
   cloudPath: ""
   # Optional secret files rendered into a Kubernetes Secret for mounting

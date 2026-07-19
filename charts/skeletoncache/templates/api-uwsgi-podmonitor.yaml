@@ -1,0 +1,16 @@
+{{- if .Values.gmp.enabled }}
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  name: skeletoncache-uwsgi
+  labels:
+    app.kubernetes.io/component: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: skeletoncache
+  endpoints:
+    - port: 9101
+      path: /
+      interval: {{ .Values.gmp.scrape.interval | default "30s" }}
+{{- end }}

@@ -1,4 +1,4 @@
-{{- if .Values.skeletoncache.api.hpa.enabled }}
+{{- if and .Values.skeletoncache.api.hpa.enabled (not (and .Values.keda.enabled .Values.gmp.enabled)) }}
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:

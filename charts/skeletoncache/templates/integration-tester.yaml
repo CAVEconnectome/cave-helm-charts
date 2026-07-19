@@ -1,0 +1,92 @@
+{{- if .Values.skeletoncache.integrationTester.enabled }}
+{{- $raw := .Values.skeletoncache.tag | default .Chart.AppVersion -}}
+{{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
+{{- $it := .Values.skeletoncache.integrationTester -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: skeletoncache-integration-tester
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        app: skeletoncache-integration-tester
+    spec:
+      restartPolicy: OnFailure
+      tolerations:
+        - key: "pool"
+          operator: "Equal"
+          value: "{{ .Values.cluster.meshPool }}"
+          effect: "NoSchedule"
+      nodeSelector:
+        cloud.google.com/gke-nodepool: {{ .Values.cluster.meshPool }}
+      terminationGracePeriodSeconds: 10
+      volumes:
+        - name: sksv-config-volume
+          configMap:
+            name: skeletoncache-config
+        - name: google-cloud-key
+          secret:
+            secretName: {{ .Values.skeletoncache.credentialsSecret }}
+      containers:
+        - name: skeletoncache-integration-tester
+          image: {{ .Values.cluster.dockerRegistry }}/skeletoncache:{{ $tag }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: sksv-config-volume
+              mountPath: /app/skeletonservice/instance/
+            - name: google-cloud-key
+              mountPath: /root/.cloudvolume/secrets
+          env:
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /root/.cloudvolume/secrets/{{ .Values.skeletoncache.googleSecretFilename }}
+            - name: GLOBAL_SERVER_URL
+              value: https://{{ .Values.cluster.globalServer }}
+            - name: AUTH_URI
+              value: {{ .Values.cluster.globalServer }}/auth
+            - name: STICKY_AUTH_URL
+              value: {{ .Values.cluster.globalServer }}/sticky_auth
+            - name: AUTH_URL
+              value: {{ .Values.cluster.globalServer }}/auth
+            - name: INFO_URL
+              value: {{ .Values.cluster.globalServer }}/info
+            - name: BIGTABLE_PROJECT
+              value: "{{ .Values.cluster.dataProjectName | default .Values.cluster.googleProject }}"
+            - name: BIGTABLE_INSTANCE
+              value: "{{ .Values.skeletoncache.bigtable.instance }}"
+            - name: APP_SETTINGS
+              value: "skeletoncache.app.config.DevelopmentConfig"
+            - name: SKELETON_CACHE_URL_PREFIX
+              value: sksv
+            - name: PROJECT_ID
+              value: "{{ .Values.cluster.dataProjectName | default .Values.cluster.googleProject }}"
+            - name: PROJECT_NAME
+              value: "{{ .Values.cluster.googleProject }}"
+            - name: DEV_SLACK_WEBHOOK_ID
+              value: {{ $it.devSlackWebhookId | quote }}
+            - name: PROD_SLACK_WEBHOOK_ID
+              value: {{ $it.prodSlackWebhookId | quote }}
+            - name: VERBOSE_LEVEL
+              value: {{ $it.verboseLevel | default "2" | quote }}
+            - name: AUTH_USE_REDIS
+              value: "false"
+            - name: DAF_CREDENTIALS
+              value: /root/.cloudvolume/secrets/{{ .Values.skeletoncache.caveSecretFilename }}
+          resources:
+            requests:
+              memory: {{ $it.resources.requests.memory | default "500Mi" }}
+              cpu: {{ $it.resources.requests.cpu | default "50m" }}
+          command:
+            - /bin/sh
+            - -c
+            - >-
+              python -u -m tests.test_integration --kube
+              -s {{ required "skeletoncache.integrationTester.server is required when enabled" $it.server }}
+              -d "{{ required "skeletoncache.integrationTester.datastack is required when enabled" $it.datastack }}"
+              -z {{ .Values.cluster.googleZone }}
+              -c {{ .Values.cluster.cluster }}
+              -v 2
+{{- end }}

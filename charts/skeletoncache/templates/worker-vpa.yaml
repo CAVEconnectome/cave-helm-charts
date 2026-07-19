@@ -1,0 +1,23 @@
+{{- if .Values.skeletoncache.worker.vpa.enabled }}
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: skeletoncache-worker-vpa
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: skeletoncache-worker
+  updatePolicy:
+    updateMode: {{ .Values.skeletoncache.worker.vpa.updateMode | default "Auto" | quote }}
+  resourcePolicy:
+    containerPolicies:
+      - containerName: 'skeletoncache-worker'
+        minAllowed:
+          cpu: {{ .Values.skeletoncache.worker.vpa.minCpu | default "50m" }}
+          memory: {{ .Values.skeletoncache.worker.vpa.minMemory | default "200Mi" }}
+        maxAllowed:
+          cpu: {{ .Values.skeletoncache.worker.vpa.maxCpu | default "1000m" }}
+          memory: {{ .Values.skeletoncache.worker.vpa.maxMemory | default "2Gi" }}
+        controlledResources: ["cpu", "memory"]
+{{- end }}
