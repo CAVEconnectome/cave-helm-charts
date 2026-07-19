@@ -70,7 +70,7 @@ spec:
             - name: TOURGUIDE_TMP_DIR
               value: {{ .Values.tourguide.tmpDir | default "/tmp" | quote }}
             - name: TOURGUIDE_TIMEOUT
-              value: {{ .Values.tourguide.timeout | default "30s" | quote }}
+              value: {{ .Values.tourguide.timeout | default "30" | quote }}
             - name: PROMETHEUS_MULTIPROC_DIR
               value: /tmp/prometheus_multiproc
           resources:

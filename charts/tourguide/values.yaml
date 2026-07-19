@@ -27,7 +27,7 @@ tourguide:
   cpuTarget: 85
   # App settings
   tmpDir: "/tmp"
-  timeout: "30s"
+  timeout: "30"
   keda:
     enabled: true
     pollingSeconds: 30
