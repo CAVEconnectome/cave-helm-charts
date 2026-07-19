@@ -549,6 +549,16 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/emannotationschemas-0.1.0/emannotationschemas-0.1.0.tgz
     version: 0.1.0
+  guidebook:
+  - apiVersion: v2
+    appVersion: 0.3.2
+    created: "2026-07-19T12:27:34.120260219Z"
+    description: A Helm chart for CAVE guidebook service on Kubernetes
+    digest: 3cff222d016afc4c1b9dc552a72bd8e47731edca4b71115c2cc52373783f8ab3
+    name: guidebook
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/guidebook-0.3.2/guidebook-0.3.2.tgz
+    version: 0.3.2
   infoservice:
   - apiVersion: v2
     appVersion: 4.3.3
@@ -1724,6 +1734,15 @@ entries:
     version: 0.2.3
   - apiVersion: v1
     appVersion: 2.3.2
+    created: "2026-07-19T12:27:34.264428095Z"
+    description: A Helm chart for CAVE tourguide on flask service on Kubernetes
+    digest: 840f556ea9c40e1e9d44a58bc0f0e8c152d1b39da805cc1a5603924eea85a670
+    name: tourguide
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.3-r1/tourguide-0.2.3-r1.tgz
+    version: 0.2.3-r1
+  - apiVersion: v1
+    appVersion: 2.3.2
     created: "2025-08-14T15:09:52.430990923Z"
     description: A Helm chart for CAVE tourguide on flask service on Kubernetes
     digest: 0a12ee332a302bd12af897a24882d830b4dda9f252a97ce76774f8ba5a114c08
@@ -1740,4 +1759,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2026-07-19T11:26:35.519716732Z"
+generated: "2026-07-19T12:27:34.264838897Z"
