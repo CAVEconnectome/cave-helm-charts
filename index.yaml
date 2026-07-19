@@ -1743,6 +1743,15 @@ entries:
     version: 0.2.3
   - apiVersion: v1
     appVersion: 2.3.2
+    created: "2026-07-19T12:45:21.446251989Z"
+    description: A Helm chart for CAVE tourguide on flask service on Kubernetes
+    digest: 59b906371b1c470292da22bf8d5bf0f2db10e5af959c6b9c7be0761dd1ebab55
+    name: tourguide
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.3-r2/tourguide-0.2.3-r2.tgz
+    version: 0.2.3-r2
+  - apiVersion: v1
+    appVersion: 2.3.2
     created: "2026-07-19T12:27:34.264428095Z"
     description: A Helm chart for CAVE tourguide on flask service on Kubernetes
     digest: 840f556ea9c40e1e9d44a58bc0f0e8c152d1b39da805cc1a5603924eea85a670
@@ -1768,4 +1777,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2026-07-19T12:33:39.354980109Z"
+generated: "2026-07-19T12:45:21.446777573Z"
