@@ -1,6 +1,10 @@
 {{- $domain := .Values.cluster.domainName | required ".Values.cluster.domainName is required." -}}
 {{- $prefix := .Values.cluster.cluster_prefix | required ".Values.cluster.cluster_prefix is required." -}}
-{{- $host := printf "%s.%s" $prefix $domain -}}
+{{- $defaultHost := printf "%s.%s" $prefix $domain -}}
+{{- $dnsEntries := .Values.cluster.dns_entries | default (list) -}}
+{{- $raw := append (default (list) $dnsEntries) $defaultHost -}}
+{{- $hosts := uniq $raw -}}
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:

@@ -17,7 +17,8 @@ cluster:
   meshPool: "mesh-pool"
   standardPool: "standard-pool"
   dockerRegistry: "docker.io/caveconnectome"
-
+  cluster_prefix: ""
+  dns_entries: []
 tourguide:
   # image tag; defaults to Chart.appVersion if empty
   tag: ""
