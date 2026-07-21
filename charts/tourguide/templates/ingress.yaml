@@ -10,7 +10,8 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: {{ $host }}
+  {{- range $hosts }}
+  - host: {{ . }}
     http:
       paths:
       - path: /tourguide
@@ -20,3 +21,4 @@ spec:
             name: tourguide-service
             port:
               number: 80
+  {{- end }}
