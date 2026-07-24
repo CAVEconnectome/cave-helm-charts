@@ -596,6 +596,17 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/infoservice-0.1.0/infoservice-0.1.0.tgz
     version: 0.1.0
+  landingpage:
+  - apiVersion: v2
+    appVersion: 1.0.0
+    created: "2026-07-24T04:01:34.894542507Z"
+    description: Static landing page served at the domain root, listing the services
+      running on the deployment
+    digest: a096653a394521f00882137af58163070fd7a4826b788829551c84988c7df2c1
+    name: landingpage
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/landingpage-0.1.0/landingpage-0.1.0.tgz
+    version: 0.1.0
   materializationengine:
   - apiVersion: v2
     appVersion: 5.23.1
@@ -1902,4 +1913,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2026-07-22T01:20:20.626443108Z"
+generated: "2026-07-24T04:01:34.8951656Z"
