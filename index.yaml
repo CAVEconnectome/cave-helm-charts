@@ -599,6 +599,16 @@ entries:
   landingpage:
   - apiVersion: v2
     appVersion: 1.0.0
+    created: "2026-07-24T04:45:47.046060305Z"
+    description: Static landing page served at the domain root, listing the services
+      running on the deployment
+    digest: bb5f2b1f176d7ecba4b0442df72a8aebbffdcf1b6c9c1252fdcbb9b492877fb2
+    name: landingpage
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/landingpage-0.1.1/landingpage-0.1.1.tgz
+    version: 0.1.1
+  - apiVersion: v2
+    appVersion: 1.0.0
     created: "2026-07-24T04:01:34.894542507Z"
     description: Static landing page served at the domain root, listing the services
       running on the deployment
@@ -1913,4 +1923,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2026-07-24T04:01:34.8951656Z"
+generated: "2026-07-24T04:45:47.046562973Z"
