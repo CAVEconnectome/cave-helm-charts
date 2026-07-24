@@ -8,6 +8,10 @@ dash:
   # both the busy-workers percentage (via GMP) and CPU; otherwise a plain CPU HPA is used.
   cpuTarget: 90
   busyWorkersTarget: 75
+  resources:
+    requests:
+      memory: 670Mi
+      cpu: 500m
 keda:
   enabled: true
 # Google Managed Prometheus scraping of the uwsgi-exporter for busy-workers autoscaling
