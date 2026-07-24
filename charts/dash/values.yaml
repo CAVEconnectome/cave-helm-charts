@@ -1,9 +1,22 @@
-dash: 
+dash:
   # image tag; if empty defaults to Chart.appVersion; legacy dash.version still honored in templates
   tag: ""
   secretKey: "" # required for session security; should be a long random string
   minReplicas: 1
   maxReplicas: 10
+  # Autoscaling targets. When keda+gmp are enabled the KEDA ScaledObject scales on
+  # both the busy-workers percentage (via GMP) and CPU; otherwise a plain CPU HPA is used.
+  cpuTarget: 90
+  busyWorkersTarget: 75
+keda:
+  enabled: true
+# Google Managed Prometheus scraping of the uwsgi-exporter for busy-workers autoscaling
+gmp:
+  enabled: true
+  scrape:
+    interval: 30s
+    path: /
+    port: 9101
 cluster:
   # required to fill in or choose
   globalServer: ""

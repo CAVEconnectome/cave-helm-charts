@@ -1,3 +1,46 @@
+{{- if .Values.keda.enabled }}
+{{- if .Values.gmp.enabled }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: dash-keda-auth
+spec:
+  podIdentity:
+    provider: gcp
+{{- end }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: dash-api
+  annotations:
+    validations.keda.sh/hpa-ownership: "true"
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: dash
+  minReplicaCount: {{ max 1 (.Values.dash.minReplicas | default 1 | int) }}
+  maxReplicaCount: {{ .Values.dash.maxReplicas | default 10 }}
+  triggers:
+    {{- if .Values.gmp.enabled }}
+    # busy-workers % scraped from the uwsgi-exporter via GMP (bare metric name),
+    # scoped to this cluster/namespace/controller. Only present when gmp is enabled.
+    - type: prometheus
+      authenticationRef:
+        name: dash-keda-auth
+      metadata:
+        serverAddress: https://monitoring.googleapis.com/v1/projects/{{ .Values.cluster.googleProject }}/location/global/prometheus
+        query: >-
+          avg(avg_over_time(uwsgi_perc_busy_workers{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",top_level_controller_name="dash"}[1m])) or vector(0)
+        threshold: "{{ .Values.dash.busyWorkersTarget | default 75 }}"
+    {{- end }}
+    - type: cpu
+      metricType: Utilization
+      metadata:
+        value: "{{ .Values.dash.cpuTarget | default 90 }}"
+{{- else }}
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -8,24 +51,12 @@ spec:
     kind: Deployment
     name: dash
   minReplicas: {{ max 1 (.Values.dash.minReplicas | default 1 | int) }}
-  maxReplicas: {{ .Values.dash.maxReplicas | default 10}}
+  maxReplicas: {{ .Values.dash.maxReplicas | default 10 }}
   metrics:
-  - type: Resource
-    resource:
-      name: cpu
-      target:
-        type: Utilization
-        averageUtilization: 90
-  - type: Pods
-    pods:
-      metric:
-        name: custom.googleapis.com|http|uwsgi_perc_busy_workers
-      target:
-        type: AverageValue
-        averageValue: 75
-  # - type: Resource
-  #   resource:
-  #     name: memory
-  #     target:
-  #       type: Utilization
-  #       averageUtilization: 75
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.dash.cpuTarget | default 90 }}
+{{- end }}
