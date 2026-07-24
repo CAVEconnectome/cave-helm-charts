@@ -335,6 +335,15 @@ entries:
     version: 1.16.1
   - apiVersion: v1
     appVersion: 1.16.1
+    created: "2026-07-24T06:40:53.062138902Z"
+    description: A Helm chart for CAVE dash on flask service on Kubernetes
+    digest: fa4272211eb907a2185fc3ffee414a46834c935214f07ded99638cea832c0a07
+    name: dash
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/dash-1.16.1-r3/dash-1.16.1-r3.tgz
+    version: 1.16.1-r3
+  - apiVersion: v1
+    appVersion: 1.16.1
     created: "2026-07-24T05:09:29.581806881Z"
     description: A Helm chart for CAVE dash on flask service on Kubernetes
     digest: 3a18bd26b789b44c0c475d7bd1aec350359a75b3218c56b0e605abe687e8bdd7
@@ -717,6 +726,15 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/materializationengine-5.23.1-r2/materializationengine-5.23.1-r2.tgz
     version: 5.23.1-r2
+  - apiVersion: v2
+    appVersion: 5.23.1
+    created: "2026-07-24T06:40:53.193984547Z"
+    description: A Helm chart for CAVE materialization service on Kubernetes
+    digest: fdae19772d0b78bb8d299d5ab302498766f21c4580ecf7a170f01f9d22263f35
+    name: materializationengine
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/materializationengine-5.23.1-r12/materializationengine-5.23.1-r12.tgz
+    version: 5.23.1-r12
   - apiVersion: v2
     appVersion: 5.23.1
     created: "2026-07-19T15:25:23.600943466Z"
@@ -1544,6 +1562,15 @@ entries:
     version: 2.20.0-r4
   - apiVersion: v2
     appVersion: 2.20.0
+    created: "2026-07-24T06:40:53.43454273Z"
+    description: A Helm chart for CAVE pychunkedgraph services on Kubernetes
+    digest: 11f79715837e3e2c50c2d99a2e3cfdc06c48ffcff843ed318f32ff6f177bfff1
+    name: pychunkedgraph
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/pychunkedgraph-2.20.0-r4/pychunkedgraph-2.20.0-r4.tgz
+    version: 2.20.0-r4
+  - apiVersion: v2
+    appVersion: 2.20.0
     created: "2026-07-11T19:04:23.595113579Z"
     description: A Helm chart for CAVE pychunkedgraph services on Kubernetes
     digest: 7710b70bff9f8ba395d4c13fe886be472439a4fba5e8f4ceba7ce0ffec0a5623
@@ -1889,6 +1916,15 @@ entries:
     version: 0.2.3-r7
   - apiVersion: v1
     appVersion: 2.3.2
+    created: "2026-07-24T06:40:53.583226513Z"
+    description: A Helm chart for CAVE tourguide on flask service on Kubernetes
+    digest: ffd94a55134a732e4e86b6b3111e4db9b1b4f2ec1b02fa0e0dbb098f8733c22d
+    name: tourguide
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.3-r7/tourguide-0.2.3-r7.tgz
+    version: 0.2.3-r7
+  - apiVersion: v1
+    appVersion: 2.3.2
     created: "2026-07-21T19:15:38.343973369Z"
     description: A Helm chart for CAVE tourguide on flask service on Kubernetes
     digest: 7c056406934ccbb17914d8e6d1188ce46ee54cdb3c52d3280bb4e8c1ae8d72d5
@@ -1959,4 +1995,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2026-07-24T06:15:56.587495907Z"
+generated: "2026-07-24T06:40:53.583979279Z"
