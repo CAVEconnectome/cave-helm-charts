@@ -1,5 +1,6 @@
 {{- $raw := .Values.skeletoncache.tag | default .Chart.AppVersion -}}
 {{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
+{{- $categories := .Values.skeletoncache.limiter.categories | default .Values.skeletoncache.limits -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -50,7 +51,7 @@ spec:
             - name: LIMITER_URI
               value: {{ .Values.skeletoncache.limiter.uri | quote }}
             - name: LIMITER_CATEGORIES
-              value: {{ if .Values.skeletoncache.limiter.categories }}{{ .Values.skeletoncache.limiter.categories | squote }}{{ else }}{{- $cat := dict -}}{{- range $k, $v := .Values.skeletoncache.limits }}{{- $_ := set $cat $k (printf "%v/minute" $v) -}}{{- end -}}{{ toJson $cat | squote }}{{ end }}
+              value: {{ $cat := dict }}{{- range $k, $v := $categories }}{{- $_ := set $cat $k (printf "%v/minute" $v) -}}{{- end -}}{{ toJson $cat | squote }}
             - name: SKELETON_DATASTACK_NAME_REMAPPING
               value: {{ if .Values.skeletoncache.datastackRemap }}{{ .Values.skeletoncache.datastackRemap | squote }}{{ else }}{{ toJson .Values.skeletoncache.datastackRemapping | squote }}{{ end }}
             - name: SKELETONCACHE_WORKER_MAX_REPLICAS
