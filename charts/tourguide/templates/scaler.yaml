@@ -1,8 +1,21 @@
 {{- if .Values.tourguide.keda.enabled }}
+{{- if .Values.gmp.enabled }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: tourguide-keda-auth
+spec:
+  podIdentity:
+    provider: gcp
+{{- end }}
+---
 apiVersion: keda.sh/v1alpha1
 kind: ScaledObject
 metadata:
   name: tourguide-scaledobject
+  annotations:
+    validations.keda.sh/hpa-ownership: "true"
 spec:
   scaleTargetRef:
     name: tourguide
@@ -11,16 +24,17 @@ spec:
   pollingInterval: {{ .Values.tourguide.keda.pollingSeconds | default 30 }}
   cooldownPeriod: {{ .Values.tourguide.keda.cooldownSeconds | default 60 }}
   triggers:
+    {{- if .Values.gmp.enabled }}
+    # active-requests scraped via PodMonitoring/GMP (bare metric name); only when gmp is enabled.
     - type: prometheus
       authenticationRef:
-        name: keda-gcm-auth
+        name: tourguide-keda-auth
       metadata:
         serverAddress: https://monitoring.googleapis.com/v1/projects/{{ .Values.cluster.googleProject | required "cluster.googleProject required" }}/location/global/prometheus
-        # Bare Prometheus metric name as scraped via PodMonitoring - GMP serves scraped
-        # metrics back under their original name, not the Cloud Monitoring metric.type string
         query: >-
           avg(avg_over_time({{ .Values.tourguide.keda.promMetricName | default "http_tourguide_active_requests" }}{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",top_level_controller_name="tourguide"}[{{ .Values.tourguide.keda.alignmentPeriod | default "60s" }}])) or vector(0)
         threshold: "{{ .Values.tourguide.keda.activeRequestsTarget | default 50 }}"
+    {{- end }}
     - type: cpu
       metadata:
         type: Utilization

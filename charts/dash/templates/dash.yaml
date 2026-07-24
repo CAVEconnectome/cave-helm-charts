@@ -58,8 +58,8 @@ spec:
           value: /app/app/instance/config.py
         resources:
           requests:
-            memory: 700Mi
-            cpu: 500m
+              memory: {{ .Values.dash.resources.requests.memory | default "670Mi" }}
+              cpu: {{ .Values.dash.resources.requests.cpu | default "500m" }}
         startupProbe:
           httpGet:
             path: /dash/
