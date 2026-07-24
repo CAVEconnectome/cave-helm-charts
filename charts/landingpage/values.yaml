@@ -1,0 +1,24 @@
+cluster:
+  # supplied at deploy time by cluster.yaml; defaults here are for self-documentation
+  globalServer: ""
+  domainName: ""
+  cluster_prefix: ""
+  dns_entries: []
+  standardPool: "standard-pool"
+  dockerRegistry: "docker.io/caveconnectome"
+
+landingpage:
+  image: nginx:stable
+  # Fixed ConfigMap name (don't change between releases)
+  configName: landingpage-config
+  replicas: 1
+  title: "CAVE services"
+  heading: "Services running on this deployment"
+  subheading: ""
+  # One entry per service to surface. `url` should be a relative path so links
+  # work on every hostname the deployment serves. `docs` is optional.
+  services: []
+    # - name: "Materialization"
+    #   url: "/materialize"
+    #   description: "Materialized annotation tables & queries"
+    #   docs: "https://caveconnectome.github.io/MaterializationEngine/"

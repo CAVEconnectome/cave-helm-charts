@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: landingpage
+spec:
+  replicas: {{ .Values.landingpage.replicas | default 1 }}
+  selector:
+    matchLabels:
+      app: landingpage
+  template:
+    metadata:
+      labels:
+        app: landingpage
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      tolerations:
+        - key: "pool"
+          operator: "Equal"
+          value: "{{ .Values.cluster.standardPool }}"
+          effect: "NoSchedule"
+      nodeSelector:
+        cloud.google.com/gke-nodepool: {{ .Values.cluster.standardPool }}
+      containers:
+        - name: nginx
+          image: {{ .Values.landingpage.image | default "nginx:stable" }}
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - mountPath: /usr/share/nginx/html/index.html
+              subPath: index.html
+              readOnly: true
+              name: html
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: 20Mi
+              cpu: 10m
+      volumes:
+        - name: html
+          configMap:
+            name: {{ .Values.landingpage.configName | default "landingpage-config" }}
+            items:
+              - key: index.html
+                path: index.html

@@ -1,0 +1,5 @@
+apiVersion: v2
+name: landingpage
+version: 0.1.0
+description: Static landing page served at the domain root, listing the services running on the deployment
+appVersion: "1.0.0"

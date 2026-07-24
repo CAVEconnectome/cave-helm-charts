@@ -1,0 +1,69 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.landingpage.configName | default "landingpage-config" }}
+data:
+  index.html: |
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>{{ .Values.landingpage.title | default "CAVE services" }}</title>
+      <style>
+        :root { color-scheme: light dark; }
+        * { box-sizing: border-box; }
+        body {
+          margin: 0; padding: 2.5rem 1.25rem;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+          line-height: 1.5; background: #f6f7f9; color: #1b1f24;
+        }
+        @media (prefers-color-scheme: dark) {
+          body { background: #0f1115; color: #e6e8eb; }
+          .card { background: #181b21 !important; border-color: #2a2f37 !important; }
+          a.card:hover { border-color: #4c8bf5 !important; }
+          .muted { color: #9aa2ad !important; }
+        }
+        .wrap { max-width: 880px; margin: 0 auto; }
+        header { margin-bottom: 2rem; }
+        h1 { font-size: 1.6rem; margin: 0 0 .35rem; }
+        .muted { color: #5c6672; margin: 0; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+        .card {
+          padding: 1rem 1.1rem; border: 1px solid #e2e5e9; border-radius: 10px;
+          background: #fff; transition: border-color .12s ease;
+        }
+        .card:hover { border-color: #4c8bf5; }
+        .card h2 { font-size: 1.05rem; margin: 0 0 .3rem; }
+        .card h2 a { color: inherit; text-decoration: none; }
+        .card h2 a:hover { text-decoration: underline; }
+        .card p { margin: 0; font-size: .9rem; }
+        .docs { display: inline-block; margin-top: .6rem; font-size: .82rem; }
+        footer { margin-top: 2.5rem; font-size: .8rem; }
+      </style>
+    </head>
+    <body>
+      <div class="wrap">
+        <header>
+          <h1>{{ .Values.landingpage.heading | default "Services running on this deployment" }}</h1>
+          {{- if .Values.landingpage.subheading }}
+          <p class="muted">{{ .Values.landingpage.subheading }}</p>
+          {{- end }}
+        </header>
+        <div class="grid">
+          {{- range .Values.landingpage.services }}
+          <div class="card">
+            <h2><a href="{{ .url }}">{{ .name }}</a></h2>
+            {{- if .description }}
+            <p class="muted">{{ .description }}</p>
+            {{- end }}
+            {{- if .docs }}
+            <a class="docs" href="{{ .docs }}">Documentation &rarr;</a>
+            {{- end }}
+          </div>
+          {{- end }}
+        </div>
+        <footer class="muted">Powered by CAVE.</footer>
+      </div>
+    </body>
+    </html>
