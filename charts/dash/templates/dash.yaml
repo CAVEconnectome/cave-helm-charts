@@ -88,6 +88,15 @@ spec:
         env:
         - name: UWSGI_STATS_URL
           value: "http://localhost:9192"
+        # cpu request required: KEDA's cpu trigger needs every container in the
+        # pod to declare a cpu request.
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 50m
+            memory: 64Mi
         readinessProbe:
           httpGet:
             path: /
