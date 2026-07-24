@@ -15,10 +15,34 @@ landingpage:
   title: "CAVE services"
   heading: "Services running on this deployment"
   subheading: ""
-  # One entry per service to surface. `url` should be a relative path so links
-  # work on every hostname the deployment serves. `docs` is optional.
-  services: []
-    # - name: "Materialization"
-    #   url: "/materialize"
-    #   description: "Materialized annotation tables & queries"
-    #   docs: "https://caveconnectome.github.io/MaterializationEngine/"
+  # Default set of CAVE services. `url` is a relative path so links work on every
+  # hostname the deployment serves; `docs` is optional. Override per-environment
+  # (e.g. to trim services a deployment doesn't run, or point docs elsewhere).
+  services:
+    - name: "Materialization"
+      url: "/materialize"
+      description: "Materialized annotation tables and versioned spatial queries."
+      docs: "https://caveconnectome.github.io/"
+    - name: "Annotation"
+      url: "/annotation"
+      description: "Create and manage spatial annotation tables."
+      docs: "https://caveconnectome.github.io/"
+    - name: "Segmentation (PyChunkedGraph)"
+      url: "/segmentation"
+      description: "Proofreadable segmentation graph: splits, merges, root IDs."
+      docs: "https://caveconnectome.github.io/"
+    - name: "Meshing"
+      url: "/meshing"
+      description: "On-demand mesh generation for segmented objects."
+    - name: "L2 Cache"
+      url: "/l2cache"
+      description: "Level-2 chunk cache for the segmentation graph."
+    - name: "Skeleton Cache"
+      url: "/skeletoncache"
+      description: "Cached skeletons for segmented cells."
+    - name: "Dash"
+      url: "/dash"
+      description: "Interactive dashboards and analysis apps."
+    - name: "TourGuide"
+      url: "/tourguide"
+      description: "Guided Neuroglancer tours and suggested cells."
