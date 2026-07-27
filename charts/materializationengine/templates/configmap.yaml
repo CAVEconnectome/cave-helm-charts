@@ -24,7 +24,8 @@ data:
     REDIS_HOST = "{{ .Values.materialize.redis.host}}"
     REDIS_PORT = "{{ .Values.materialize.redis.port}}"
     REDIS_PASSWORD = "{{ .Values.materialize.redis.password}}"
-    REDIS_URL = "redis://:{{ .Values.materialize.redis.password}}@{{ .Values.materialize.redis.host}}:{{ .Values.materialize.redis.post}}/0"
+    REDIS_URL = "redis://:{{ .Values.materialize.redis.password}}@{{ .Values.materialize.redis.host}}:{{ .Values.materialize.redis.por
+    t}}/0"
     # Add all other configuration options similarly...
     CELERY_BROKER_URL = REDIS_URL
     CELERY_RESULT_BACKEND = CELERY_BROKER_URL
