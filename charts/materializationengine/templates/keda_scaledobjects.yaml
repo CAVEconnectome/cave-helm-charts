@@ -28,6 +28,20 @@ spec:
         threshold: "{{ .Values.materialize.producerTargetQueueLength }}"
       authenticationRef:
         name: keda-gcm-auth
+    # In-flight (received-but-unacknowledged) tasks keep pods alive while a task
+    # is still running even though celery_queue_length has dropped to 0 (the task
+    # has left the queue). Without this, KEDA scales the pod to zero mid-task and
+    # the warm-shutdown restores/redelivers the in-flight message. KEDA takes the
+    # max desired replicas across triggers, so this is a floor, not a cap.
+    # threshold = pool concurrency (in-flight tasks a single pod can handle).
+    - type: prometheus
+      metadata:
+        serverAddress: https://monitoring.googleapis.com/v1/projects/{{ .Values.cluster.googleProject }}/location/global/prometheus
+        query: >-
+          avg(avg_over_time(celery_inflight_tasks{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",queue_name="{{ .Values.materialize.producerQueueName }}"}[1m])) or vector(0)
+        threshold: "{{ .Values.materialize.celeryProducerConcurrency | default 1 }}"
+      authenticationRef:
+        name: keda-gcm-auth
 ---
 apiVersion: keda.sh/v1alpha1
 kind: ScaledObject
@@ -46,6 +60,18 @@ spec:
         query: >-
           avg(avg_over_time(celery_queue_length{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",queue_name="{{ .Values.materialize.consumerQueueName }}"}[1m])) or vector(0)
         threshold: "{{ .Values.materialize.consumerTargetQueueLength }}"
+      authenticationRef:
+        name: keda-gcm-auth
+    # In-flight (received-but-unacknowledged) tasks keep pods alive while a task
+    # is still running even though celery_queue_length has dropped to 0.
+    # KEDA takes the max desired replicas across triggers, so this is a floor.
+    # threshold = pool concurrency (in-flight tasks a single pod can handle).
+    - type: prometheus
+      metadata:
+        serverAddress: https://monitoring.googleapis.com/v1/projects/{{ .Values.cluster.googleProject }}/location/global/prometheus
+        query: >-
+          avg(avg_over_time(celery_inflight_tasks{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",queue_name="{{ .Values.materialize.consumerQueueName }}"}[1m])) or vector(0)
+        threshold: "{{ .Values.materialize.celeryConsumerConcurrency | default 1 }}"
       authenticationRef:
         name: keda-gcm-auth
 {{- if .Values.materialize.deltalakeEnabled }}
@@ -67,6 +93,18 @@ spec:
         query: >-
           avg(avg_over_time(celery_queue_length{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",queue_name="{{ .Values.materialize.deltalakeQueueName }}"}[1m])) or vector(0)
         threshold: "{{ .Values.materialize.deltalakeTargetQueueLength }}"
+      authenticationRef:
+        name: keda-gcm-auth
+    # In-flight (received-but-unacknowledged) tasks keep pods alive while a task
+    # is still running even though celery_queue_length has dropped to 0.
+    # KEDA takes the max desired replicas across triggers, so this is a floor.
+    # threshold = pool concurrency (in-flight tasks a single pod can handle).
+    - type: prometheus
+      metadata:
+        serverAddress: https://monitoring.googleapis.com/v1/projects/{{ .Values.cluster.googleProject }}/location/global/prometheus
+        query: >-
+          avg(avg_over_time(celery_inflight_tasks{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",queue_name="{{ .Values.materialize.deltalakeQueueName }}"}[1m])) or vector(0)
+        threshold: "{{ .Values.materialize.celeryDeltalakeConcurrency | default 1 }}"
       authenticationRef:
         name: keda-gcm-auth
 {{- end }}

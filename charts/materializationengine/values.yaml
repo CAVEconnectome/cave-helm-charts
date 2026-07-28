@@ -18,7 +18,8 @@ materialize:
   # image tag; if empty defaults to Chart.appVersion; legacy .materialize.version still honored
   tag: ""
   # image tag for the celery metric exporter (caveconnectome/celery-metric-exporter)
-  celeryExporterTag: "v5"
+  # v7 adds the celery_inflight_tasks gauge used by the KEDA in-flight triggers
+  celeryExporterTag: "v7"
   # need to fill in
   datastacks:
     - ""
