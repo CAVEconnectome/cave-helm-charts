@@ -19,7 +19,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: celery-exporter
-          image: {{ .Values.cluster.dockerRegistry}}/celery-metric-exporter:v5
+          image: {{ .Values.cluster.dockerRegistry}}/celery-metric-exporter:{{ .Values.materialize.celeryExporterTag | default "v5" }}
           command: ["python"]
           args:
             - cli.py
