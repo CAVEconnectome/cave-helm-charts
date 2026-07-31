@@ -33,7 +33,7 @@ spec:
       terminationGracePeriodSeconds: 10
       containers:
         - name: pcgl2cache-worker
-          image: {{ .Values.cluster.dockerRegistry }}/pcgl2cache:worker_pcgv1_{{ $tag }}
+          image: {{ .Values.cluster.dockerRegistry }}/pcgl2cache:{{ $tag }}
           imagePullPolicy: Always
           ports:
             - containerPort: 80
@@ -203,7 +203,7 @@ spec:
       terminationGracePeriodSeconds: 10
       containers:
         - name: pcgl2cache-lowpriority-worker
-          image: {{ .Values.cluster.dockerRegistry }}/pcgl2cache:worker_pcgv1_{{ $tag }}
+          image: {{ .Values.cluster.dockerRegistry }}/pcgl2cache:{{ $tag }}
           imagePullPolicy: Always
           ports:
             - containerPort: 80
