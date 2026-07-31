@@ -36,8 +36,8 @@ spec:
         threshold: "{{ .Values.tourguide.keda.activeRequestsTarget | default 50 }}"
     {{- end }}
     - type: cpu
+      metricType: Utilization
       metadata:
-        type: Utilization
         value: "{{ .Values.tourguide.cpuTarget | default 85 }}"
         containerName: tourguide
 {{- else }}
