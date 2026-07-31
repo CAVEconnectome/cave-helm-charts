@@ -21,6 +21,15 @@ spec:
   pollingInterval: {{ .Values.keda.pollingSeconds | default 15 }}
   advanced:
     restoreToOriginalReplicaCount: false
+    {{- if .Values.skeletoncache.worker.scaleDownStabilizationSeconds }}
+    # Shorten the HPA scale-down stabilization window (k8s default 300s) so the large
+    # worker fleet drains faster after a burst. Note: the gcp-pubsub metric is already a
+    # timeHorizon-averaged value, so scale-down still lags the real queue by ~timeHorizon.
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: {{ .Values.skeletoncache.worker.scaleDownStabilizationSeconds }}
+    {{- end }}
   triggers:
     - type: gcp-pubsub
       authenticationRef:

@@ -26,6 +26,7 @@ skeletoncache:
   worker:
     minReplicas: 1
     maxReplicas: 50
+    scaleDownStabilizationSeconds: 120
     resources:
       requests:
         memory: 1000Mi
