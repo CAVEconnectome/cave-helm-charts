@@ -102,7 +102,11 @@ keda:
   pollingSeconds: 15
   cooldownSeconds: 600
   activationValue: 0
-  timeHorizon: "1m"
+  # gcp-pubsub (num_undelivered_messages) is emitted ~every 60s with ingestion delay, so a
+  # 1m query window frequently lands in the gap and returns empty -> KEDA reads valueIfNull(0)
+  # and won't scale up despite a real backlog. Keep >= 2m (matches pcgl2cache). Raise to 3-5m
+  # if intermittent misses persist, at the cost of slower reaction/scale-down.
+  timeHorizon: "2m"
   valueIfNull: 0
   pubsub:
     messagesPerWorker: 3
