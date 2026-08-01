@@ -1707,6 +1707,15 @@ entries:
     version: 0.23.11
   - apiVersion: v1
     appVersion: 0.23.11
+    created: "2026-08-01T22:55:03.269988016Z"
+    description: Skeleton cache API and workers
+    digest: d3bcbfb61765513d7f395873da6fba8615d32e28aba925421808be18d3892ba3
+    name: skeletoncache
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/skeletoncache-0.23.11-r7/skeletoncache-0.23.11-r7.tgz
+    version: 0.23.11-r7
+  - apiVersion: v1
+    appVersion: 0.23.11
     created: "2026-07-31T19:31:30.050665845Z"
     description: Skeleton cache API and workers
     digest: ee384b1b8a03076071d7b98e819dd21d7b5e12a592cf42b7ab6115d951ec82f7
@@ -1815,18 +1824,18 @@ entries:
     version: 0.22.49-dev2
   - apiVersion: v1
     appVersion: 0.22.49
-    created: "2026-05-22T16:55:39.889074118Z"
+    created: "2026-05-22T17:03:09.426616146Z"
     description: Skeleton cache API and workers
-    digest: 763a71c2445a532af18ba9982d0903180567f7b53af11d7c9b15f0ebc4a92f99
+    digest: a29247d28219ab4d64dee727eb24ad5483c43348c5435d9032db4776804f2550
     name: skeletoncache
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/skeletoncache-0.22.49-dev.12/skeletoncache-0.22.49-dev.12.tgz
     version: 0.22.49-dev.12
   - apiVersion: v1
     appVersion: 0.22.49
-    created: "2026-05-22T17:03:09.426616146Z"
+    created: "2026-05-22T16:55:39.889074118Z"
     description: Skeleton cache API and workers
-    digest: a29247d28219ab4d64dee727eb24ad5483c43348c5435d9032db4776804f2550
+    digest: 763a71c2445a532af18ba9982d0903180567f7b53af11d7c9b15f0ebc4a92f99
     name: skeletoncache
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/skeletoncache-0.22.49-dev.12/skeletoncache-0.22.49-dev.12.tgz
@@ -2085,4 +2094,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2026-07-31T21:39:36.259760886Z"
+generated: "2026-08-01T22:55:03.270683737Z"
