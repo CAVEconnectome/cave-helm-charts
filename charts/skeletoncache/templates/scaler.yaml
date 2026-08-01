@@ -15,7 +15,9 @@ metadata:
 spec:
   scaleTargetRef:
     name: skeletoncache-worker
-  minReplicaCount: {{ .Values.skeletoncache.worker.minReplicas | default 1 }}
+  # dig (not `| default`) so an explicit minReplicas: 0 is honored -- sprig's `default`
+  # treats 0 as empty and would silently force it back to 1 (blocking scale-to-zero).
+  minReplicaCount: {{ dig "minReplicas" 1 .Values.skeletoncache.worker }}
   maxReplicaCount: {{ .Values.skeletoncache.worker.maxReplicas | default 50 }}
   cooldownPeriod: {{ .Values.keda.cooldownSeconds | default 600 }}
   pollingInterval: {{ .Values.keda.pollingSeconds | default 15 }}
