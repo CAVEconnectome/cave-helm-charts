@@ -175,9 +175,12 @@ spec:
       metadata:
         serverAddress: https://monitoring.googleapis.com/v1/projects/{{ .Values.cluster.googleProject }}/location/global/prometheus
         # Use the Celery queue metric from GMP, scoped to this cluster/namespace.
-        # Mean-align to 1m buckets, sum across matching series, treat no data as 0.
+        # Mean-align to 2m buckets, sum across matching series, treat no data as 0.
+        # 2m (not 1m): the exporter/scrape/GMP-ingest pipeline lags ~1-2m, so a trailing [1m]
+        # window queried in real time often lands in the not-yet-ingested gap -> empty ->
+        # `or vector(0)` reads 0 -> orchestration jobs fail to launch / flap.
         query: >-
-          sum(avg_over_time(celery_queue_length{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",queue_name="{{ .Values.materialize.orchestrationQueueName | default "orchestration" }}"}[1m])) or vector(0)
+          sum(avg_over_time(celery_queue_length{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",queue_name="{{ .Values.materialize.orchestrationQueueName | default "orchestration" }}"}[2m])) or vector(0)
         # One Job per queued item
         threshold: "{{ .Values.materialize.orchestrationTargetQueueLength | default 1 }}"
       authenticationRef:

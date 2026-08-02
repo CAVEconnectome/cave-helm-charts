@@ -21,9 +21,12 @@ spec:
     - type: prometheus
       metadata:
         serverAddress: https://monitoring.googleapis.com/v1/projects/{{ .Values.cluster.googleProject }}/location/global/prometheus
-        # Query GMP-mapped Prometheus metric from celery exporter, scoped to this cluster and namespace
+        # Query GMP-mapped Prometheus metric from celery exporter, scoped to this cluster and namespace.
+        # 2m window (not 1m): the exporter emits every 30s, GMP scrapes every 30s, and GMP has a
+        # ~1-2m ingestion lag, so a trailing [1m] window queried in real time often lands entirely in
+        # the not-yet-ingested gap -> avg_over_time returns empty -> `or vector(0)` reads 0 -> flapping.
         query: >-
-          avg(avg_over_time(celery_queue_length{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",queue_name="{{ .Values.materialize.producerQueueName }}"}[1m])) or vector(0)
+          avg(avg_over_time(celery_queue_length{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",queue_name="{{ .Values.materialize.producerQueueName }}"}[2m])) or vector(0)
         # Target average queue length per Pod
         threshold: "{{ .Values.materialize.producerTargetQueueLength }}"
       authenticationRef:
@@ -34,11 +37,14 @@ spec:
     # the warm-shutdown restores/redelivers the in-flight message. KEDA takes the
     # max desired replicas across triggers, so this is a floor, not a cap.
     # threshold = pool concurrency (in-flight tasks a single pod can handle).
+    # max_over_time (not avg) over a 2m window: this is a presence floor -- keep a pod
+    # while there was ANY in-flight work in the window. avg dilutes a single flickering
+    # task below 1 (and the 2m window rides over GMP's ingest gap, same as above).
     - type: prometheus
       metadata:
         serverAddress: https://monitoring.googleapis.com/v1/projects/{{ .Values.cluster.googleProject }}/location/global/prometheus
         query: >-
-          avg(avg_over_time(celery_inflight_tasks{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",queue_name="{{ .Values.materialize.producerQueueName }}"}[1m])) or vector(0)
+          avg(max_over_time(celery_inflight_tasks{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",queue_name="{{ .Values.materialize.producerQueueName }}"}[2m])) or vector(0)
         threshold: "{{ .Values.materialize.celeryProducerConcurrency | default 1 }}"
       authenticationRef:
         name: keda-gcm-auth
@@ -58,7 +64,7 @@ spec:
         serverAddress: https://monitoring.googleapis.com/v1/projects/{{ .Values.cluster.googleProject }}/location/global/prometheus
         # Scope to this cluster and namespace to avoid cross-cluster series
         query: >-
-          avg(avg_over_time(celery_queue_length{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",queue_name="{{ .Values.materialize.consumerQueueName }}"}[1m])) or vector(0)
+          avg(avg_over_time(celery_queue_length{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",queue_name="{{ .Values.materialize.consumerQueueName }}"}[2m])) or vector(0)
         threshold: "{{ .Values.materialize.consumerTargetQueueLength }}"
       authenticationRef:
         name: keda-gcm-auth
@@ -70,7 +76,7 @@ spec:
       metadata:
         serverAddress: https://monitoring.googleapis.com/v1/projects/{{ .Values.cluster.googleProject }}/location/global/prometheus
         query: >-
-          avg(avg_over_time(celery_inflight_tasks{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",queue_name="{{ .Values.materialize.consumerQueueName }}"}[1m])) or vector(0)
+          avg(max_over_time(celery_inflight_tasks{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",queue_name="{{ .Values.materialize.consumerQueueName }}"}[2m])) or vector(0)
         threshold: "{{ .Values.materialize.celeryConsumerConcurrency | default 1 }}"
       authenticationRef:
         name: keda-gcm-auth
@@ -91,7 +97,7 @@ spec:
         serverAddress: https://monitoring.googleapis.com/v1/projects/{{ .Values.cluster.googleProject }}/location/global/prometheus
         # Scope to this cluster and namespace to avoid cross-cluster series
         query: >-
-          avg(avg_over_time(celery_queue_length{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",queue_name="{{ .Values.materialize.deltalakeQueueName }}"}[1m])) or vector(0)
+          avg(avg_over_time(celery_queue_length{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",queue_name="{{ .Values.materialize.deltalakeQueueName }}"}[2m])) or vector(0)
         threshold: "{{ .Values.materialize.deltalakeTargetQueueLength }}"
       authenticationRef:
         name: keda-gcm-auth
@@ -103,7 +109,7 @@ spec:
       metadata:
         serverAddress: https://monitoring.googleapis.com/v1/projects/{{ .Values.cluster.googleProject }}/location/global/prometheus
         query: >-
-          avg(avg_over_time(celery_inflight_tasks{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",queue_name="{{ .Values.materialize.deltalakeQueueName }}"}[1m])) or vector(0)
+          avg(max_over_time(celery_inflight_tasks{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",queue_name="{{ .Values.materialize.deltalakeQueueName }}"}[2m])) or vector(0)
         threshold: "{{ .Values.materialize.celeryDeltalakeConcurrency | default 1 }}"
       authenticationRef:
         name: keda-gcm-auth
