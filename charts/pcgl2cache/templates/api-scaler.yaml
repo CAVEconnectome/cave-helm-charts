@@ -32,7 +32,7 @@ spec:
       metadata:
         serverAddress: https://monitoring.googleapis.com/v1/projects/{{ .Values.cluster.googleProject }}/location/global/prometheus
         query: >-
-          avg(avg_over_time(uwsgi_perc_busy_workers{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",top_level_controller_name="pcgl2cache"}[1m])) or vector(0)
+          avg(avg_over_time(uwsgi_perc_busy_workers{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",top_level_controller_name="pcgl2cache"}[2m])) or vector(0)
         threshold: {{ .Values.pcgl2cache.api.busyWorkersTarget | default 75 | quote }}
     {{- end }}
     - type: cpu
