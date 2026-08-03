@@ -93,6 +93,28 @@ spec:
             initialDelaySeconds: 15
             timeoutSeconds: 1
             periodSeconds: 60
+        - name: uwsgi-exporter
+          image: caveconnectome/uwsgi-export-workers:v14
+          # Exposes the metrics endpoint on 0.0.0.0:9101
+          ports:
+            - containerPort: 9101
+          env:
+          # This tells the exporter where to find the uWSGI stats server
+          - name: UWSGI_STATS_URL
+            value: "http://localhost:9192"
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 50m
+              memory: 64Mi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
         - name: sysctl-buddy
           image: alpine:3.4
           command:

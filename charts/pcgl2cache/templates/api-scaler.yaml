@@ -1,0 +1,42 @@
+{{- if .Values.keda.enabled }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: pcgl2cache-keda-auth
+spec:
+  podIdentity:
+    provider: gcp
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: pcgl2cache-api
+  annotations:
+    validations.keda.sh/hpa-ownership: "true"
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: pcgl2cache
+  minReplicaCount: {{ max 1 (.Values.pcgl2cache.api.hpa.minReplicas | default 1 | int) }}
+  maxReplicaCount: {{ .Values.pcgl2cache.api.hpa.maxReplicas | default 5 }}
+  triggers:
+    {{- if .Values.gmp.enabled }}
+    # busy-workers % via GMP; only present when gmp is enabled. Requests here are
+    # I/O bound on BigTable, so workers saturate long before CPU does and a
+    # CPU-only trigger never fires.
+    - type: prometheus
+      authenticationRef:
+        name: pcgl2cache-keda-auth
+      metadata:
+        serverAddress: https://monitoring.googleapis.com/v1/projects/{{ .Values.cluster.googleProject }}/location/global/prometheus
+        query: >-
+          avg(avg_over_time(uwsgi_perc_busy_workers{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",top_level_controller_name="pcgl2cache"}[1m])) or vector(0)
+        threshold: {{ .Values.pcgl2cache.api.busyWorkersTarget | default 75 | quote }}
+    {{- end }}
+    - type: cpu
+      metricType: Utilization
+      metadata:
+        value: {{ .Values.pcgl2cache.api.hpa.cpuTarget | default 80 | quote }}
+{{- end }}

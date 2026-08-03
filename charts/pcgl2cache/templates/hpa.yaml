@@ -1,3 +1,4 @@
+{{- if and .Values.pcgl2cache.api.hpa.enabled (not .Values.keda.enabled) }}
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -16,4 +17,5 @@ spec:
         target:
           type: Utilization
           averageUtilization: {{ .Values.pcgl2cache.api.hpa.cpuTarget | default 80 }}
+{{- end }}
 

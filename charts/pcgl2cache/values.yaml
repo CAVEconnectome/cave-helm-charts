@@ -14,6 +14,10 @@ pcgl2cache:
       minReplicas: 1
       maxReplicas: 5
       cpuTarget: 80
+    # Target percent of busy uWSGI workers for the KEDA prometheus trigger
+    # (used only when keda.enabled and gmp.enabled). These requests are I/O
+    # bound on BigTable, so workers saturate well before CPU does.
+    busyWorkersTarget: 75
     resources:
       requests:
         memory: 900Mi

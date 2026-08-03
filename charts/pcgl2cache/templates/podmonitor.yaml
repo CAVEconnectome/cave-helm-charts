@@ -10,7 +10,9 @@ spec:
     matchLabels:
       app: pcgl2cache
   endpoints:
-  - port: 80
+  # The app itself serves no /metrics; the uwsgi-exporter sidecar does, and it
+  # is what produces uwsgi_perc_busy_workers for the API scaler.
+  - port: 9101
     interval: {{ .Values.gmp.scrape.interval | default "30s" }}
-    path: /metrics
+    path: /
 {{- end }}
