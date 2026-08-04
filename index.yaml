@@ -1487,6 +1487,15 @@ entries:
   pcgl2cache:
   - apiVersion: v1
     appVersion: 1.3.1
+    created: "2026-08-04T20:55:25.02269335Z"
+    description: PCG L2 cache API and workers
+    digest: 115c87248ac43f89b5a8a6c48cec755bc32954ef6129e42ea6ae8a3b201f33d5
+    name: pcgl2cache
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/pcgl2cache-1.3.2-dev5/pcgl2cache-1.3.2-dev5.tgz
+    version: 1.3.2-dev5
+  - apiVersion: v1
+    appVersion: 1.3.1
     created: "2026-08-03T02:27:14.265109047Z"
     description: PCG L2 cache API and workers
     digest: b356cae4b7a23be3189227b742ee2216ccebf52f47117cf1046f8eb3364f3471
@@ -1532,18 +1541,18 @@ entries:
     version: 1.3.1-r2
   - apiVersion: v1
     appVersion: 1.3.1
-    created: "2025-11-09T19:07:43.299844554Z"
+    created: "2026-07-19T15:25:23.761488647Z"
     description: PCG L2 cache API and workers
-    digest: fcf04e1816c3e674fc386141cf6697e845e64c58ffd5c04b34dbba0d67df5f8f
+    digest: f36d618c2ff2875def4d0bf6f8a89daf680e9fb1d0f9802addc250c7d6fbedce
     name: pcgl2cache
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/pcgl2cache-1.3.1-r1/pcgl2cache-1.3.1-r1.tgz
     version: 1.3.1-r1
   - apiVersion: v1
     appVersion: 1.3.1
-    created: "2026-07-19T15:25:23.761488647Z"
+    created: "2025-11-09T19:07:43.299844554Z"
     description: PCG L2 cache API and workers
-    digest: f36d618c2ff2875def4d0bf6f8a89daf680e9fb1d0f9802addc250c7d6fbedce
+    digest: fcf04e1816c3e674fc386141cf6697e845e64c58ffd5c04b34dbba0d67df5f8f
     name: pcgl2cache
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/pcgl2cache-1.3.1-r1/pcgl2cache-1.3.1-r1.tgz
@@ -2112,4 +2121,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2026-08-03T02:27:14.265720271Z"
+generated: "2026-08-04T20:55:25.02320355Z"
