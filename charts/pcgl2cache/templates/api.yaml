@@ -99,9 +99,12 @@ spec:
           ports:
             - containerPort: 9101
           env:
-          # This tells the exporter where to find the uWSGI stats server
+          # Where to find the uWSGI stats server. 9191, not the 9192 the other
+          # charts use: on uWSGI 2.0.31 `stats-http` is a boolean and the
+          # server stays on the `stats` address, so pcgl2cache's uwsgi.ini
+          # binds 9191. Keep this in sync with that file.
           - name: UWSGI_STATS_URL
-            value: "http://localhost:9192"
+            value: "http://127.0.0.1:9191"
           resources:
             requests:
               cpu: 10m
