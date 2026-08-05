@@ -16,13 +16,19 @@ spec:
   triggers:
     {{- if .Values.gmp.enabled }}
     # busy-workers % via GMP; only present when gmp is enabled.
+    # sum() (NOT avg()): uwsgi_perc_busy_workers is a PER-POD 0-100 ratio, and KEDA
+    # registers this as an HPA AverageValue metric (desired = ceil(metric / threshold),
+    # HPA divides the reported value by pod count). With avg() the reported value is the
+    # mean busy-% (<=100), so desired is capped at ceil(100/75)=2 -- the trigger is inert.
+    # With sum() the reported value is replicas*meanBusy%, so desired = ceil(replicas*meanBusy%/75),
+    # which scales the fleet to hold the average at ~threshold%. 2m window rides over GMP's ingest gap.
     - type: prometheus
       authenticationRef:
         name: pcg-keda-trigger-auth-gcp-credentials
       metadata:
         serverAddress: https://monitoring.googleapis.com/v1/projects/{{ .Values.cluster.googleProject }}/location/global/prometheus
         query: >-
-          avg(avg_over_time(uwsgi_perc_busy_workers{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",top_level_controller_name="pychunkedgraph"}[1m])) or vector(0)
+          sum(avg_over_time(uwsgi_perc_busy_workers{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",top_level_controller_name="pychunkedgraph"}[2m])) or vector(0)
         threshold: "{{ .Values.pychunkedgraph.apiBusyWorkersTarget | default 75 }}"
     {{- end }}
     - type: cpu
