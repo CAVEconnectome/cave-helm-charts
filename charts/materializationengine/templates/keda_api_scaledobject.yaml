@@ -21,8 +21,12 @@ spec:
         name: keda-gcm-auth
       metadata:
         serverAddress: https://monitoring.googleapis.com/v1/projects/{{ .Values.cluster.googleProject }}/location/global/prometheus
+        # sum() not avg(): uwsgi_perc_busy_workers is a per-pod 0-100 ratio under a KEDA
+        # AverageValue target (HPA divides the reported value by pod count). avg() caps desired
+        # at ceil(100/threshold) (~2 pods) -> inert. sum() -> desired = ceil(replicas*meanBusy%/threshold),
+        # scaling the fleet to hold average busy-% at threshold. 2m rides over GMP's ingest lag.
         query: >-
-          avg(avg_over_time(uwsgi_perc_busy_workers{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",top_level_controller_name="materialize"}[1m])) or vector(0)
+          sum(avg_over_time(uwsgi_perc_busy_workers{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",top_level_controller_name="materialize"}[2m])) or vector(0)
         # Target AverageValue in percent
         threshold: "75"
     {{- end }}
