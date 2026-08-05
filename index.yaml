@@ -1770,6 +1770,15 @@ entries:
     version: 0.23.11
   - apiVersion: v1
     appVersion: 0.23.11
+    created: "2026-08-05T05:32:41.843765317Z"
+    description: Skeleton cache API and workers
+    digest: 8e3f203e7b0047da88af89e4a3514bd26bc3958f877bd38c5e88e3528bcf38be
+    name: skeletoncache
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/skeletoncache-0.23.11-r9/skeletoncache-0.23.11-r9.tgz
+    version: 0.23.11-r9
+  - apiVersion: v1
+    appVersion: 0.23.11
     created: "2026-08-05T02:20:27.439910647Z"
     description: Skeleton cache API and workers
     digest: c7b603406652d9c81b0fb6ec2253359c4a3b48bae05041f302e843a26fba9697
@@ -1896,18 +1905,18 @@ entries:
     version: 0.22.49-dev2
   - apiVersion: v1
     appVersion: 0.22.49
-    created: "2026-05-22T17:03:09.426616146Z"
+    created: "2026-05-22T16:55:39.889074118Z"
     description: Skeleton cache API and workers
-    digest: a29247d28219ab4d64dee727eb24ad5483c43348c5435d9032db4776804f2550
+    digest: 763a71c2445a532af18ba9982d0903180567f7b53af11d7c9b15f0ebc4a92f99
     name: skeletoncache
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/skeletoncache-0.22.49-dev.12/skeletoncache-0.22.49-dev.12.tgz
     version: 0.22.49-dev.12
   - apiVersion: v1
     appVersion: 0.22.49
-    created: "2026-05-22T16:55:39.889074118Z"
+    created: "2026-05-22T17:03:09.426616146Z"
     description: Skeleton cache API and workers
-    digest: 763a71c2445a532af18ba9982d0903180567f7b53af11d7c9b15f0ebc4a92f99
+    digest: a29247d28219ab4d64dee727eb24ad5483c43348c5435d9032db4776804f2550
     name: skeletoncache
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/skeletoncache-0.22.49-dev.12/skeletoncache-0.22.49-dev.12.tgz
@@ -2166,4 +2175,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2026-08-05T02:20:27.441230931Z"
+generated: "2026-08-05T05:32:41.844797857Z"
