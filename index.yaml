@@ -335,6 +335,15 @@ entries:
     version: 1.16.1
   - apiVersion: v1
     appVersion: 1.16.1
+    created: "2026-08-05T02:20:26.946781899Z"
+    description: A Helm chart for CAVE dash on flask service on Kubernetes
+    digest: 637c4fd95a4dfb02e28d6e20a1c8e9d6dd254c3077279a80d605db2c9879e997
+    name: dash
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/dash-1.16.1-r6/dash-1.16.1-r6.tgz
+    version: 1.16.1-r6
+  - apiVersion: v1
+    appVersion: 1.16.1
     created: "2026-07-24T06:48:44.390582694Z"
     description: A Helm chart for CAVE dash on flask service on Kubernetes
     digest: d04fea18f08e4ea7147b478449de3304c0d74c23c6c8f32d471cd303b442c72c
@@ -744,6 +753,15 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/materializationengine-5.23.1-r2/materializationengine-5.23.1-r2.tgz
     version: 5.23.1-r2
+  - apiVersion: v2
+    appVersion: 5.23.1
+    created: "2026-08-05T02:20:27.126633993Z"
+    description: A Helm chart for CAVE materialization service on Kubernetes
+    digest: b4c3fa7db64855d4ff60394b44a4a2792bfa1999d9519e12120465355e6c4634
+    name: materializationengine
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/materializationengine-5.23.1-r17/materializationengine-5.23.1-r17.tgz
+    version: 5.23.1-r17
   - apiVersion: v2
     appVersion: 5.23.1
     created: "2026-08-02T21:42:24.048238475Z"
@@ -1487,6 +1505,15 @@ entries:
   pcgl2cache:
   - apiVersion: v1
     appVersion: 1.3.1
+    created: "2026-08-05T02:20:27.290949561Z"
+    description: PCG L2 cache API and workers
+    digest: 69f0e6714c355b8cffe47023bba0299e0f198970a517929e8e6035fe927f1cae
+    name: pcgl2cache
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/pcgl2cache-1.3.2-dev6/pcgl2cache-1.3.2-dev6.tgz
+    version: 1.3.2-dev6
+  - apiVersion: v1
+    appVersion: 1.3.1
     created: "2026-08-04T20:55:25.02269335Z"
     description: PCG L2 cache API and workers
     digest: 115c87248ac43f89b5a8a6c48cec755bc32954ef6129e42ea6ae8a3b201f33d5
@@ -1741,6 +1768,15 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/skeletoncache-0.23.11/skeletoncache-0.23.11.tgz
     version: 0.23.11
+  - apiVersion: v1
+    appVersion: 0.23.11
+    created: "2026-08-05T02:20:27.439910647Z"
+    description: Skeleton cache API and workers
+    digest: c7b603406652d9c81b0fb6ec2253359c4a3b48bae05041f302e843a26fba9697
+    name: skeletoncache
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/skeletoncache-0.23.11-r8/skeletoncache-0.23.11-r8.tgz
+    version: 0.23.11-r8
   - apiVersion: v1
     appVersion: 0.23.11
     created: "2026-08-01T22:55:03.269988016Z"
@@ -2130,4 +2166,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2026-08-05T02:09:17.391347041Z"
+generated: "2026-08-05T02:20:27.441230931Z"
