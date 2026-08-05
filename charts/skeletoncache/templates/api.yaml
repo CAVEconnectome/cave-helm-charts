@@ -32,8 +32,11 @@ spec:
           ports:
             - name: http
               containerPort: 80
+            # This image's uwsgi serves its stats HTTP server on 127.0.0.1:1717
+            # (the fleet default elsewhere is 9192, but skeletoncache's image uses 1717).
+            # The uwsgi-exporter sidecar reads it there; keep this in sync with UWSGI_STATS_URL below.
             - name: metrics
-              containerPort: 9192
+              containerPort: 1717
           envFrom:
             - configMapRef:
                 name: skeletoncache-config
@@ -107,9 +110,12 @@ spec:
           ports:
               - containerPort: 9101
           env:
-          # This tells the exporter where to find the uWSGI stats server
+          # Where the exporter finds the uWSGI stats server. skeletoncache's uwsgi
+          # serves stats on 1717 (NOT the 9192 fleet default); pointing at 9192 gives
+          # connection-refused every scrape -> uwsgi_perc_busy_workers stuck at 0.
+          # Must match the app's uwsgi --stats port (and the `metrics` containerPort above).
           - name: UWSGI_STATS_URL
-            value: "http://localhost:9192"
+            value: "http://localhost:1717"
           resources:
             requests:
               cpu: 10m
