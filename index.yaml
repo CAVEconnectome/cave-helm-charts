@@ -1679,6 +1679,15 @@ entries:
   pychunkedgraph:
   - apiVersion: v2
     appVersion: 2.20.0
+    created: "2026-08-06T06:43:35.196543952Z"
+    description: A Helm chart for CAVE pychunkedgraph services on Kubernetes
+    digest: 593f1e5af898d82373fab677965ed2ab1d1023dbed07ecefb145035592329b25
+    name: pychunkedgraph
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/pychunkedgraph-2.20.0-r7/pychunkedgraph-2.20.0-r7.tgz
+    version: 2.20.0-r7
+  - apiVersion: v2
+    appVersion: 2.20.0
     created: "2026-08-06T06:02:29.882124103Z"
     description: A Helm chart for CAVE pychunkedgraph services on Kubernetes
     digest: 109bda409be352905881a4f2334cf901fe73381b2a14b6a37d0ae667a832b694
@@ -2193,4 +2202,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2026-08-06T06:02:29.882548069Z"
+generated: "2026-08-06T06:43:35.197181913Z"
