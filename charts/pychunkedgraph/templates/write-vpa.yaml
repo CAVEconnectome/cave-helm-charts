@@ -1,0 +1,44 @@
+{{- if .Values.pychunkedgraph.writeVpa.enabled }}
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: pychunkedgraph-write-vpa
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: pychunkedgraph
+  # Auto: evicts + recreates pods so requests track usage as the profile changes.
+  updatePolicy:
+    updateMode: Auto
+  resourcePolicy:
+    containerPolicies:
+      # The recommender targets ~P90 of usage (not the max, and not the mean -- GKE's
+      # managed recommender percentile isn't tunable). minAllowed (= the base request)
+      # is the floor, so the VPA mainly reacts UP if the profile grows; maxAllowed caps
+      # a runaway (e.g. from node-level OOM ratcheting).
+      - containerName: 'pychunkedgraph'
+        minAllowed:
+          cpu: {{ .Values.pychunkedgraph.writeCpuMilli | default 500 }}m
+          memory: {{ .Values.pychunkedgraph.writeMemGb | default 4 }}Gi
+        maxAllowed:
+          cpu: {{ .Values.pychunkedgraph.writeVpa.maxCpuMilli | default 2000 }}m
+          memory: {{ .Values.pychunkedgraph.writeVpa.maxMemGb | default 10 }}Gi
+        controlledResources: ["cpu", "memory"]
+      # cap the sidecars explicitly: without a policy the VPA controls them uncapped, and
+      # node-level OOM events ratchet their recommendation up until the pod no longer fits.
+      - containerName: 'sysctl-buddy'
+        minAllowed:
+          memory: 10Mi
+        maxAllowed:
+          cpu: 10m
+          memory: 64Mi
+        controlledResources: ["cpu", "memory"]
+      - containerName: 'uwsgi-exporter'
+        minAllowed:
+          memory: 32Mi
+        maxAllowed:
+          cpu: 50m
+          memory: 64Mi
+        controlledResources: ["cpu", "memory"]
+{{- end }}

@@ -53,8 +53,18 @@ spec:
               value: "{{ .Values.pychunkedgraph.uwsgiReadIni | default "uwsgi.ini"}}"
           resources:
             requests:
-              memory: {{ .Values.pychunkedgraph.readMemGb }}Gi
+              # integer Mi (not <float>Gi): a fractional readMemGb like 1.8 -> "1.8Gi" is a
+              # fractional number of bytes, which the k8s API flags as invalid.
+              memory: {{ mulf .Values.pychunkedgraph.readMemGb 1024 | int }}Mi
               cpu: {{ .Values.pychunkedgraph.readCpuMilli }}m
+            limits:
+              # Memory limit = readMemLimitRatio (default 1.2) x request. A container that
+              # exceeds this is OOM-killed by the kernel -- CONTAINED to this pod, so a
+              # runaway request can't cause node-level OOM that evicts neighbor pods.
+              # No CPU limit (CPU is compressible; a limit would only throttle).
+              # The read VPA runs RequestsAndLimits, so it preserves this ratio as it
+              # right-sizes the request.
+              memory: {{ mulf .Values.pychunkedgraph.readMemGb (.Values.pychunkedgraph.readMemLimitRatio | default 1.2) 1024 | int }}Mi
           readinessProbe:
             httpGet:
               path: /segmentation

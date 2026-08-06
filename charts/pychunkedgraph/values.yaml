@@ -43,10 +43,20 @@ pychunkedgraph:
   writeMaxReplicas: 3
   writeMemGb: 4
   writeCpuMilli: 500
+  # VerticalPodAutoscaler for pychunkedgraph (non-read/write) pods. writeMemGb/writeCpuMilli
+  # act as the floor (minAllowed); the VPA reacts up to these caps if the profile grows.
+  writeVpa:
+    enabled: true
+    maxMemGb: 10
+    maxCpuMilli: 2000
   readMinReplicas: 1
   readMaxReplicas: 10
   readMemGb: 1.8
   readCpuMilli: 125
+  # Read pod memory limit = readMemLimitRatio x request. Contains OOM to the pod (no
+  # node-level eviction of neighbors); the read VPA (RequestsAndLimits) keeps this ratio
+  # as it right-sizes the request.
+  readMemLimitRatio: 1.2
   # VerticalPodAutoscaler for pychunkedgraph-read; requires the VPA
   # admission controller on the cluster (GKE: vertical pod autoscaling enabled).
   # readMemGb/readCpuMilli above act as the floor (minAllowed).
