@@ -13,6 +13,12 @@ spec:
     name: skeletoncache
   minReplicaCount: {{ .Values.skeletoncache.api.hpa.minReplicas }}
   maxReplicaCount: {{ .Values.skeletoncache.api.hpa.maxReplicas }}
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleDown:
+          # Scale the api fleet down faster after a burst (k8s HPA default is 300s).
+          stabilizationWindowSeconds: {{ .Values.skeletoncache.api.scaleDownStabilizationSeconds | default 90 }}
   triggers:
     {{- if .Values.gmp.enabled }}
     # busy-workers % via GMP; only present when gmp is enabled.

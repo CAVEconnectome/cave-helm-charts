@@ -19,6 +19,9 @@ skeletoncache:
     # Target percent of busy uWSGI workers for the KEDA prometheus trigger
     # (used only when keda.enabled and gmp.enabled).
     busyWorkersTarget: 75
+    # HPA scale-down stabilization (k8s default 300s); lowered so the api fleet
+    # drains faster after a burst.
+    scaleDownStabilizationSeconds: 90
     resources:
       requests:
         memory: 512Mi
