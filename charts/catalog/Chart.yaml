@@ -1,0 +1,5 @@
+apiVersion: v2
+name: catalog
+description: A Helm chart for CAVE Catalog service on Kubernetes
+version: 0.1.0
+appVersion: "0.1.0"
