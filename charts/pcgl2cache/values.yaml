@@ -62,12 +62,20 @@ pcgl2cache:
 keda:
   enabled: true
   pollingSeconds: 15
+  # cooldownPeriod = scale-to-ZERO delay; kept high so the deployment stays warm
+  # between bursts and avoids cold starts. (Not the same as scaleDownStabilizationSeconds.)
   cooldownSeconds: 600
+  # HPA scale-DOWN stabilization for scaling between non-zero replica counts (k8s default 300s).
+  # Lowered so over-scaled idle workers drain quickly after a burst instead of lingering ~5 min.
+  scaleDownStabilizationSeconds: 90
   activationValue: 0
   timeHorizon: "2m"
   valueIfNull: 0
   pubsub:
-    messagesPerWorker: 1
+    # Target messages per worker. Workers process strictly serially (1 message at a
+    # time, max_messages=1), so this trades scale-up latency for fewer, better-utilized
+    # pods: desired = ceil(backlog / messagesPerWorker).
+    messagesPerWorker: 2
 
 service:
   type: NodePort

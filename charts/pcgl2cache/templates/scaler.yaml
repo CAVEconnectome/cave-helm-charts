@@ -21,6 +21,13 @@ spec:
   pollingInterval: {{ .Values.keda.pollingSeconds | default 15 }}
   advanced:
     restoreToOriginalReplicaCount: false
+    # Drop over-scaled idle workers ~90s after a burst instead of the k8s HPA default (300s).
+    # This only affects scaling DOWN between non-zero replica counts; cooldownPeriod above
+    # (scale-to-zero) stays high to keep the pool warm and avoid cold starts.
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: {{ .Values.keda.scaleDownStabilizationSeconds | default 90 }}
   triggers:
     - type: gcp-pubsub
       authenticationRef:
@@ -47,6 +54,13 @@ spec:
   pollingInterval: {{ .Values.keda.pollingSeconds | default 15 }}
   advanced:
     restoreToOriginalReplicaCount: false
+    # Drop over-scaled idle workers ~90s after a burst instead of the k8s HPA default (300s).
+    # This only affects scaling DOWN between non-zero replica counts; cooldownPeriod above
+    # (scale-to-zero) stays high to keep the pool warm and avoid cold starts.
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: {{ .Values.keda.scaleDownStabilizationSeconds | default 90 }}
   triggers:
     - type: gcp-pubsub
       authenticationRef:
@@ -72,6 +86,13 @@ spec:
   pollingInterval: {{ .Values.keda.pollingSeconds | default 15 }}
   advanced:
     restoreToOriginalReplicaCount: false
+    # Drop over-scaled idle workers ~90s after a burst instead of the k8s HPA default (300s).
+    # This only affects scaling DOWN between non-zero replica counts; cooldownPeriod above
+    # (scale-to-zero) stays high to keep the pool warm and avoid cold starts.
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: {{ .Values.keda.scaleDownStabilizationSeconds | default 90 }}
   triggers:
     - type: gcp-pubsub
       authenticationRef:
