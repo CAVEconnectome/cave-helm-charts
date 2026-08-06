@@ -51,8 +51,14 @@ spec:
             {{- include "pcg_env.config" . | nindent 12 }}
           resources:
             requests:
-              memory: {{ .Values.pychunkedgraph.writeMemGb | default 4}}Gi
+              # integer Mi (not <float>Gi) so a fractional writeMemGb doesn't produce a
+              # fractional-byte quantity that the k8s API flags as invalid.
+              memory: {{ mulf (.Values.pychunkedgraph.writeMemGb | default 4) 1024 | int }}Mi
               cpu: {{ .Values.pychunkedgraph.writeCpuMilli | default 1000}}m
+            limits:
+              # Memory limit = writeMemLimitRatio (default 1.2) x request. Contains OOM to
+              # the pod; the write VPA (RequestsAndLimits) preserves this ratio as it scales.
+              memory: {{ mulf (.Values.pychunkedgraph.writeMemGb | default 4) (.Values.pychunkedgraph.writeMemLimitRatio | default 1.2) 1024 | int }}Mi
           readinessProbe:
             httpGet:
               path: /segmentation
