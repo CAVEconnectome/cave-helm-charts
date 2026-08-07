@@ -19,6 +19,7 @@ spec:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/secrets: {{ include (print $.Template.BasePath "/materialize_secret.yaml") . | sha256sum }}
         checksum/cloudsql: {{ include (print $.Template.BasePath "/cloudsql_secret.yaml") . | sha256sum }}
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
     spec:
       terminationGracePeriodSeconds: 6000
       tolerations:
