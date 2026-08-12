@@ -48,6 +48,8 @@ spec:
               mountPath: /root/.cloudvolume/secrets
           {{- end }}
           env:
+            - name: GLOBAL_SERVER_URL
+              value: https://{{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}
             - name: AUTH_URI
               value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/auth
             - name: STICKY_AUTH_URL
