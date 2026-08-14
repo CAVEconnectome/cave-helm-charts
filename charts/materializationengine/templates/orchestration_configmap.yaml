@@ -81,13 +81,13 @@ data:
     DELTALAKE_OUTPUT_BUCKET = "{{ .Values.materialize.dumpBucketPath }}/deltalake_exports"
     {{- end }}
     {{- if .Values.materialize.deltalakeFlushThresholdBytes }}
-    DELTALAKE_FLUSH_THRESHOLD_BYTES = {{ .Values.materialize.deltalakeFlushThresholdBytes }}
+    DELTALAKE_FLUSH_THRESHOLD_BYTES = {{ .Values.materialize.deltalakeFlushThresholdBytes | int64 }}
     {{- end }}
     {{- if .Values.materialize.deltalakeOptimizeTargetSizeBytes }}
-    DELTALAKE_OPTIMIZE_TARGET_SIZE_BYTES = {{ .Values.materialize.deltalakeOptimizeTargetSizeBytes }}
+    DELTALAKE_OPTIMIZE_TARGET_SIZE_BYTES = {{ .Values.materialize.deltalakeOptimizeTargetSizeBytes | int64 }}
     {{- end }}
     {{- if .Values.materialize.deltalakeOptimizeMaxSpillSizeBytes }}
-    DELTALAKE_OPTIMIZE_MAX_SPILL_SIZE_BYTES = {{ .Values.materialize.deltalakeOptimizeMaxSpillSizeBytes }}
+    DELTALAKE_OPTIMIZE_MAX_SPILL_SIZE_BYTES = {{ .Values.materialize.deltalakeOptimizeMaxSpillSizeBytes | int64 }}
     {{- end }}
     # Celery worker autoshutdown settings for orchestration pods
     CELERY_WORKER_AUTOSHUTDOWN_ENABLED = {{ if hasKey .Values.materialize "orchestrationAutoshutdownEnabled" }}{{ if .Values.materialize.orchestrationAutoshutdownEnabled }}True{{ else }}False{{ end }}{{ else }}True{{ end }}
