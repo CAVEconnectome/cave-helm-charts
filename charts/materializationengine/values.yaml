@@ -46,6 +46,19 @@ materialize:
   # Output bucket for deltalake exports. If empty, defaults to
   # "<dumpBucketPath>/deltalake_exports". Set to override the location.
   deltalakeOutputBucket: ""
+  # Delta Lake export memory tuning. Leave empty to keep the
+  # MaterializationEngine defaults (2 GiB flush threshold, no optimize
+  # spill limit).
+  #
+  # The export streams Postgres rows into an in-memory buffer and flushes
+  # when it reaches deltalakeFlushThresholdBytes. Peak worker memory is a
+  # multiple of this value, not equal to it, so lower it if the deltalake
+  # worker OOMs on large tables. 536870912 (512 MiB) is a reasonable
+  # starting point for tables in the hundreds of millions of rows.
+  deltalakeFlushThresholdBytes: ""
+  # Bounds memory during the post-export optimize (z-order/compact) step.
+  deltalakeOptimizeTargetSizeBytes: ""
+  deltalakeOptimizeMaxSpillSizeBytes: ""
   # KEDA scaling targets per-queue
   producerTargetQueueLength: 10
   consumerTargetQueueLength: 10
@@ -65,6 +78,11 @@ materialize:
   celeryConsumerMemory: "400Mi"
   celeryDeltalakeCpu: "950m"
   celeryDeltalakeMemory: "4000Mi"
+  # Optional memory ceiling for the deltalake worker. Empty means no limit
+  # (Burstable), so a runaway export is killed by the node OOM killer and
+  # may take neighbouring pods with it. Setting a limit turns that into a
+  # cgroup OOM attributable to this container.
+  celeryDeltalakeMemoryLimit: ""
   celeryProducerConcurrency: 2
   celeryConsumerConcurrency: 2
   celeryDeltalakeConcurrency: 2
