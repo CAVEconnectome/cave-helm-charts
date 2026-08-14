@@ -105,10 +105,10 @@ spec:
             requests:
               cpu: {{ .Values.materialize.celeryDeltalakeCpu }}
               memory: {{ .Values.materialize.celeryDeltalakeMemory }}
-            {{- if .Values.materialize.celeryDeltalakeMemoryLimit }}
+{{ if .Values.materialize.celeryDeltalakeMemoryLimit }}
             limits:
               memory: {{ .Values.materialize.celeryDeltalakeMemoryLimit }}
-            {{- end }}
+{{ end }}
           lifecycle:
             preStop:
               exec:
