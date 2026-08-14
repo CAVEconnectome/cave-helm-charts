@@ -46,15 +46,11 @@ materialize:
   # Output bucket for deltalake exports. If empty, defaults to
   # "<dumpBucketPath>/deltalake_exports". Set to override the location.
   deltalakeOutputBucket: ""
-  # Delta Lake export memory tuning. Leave empty to keep the
-  # MaterializationEngine defaults (2 GiB flush threshold, no optimize
-  # spill limit).
-  #
+  # Delta Lake export memory tuning.
   # The export streams Postgres rows into an in-memory buffer and flushes
-  # when it reaches deltalakeFlushThresholdBytes. Peak worker memory is a
+  # when it reaches deltalakeFlushThresholdBytes. Peak worker memory may be a
   # multiple of this value, not equal to it, so lower it if the deltalake
-  # worker OOMs on large tables. 536870912 (512 MiB) is a reasonable
-  # starting point for tables in the hundreds of millions of rows.
+  # worker OOMs on large tables.
   deltalakeFlushThresholdBytes: ""
   # Bounds memory during the post-export optimize (z-order/compact) step.
   deltalakeOptimizeTargetSizeBytes: ""
