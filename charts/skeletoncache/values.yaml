@@ -61,6 +61,11 @@ skeletoncache:
   datastackRemap: ""
   cacheNonH5: "false"
   verboseLevel: "0"
+  # Archive one row per generated skeleton to skeletonization_times_v2.csv. Off by default: the
+  # service rewrites that whole object on every skeleton, so the cost grows with the number of
+  # skeletons ever produced and all workers contend for the same key. Only enable if you have
+  # accepted that cost or the write has been resharded.
+  archiveSkeletonizationTimes: false
   # Default debug root id; set to a non-zero root ID to enable targeted debugging
   debugRootId: "0"
   queues:

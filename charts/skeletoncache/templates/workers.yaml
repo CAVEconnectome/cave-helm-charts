@@ -88,6 +88,8 @@ spec:
               value: {{ required "A valid .skeletoncache.queues.deadLetter is required!" .Values.skeletoncache.queues.deadLetter | quote }}
             - name: VERBOSE_LEVEL
               value: {{ .Values.skeletoncache.verboseLevel | quote }}
+            - name: ARCHIVE_SKELETONIZATION_TIMES
+              value: {{ .Values.skeletoncache.archiveSkeletonizationTimes | default false | quote }}
             - name: DEBUG_ROOT_ID
               value: {{ .Values.skeletoncache.debugRootId | default "0" | quote }}
             - name: GOOGLE_APPLICATION_CREDENTIALS
