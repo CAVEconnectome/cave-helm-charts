@@ -79,6 +79,8 @@ spec:
             requests:
               memory: {{ .Values.pcgl2cache.worker.resources.requests.memory }}
               cpu: {{ .Values.pcgl2cache.worker.resources.requests.cpu }}
+            limits:
+              memory: {{ include "pcgl2cache.memLimit" (dict "request" .Values.pcgl2cache.worker.resources.requests.memory "explicit" (.Values.pcgl2cache.worker.resources.limits).memory "ratio" .Values.pcgl2cache.worker.resources.memLimitRatio) }}
           command:
             - su
             - nginx
@@ -164,6 +166,8 @@ spec:
             requests:
               memory: {{ .Values.pcgl2cache.worker.resources.requests.memory }}
               cpu: {{ .Values.pcgl2cache.worker.resources.requests.cpu }}
+            limits:
+              memory: {{ include "pcgl2cache.memLimit" (dict "request" .Values.pcgl2cache.worker.resources.requests.memory "explicit" (.Values.pcgl2cache.worker.resources.limits).memory "ratio" .Values.pcgl2cache.worker.resources.memLimitRatio) }}
           command:
             - su
             - nginx
@@ -249,6 +253,8 @@ spec:
             requests:
               memory: {{ .Values.pcgl2cache.worker.resources.requests.memory }}
               cpu: {{ .Values.pcgl2cache.worker.resources.requests.cpu }}
+            limits:
+              memory: {{ include "pcgl2cache.memLimit" (dict "request" .Values.pcgl2cache.worker.resources.requests.memory "explicit" (.Values.pcgl2cache.worker.resources.limits).memory "ratio" .Values.pcgl2cache.worker.resources.memLimitRatio) }}
           command:
             - su
             - nginx

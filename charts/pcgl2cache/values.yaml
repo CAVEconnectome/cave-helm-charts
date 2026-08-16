@@ -22,6 +22,20 @@ pcgl2cache:
       requests:
         memory: 900Mi
         cpu: 200m
+      # Memory limit, always set. Without one, a container that outgrows its request is
+      # not killed; instead the node fills and the kubelet evicts whichever pod most
+      # exceeds its request -- taking down neighbours too. A limit turns that node-wide
+      # eviction into a contained per-pod OOM kill.
+      # Defaults to memLimitRatio x requests.memory. Set limits.memory to pin an explicit
+      # value instead. No CPU limit (CPU is compressible; a limit would only throttle).
+      #
+      # NOTE: the limit must sit above real steady-state usage, not just above the
+      # request. These API pods run 8 uwsgi workers minimum and idle well over 900Mi, so
+      # a ratio near 1.0 would OOM-kill them on startup. Check actual usage per
+      # deployment before lowering the ratio.
+      memLimitRatio: 1.5
+      limits: {}
+        # memory: 1500Mi   # explicit override; wins over memLimitRatio
   worker:
     minReplicas: 0
     maxReplicas: 50
@@ -30,6 +44,10 @@ pcgl2cache:
       requests:
         memory: 2500Mi
         cpu: 500m
+      # Same scheme as api.resources above.
+      memLimitRatio: 1.5
+      limits: {}
+        # memory: 4000Mi   # explicit override; wins over memLimitRatio
   queues:
     update: pcg-update-sub
     high: pcg-high-sub

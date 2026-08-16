@@ -79,6 +79,10 @@ spec:
             requests:
               memory: {{ .Values.pcgl2cache.api.resources.requests.memory }}
               cpu: {{ .Values.pcgl2cache.api.resources.requests.cpu }}
+            limits:
+              # Contains a runaway pod to a per-pod OOM kill instead of letting the node
+              # fill and the kubelet evict neighbours. No CPU limit (CPU is compressible).
+              memory: {{ include "pcgl2cache.memLimit" (dict "request" .Values.pcgl2cache.api.resources.requests.memory "explicit" (.Values.pcgl2cache.api.resources.limits).memory "ratio" .Values.pcgl2cache.api.resources.memLimitRatio) }}
           readinessProbe:
             httpGet:
               path: /l2cache/api/v1
