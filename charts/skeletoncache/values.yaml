@@ -66,6 +66,11 @@ skeletoncache:
   # skeletons ever produced and all workers contend for the same key. Only enable if you have
   # accepted that cost or the write has been resharded.
   archiveSkeletonizationTimes: false
+  # Emit one PHASE_TIMINGS line per message (preamble step timings) and one MESSAGE_TIMING line
+  # (whole-message wall time). Diagnostic only -- one extra log line per message. Use when
+  # throughput does not match the generation times, since the preamble runs on every message
+  # including cache hits.
+  logPhaseTimings: false
   # Default debug root id; set to a non-zero root ID to enable targeted debugging
   debugRootId: "0"
   queues:

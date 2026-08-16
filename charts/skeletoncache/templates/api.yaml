@@ -75,6 +75,8 @@ spec:
               value: {{ .Values.skeletoncache.verboseLevel | quote }}
             - name: ARCHIVE_SKELETONIZATION_TIMES
               value: {{ .Values.skeletoncache.archiveSkeletonizationTimes | default false | quote }}
+            - name: LOG_PHASE_TIMINGS
+              value: {{ .Values.skeletoncache.logPhaseTimings | default false | quote }}
             - name: DEBUG_ROOT_ID
               value: {{ .Values.skeletoncache.debugRootId | default "0" | quote }}
             - name: PROJECT_NAME
