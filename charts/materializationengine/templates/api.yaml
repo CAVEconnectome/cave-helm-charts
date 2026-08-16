@@ -71,6 +71,13 @@ spec:
               value: '{"query":"{{ .Values.materialize.limitsQueryPerMinute}}/minute","fast_query":"{{ .Values.materialize.limitsFastQueryPerMinute}}/minute"}'
             - name: LIMITER_URI
               value: redis://{{ .Values.limiter.redis.host }}/0 
+            {{- with .Values.materialize.limitsServiceAccountQueryPerMinute }}
+            # Higher ceiling for service-account callers on the endpoint caveclient's
+            # live_live_query posts to. Limits bucket per (user id, endpoint), so this leaves
+            # every other endpoint's limit for the same identity untouched.
+            - name: LIMITER_SERVICE_ACCOUNT_OVERRIDES
+              value: '{"LiveTableQuery":{"query":"{{ . }}/minute"}}'
+            {{- end }}
             - name: STICKY_AUTH_URL
               value: {{ .Values.cluster.globalServer }}/sticky_auth
             - name: AUTH_URL

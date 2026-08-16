@@ -67,6 +67,11 @@ materialize:
   # limits queries to the api
   limitsQueryPerMinute: 300
   limitsFastQueryPerMinute: 2000
+  # Optional higher per-minute ceiling on the live-query endpoint for callers whose token
+  # reports service_account=true. Unset means service accounts get the normal limit, i.e.
+  # no behaviour change. Set it when an internal batch consumer needs headroom without
+  # relaxing limits for interactive users or that identity's other endpoints.
+  limitsServiceAccountQueryPerMinute: ""
   # resources limits for the celery workers
   celeryProducerCpu: "100m"
   celeryProducerMemory: "400Mi"
