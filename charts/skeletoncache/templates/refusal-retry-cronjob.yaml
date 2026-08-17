@@ -1,0 +1,127 @@
+{{- if .Values.skeletoncache.refusalRetry.enabled }}
+{{- $raw := .Values.skeletoncache.tag | default .Chart.AppVersion -}}
+{{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
+{{- $categories := .Values.skeletoncache.limiter.categories | default .Values.skeletoncache.limits -}}
+# Slow-timescale retry of refused root ids.
+#
+# Pub/Sub redelivery covers minutes to hours; when it is exhausted the message dead-letters and the
+# root is added to the refusal list, which is consulted on every request. But dead-lettering means
+# "retries exhausted", not "this root cannot be skeletonized": on 2026-08-17 a frozen-database copy
+# (CREATE DATABASE ... WITH TEMPLATE, preceded by pg_terminate_backend on every connection to the
+# live database) made materialize return 503 for 33 minutes, and a healthy root with 8 level 2 ids
+# was refused permanently. This sweep gives such roots another chance on a daily cadence.
+#
+# Bounded on purpose. maxRetryCount caps how many sweeps a root gets, so a genuinely broken root --
+# an uncomputable statistic, a query that OOMs the database -- stops costing anything after a few
+# days rather than being retried forever. limit caps how many are re-queued at once, because a root
+# that fails by hanging occupies a worker for the whole ack deadline on every delivery attempt.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: skeletoncache-refusal-retry
+spec:
+  schedule: {{ .Values.skeletoncache.refusalRetry.schedule | default "0 17 * * *" | quote }}
+  # A sweep that overruns must not overlap the next one and publish the same roots twice.
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: {{ .Values.skeletoncache.refusalRetry.activeDeadlineSeconds | default 900 }}
+      template:
+        spec:
+          restartPolicy: Never
+          tolerations:
+            - key: "pool"
+              operator: "Equal"
+              value: "{{ .Values.cluster.meshPool }}"
+              effect: "NoSchedule"
+          nodeSelector:
+            cloud.google.com/gke-nodepool: {{ .Values.cluster.meshPool }}
+          volumes:
+            - name: sksv-config-volume
+              configMap:
+                name: skeletoncache-config
+          {{- if .Values.skeletoncache.credentialsSecret }}
+            - name: google-cloud-key
+              secret:
+                secretName: {{ .Values.skeletoncache.credentialsSecret }}
+          {{- end }}
+          containers:
+            - name: refusal-retry
+              image: {{ .Values.cluster.dockerRegistry }}/skeletoncache:{{ $tag }}
+              imagePullPolicy: Always
+              command: ["python", "-m", "skeletonservice.scripts.retry_refusal_list"]
+              args:
+                # cloudPath is the same value the configmap exposes as SKELETON_CACHE_BUCKET, but
+                # that is a Flask config file rather than an env var, so pass it explicitly.
+                - --bucket={{ required "skeletoncache.cloudPath is required when refusalRetry is enabled" .Values.skeletoncache.cloudPath }}
+                - --max-retry-count={{ .Values.skeletoncache.refusalRetry.maxRetryCount | default 7 }}
+                - --limit={{ .Values.skeletoncache.refusalRetry.limit | default 25 }}
+                {{- if .Values.skeletoncache.refusalRetry.dryRun }}
+                - --dry-run
+                {{- end }}
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 512Mi
+                limits:
+                  memory: 1Gi
+              volumeMounts:
+                - name: sksv-config-volume
+                  mountPath: /app/skeletonservice/instance/
+              {{- if .Values.skeletoncache.credentialsSecret }}
+                - name: google-cloud-key
+                  mountPath: /root/.cloudvolume/secrets
+              {{- end }}
+              env:
+                - name: GLOBAL_SERVER_URL
+                  value: https://{{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}
+                - name: AUTH_URI
+                  value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/auth
+                - name: STICKY_AUTH_URL
+                  value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/sticky_auth
+                - name: AUTH_URL
+                  value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/auth
+                - name: INFO_URL
+                  value: {{ required "A valid .cluster.globalServer is required!" .Values.cluster.globalServer }}/info
+                - name: APP_SETTINGS
+                  value: "skeletoncache.app.config.DevelopmentConfig"
+                - name: SKELETON_CACHE_URL_PREFIX
+                  value: sksv
+                - name: PROJECT_ID
+                  value: "{{ .Values.cluster.dataProjectName | default .Values.cluster.googleProject }}"
+                - name: PROJECT_NAME
+                  value: {{ .Values.cluster.googleProject | quote }}
+                - name: LIMITER_URI
+                  value: {{ .Values.skeletoncache.limiter.uri | quote }}
+                - name: LIMITER_CATEGORIES
+                  value: {{ $cat := dict }}{{- range $k, $v := $categories }}{{- $_ := set $cat $k (printf "%v/minute" $v) -}}{{- end -}}{{ toJson $cat | squote }}
+                - name: CACHE_NON_H5_SKELETONS
+                  value: {{ .Values.skeletoncache.cacheNonH5 | quote }}
+                - name: SKELETON_DATASTACK_NAME_REMAPPING
+                  value: {{ if .Values.skeletoncache.datastackRemap }}{{ .Values.skeletoncache.datastackRemap | squote }}{{ else }}{{ toJson .Values.skeletoncache.datastackRemapping | squote }}{{ end }}
+                - name: SKELETONCACHE_WORKER_MAX_REPLICAS
+                  value: {{ .Values.skeletoncache.worker.maxReplicas | quote }}
+                - name: SKELETON_CACHE_LOW_PRIORITY_EXCHANGE
+                  value: {{ .Values.skeletoncache.exchanges.low | default "" | quote }}
+                - name: SKELETON_CACHE_HIGH_PRIORITY_EXCHANGE
+                  value: {{ .Values.skeletoncache.exchanges.high | default "" | quote }}
+                - name: SKELETON_CACHE_LOW_PRIORITY_RETRIEVE_QUEUE
+                  value: {{ required "A valid .skeletoncache.queues.low is required!" .Values.skeletoncache.queues.low | quote }}
+                - name: SKELETON_CACHE_HIGH_PRIORITY_RETRIEVE_QUEUE
+                  value: {{ required "A valid .skeletoncache.queues.high is required!" .Values.skeletoncache.queues.high | quote }}
+                - name: SKELETON_CACHE_DEAD_LETTER_RETRIEVE_QUEUE
+                  value: {{ required "A valid .skeletoncache.queues.deadLetter is required!" .Values.skeletoncache.queues.deadLetter | quote }}
+                - name: VERBOSE_LEVEL
+                  value: {{ .Values.skeletoncache.verboseLevel | quote }}
+                - name: ARCHIVE_SKELETONIZATION_TIMES
+                  value: {{ .Values.skeletoncache.archiveSkeletonizationTimes | default false | quote }}
+                - name: LOG_PHASE_TIMINGS
+                  value: {{ .Values.skeletoncache.logPhaseTimings | default false | quote }}
+                - name: DEBUG_ROOT_ID
+                  value: {{ .Values.skeletoncache.debugRootId | default "0" | quote }}
+                - name: GOOGLE_APPLICATION_CREDENTIALS
+                  value: "/root/.cloudvolume/secrets/google-secret.json"
+{{- end }}

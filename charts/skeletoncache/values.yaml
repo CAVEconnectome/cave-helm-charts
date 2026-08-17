@@ -100,6 +100,17 @@ skeletoncache:
         cpu: 50m
   # Optional: full gs:// cloud path (bucket and optional prefix)
   cloudPath: ""
+  # Daily re-attempt of root ids on the skeletonization refusal list. Pub/Sub redelivery
+  # handles minutes-to-hours; this handles the case where a long downstream outage
+  # exhausted those attempts and left a perfectly good root permanently refused.
+  # maxRetryCount bounds it so a genuinely unskeletonizable root is eventually left alone.
+  refusalRetry:
+    enabled: false
+    schedule: "0 17 * * *"   # daily, 17:00 UTC (10:00 PDT) -- off-peak
+    maxRetryCount: 7          # a week of daily sweeps per root
+    limit: 25                 # roots re-queued per sweep, oldest first
+    activeDeadlineSeconds: 900
+    dryRun: false
   # Optional secret files rendered into a Kubernetes Secret for mounting
   # Each entry is a name and value; value can be a string or a ref+gcpsecrets:// URI
   secretFiles:
