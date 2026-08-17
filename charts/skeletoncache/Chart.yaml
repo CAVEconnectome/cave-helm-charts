@@ -1,7 +1,7 @@
 apiVersion: v1
 name: skeletoncache
 description: Skeleton cache API and workers
-version: 0.23.11-dev2
+version: 0.23.11-dev3
 # Dev image carrying the mandatory SKELETON_CACHE_CONSUME_QUEUES support that the
 # per-queue worker fleets in this chart require. Revert to a released version once the
 # SkeletonService PR lands.

@@ -9,6 +9,7 @@
 */ -}}
 {{- $fleets := $.Values.skeletoncache.worker.fleets | default (dict "" (dict "consume" "low,high,dead")) -}}
 {{- range $suffix, $fleet := $fleets }}
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
