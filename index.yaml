@@ -1941,6 +1941,15 @@ entries:
     version: 0.23.11-r2
   - apiVersion: v1
     appVersion: 0.23.11
+    created: "2026-08-17T14:04:21.502237164Z"
+    description: Skeleton cache API and workers
+    digest: 7d8a2537bfd824bbe8c6bc0a85c01a85d522f7d2c22b634fe9ff03a4988ab0b7
+    name: skeletoncache
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/skeletoncache-0.23.11-r14/skeletoncache-0.23.11-r14.tgz
+    version: 0.23.11-r14
+  - apiVersion: v1
+    appVersion: 0.23.11
     created: "2026-08-16T16:24:58.124853838Z"
     description: Skeleton cache API and workers
     digest: 6d652304fda50a0856745e21b3a7ffc0bfc0b014103dc07fa33e661af675e4b1
@@ -2013,18 +2022,18 @@ entries:
     version: 0.22.49-r2
   - apiVersion: v1
     appVersion: 0.22.49
-    created: "2026-05-22T17:03:57.799974267Z"
+    created: "2026-05-22T17:09:17.312733851Z"
     description: Skeleton cache API and workers
-    digest: 4735ca3c96c5904a5ca8af4aa94447c74441908a950e5edc4ed2005835ea705c
+    digest: 3765b6dc7e048a4d11e5261445bb69f69318e2d2e317d55bdc266e6228209b03
     name: skeletoncache
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/skeletoncache-0.22.49-r1/skeletoncache-0.22.49-r1.tgz
     version: 0.22.49-r1
   - apiVersion: v1
     appVersion: 0.22.49
-    created: "2026-05-22T17:09:17.312733851Z"
+    created: "2026-05-22T17:03:57.799974267Z"
     description: Skeleton cache API and workers
-    digest: 3765b6dc7e048a4d11e5261445bb69f69318e2d2e317d55bdc266e6228209b03
+    digest: 4735ca3c96c5904a5ca8af4aa94447c74441908a950e5edc4ed2005835ea705c
     name: skeletoncache
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/skeletoncache-0.22.49-r1/skeletoncache-0.22.49-r1.tgz
@@ -2310,4 +2319,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2026-08-17T06:34:18.129155757Z"
+generated: "2026-08-17T14:04:21.503004012Z"
