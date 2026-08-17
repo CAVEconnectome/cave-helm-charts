@@ -7,52 +7,58 @@ metadata:
 spec:
   podIdentity:
     provider: gcp
+{{- /*
+  One ScaledObject per fleet, with a trigger per subscription that fleet consumes. The default is a
+  single fleet on low+high, matching the previous behaviour. Per-fleet scaling is the point of
+  splitting: the high-priority and dead-letter queues are empty almost all the time, so their fleets
+  can sit at zero instead of holding workers that poll an empty subscription.
+*/ -}}
+{{- $fleets := $.Values.skeletoncache.worker.fleets | default (dict "" (dict "consume" "low,high")) -}}
+{{- $subs := dict "low" $.Values.skeletoncache.queues.low "high" $.Values.skeletoncache.queues.high "dead" $.Values.skeletoncache.queues.deadLetter -}}
+{{- range $suffix, $fleet := $fleets }}
 ---
 apiVersion: keda.sh/v1alpha1
 kind: ScaledObject
 metadata:
-  name: skeletoncache-worker-scaler-high
+  # The default fleet keeps the historical name (-scaler-high, from when this object carried
+  # both the high and low triggers) so an existing release upgrades in place rather than
+  # deleting and recreating the ScaledObject and its HPA.
+  name: skeletoncache-worker-scaler-{{ $suffix | default "high" }}
 spec:
   scaleTargetRef:
-    name: skeletoncache-worker
+    name: skeletoncache-worker{{ if $suffix }}-{{ $suffix }}{{ end }}
   # dig (not `| default`) so an explicit minReplicas: 0 is honored -- sprig's `default`
   # treats 0 as empty and would silently force it back to 1 (blocking scale-to-zero).
-  minReplicaCount: {{ dig "minReplicas" 1 .Values.skeletoncache.worker }}
-  maxReplicaCount: {{ .Values.skeletoncache.worker.maxReplicas | default 50 }}
-  cooldownPeriod: {{ .Values.keda.cooldownSeconds | default 600 }}
-  pollingInterval: {{ .Values.keda.pollingSeconds | default 15 }}
+  minReplicaCount: {{ dig "minReplicas" (dig "minReplicas" 1 $.Values.skeletoncache.worker) $fleet }}
+  maxReplicaCount: {{ dig "maxReplicas" ($.Values.skeletoncache.worker.maxReplicas | default 50) $fleet }}
+  cooldownPeriod: {{ $.Values.keda.cooldownSeconds | default 600 }}
+  pollingInterval: {{ $.Values.keda.pollingSeconds | default 15 }}
   advanced:
     restoreToOriginalReplicaCount: false
-    {{- if .Values.skeletoncache.worker.scaleDownStabilizationSeconds }}
+    {{- if $.Values.skeletoncache.worker.scaleDownStabilizationSeconds }}
     # Shorten the HPA scale-down stabilization window (k8s default 300s) so the large
     # worker fleet drains faster after a burst. Note: the gcp-pubsub metric is already a
     # timeHorizon-averaged value, so scale-down still lags the real queue by ~timeHorizon.
     horizontalPodAutoscalerConfig:
       behavior:
         scaleDown:
-          stabilizationWindowSeconds: {{ .Values.skeletoncache.worker.scaleDownStabilizationSeconds }}
+          stabilizationWindowSeconds: {{ $.Values.skeletoncache.worker.scaleDownStabilizationSeconds }}
     {{- end }}
   triggers:
+    {{- range $key := splitList "," ($fleet.consume | required "each skeletoncache.worker.fleets entry needs `consume`") }}
+    {{- $sub := get $subs (trim $key) | required (printf "no subscription configured for consume key %q (expected one of low/high/dead)" (trim $key)) }}
     - type: gcp-pubsub
       authenticationRef:
         name: skeletoncache-keda-auth
       metadata:
-        subscriptionName: {{ required "A valid .skeletoncache.queues.high is required!" .Values.skeletoncache.queues.high | quote }}
+        subscriptionName: {{ $sub | quote }}
         mode: "SubscriptionSize"
-        timeHorizon: {{ .Values.keda.timeHorizon | default "2m" | quote }}
-        valueIfNull: {{ .Values.keda.valueIfNull | default 0 | quote }}
-        activationValue: {{ .Values.keda.activationValue | default 0 | quote }}
-        value: {{ .Values.keda.pubsub.messagesPerWorker | default 1 | quote }}
-    - type: gcp-pubsub
-      authenticationRef:
-        name: skeletoncache-keda-auth
-      metadata:
-        subscriptionName: {{ required "A valid .skeletoncache.queues.low is required!" .Values.skeletoncache.queues.low | quote }}
-        mode: "SubscriptionSize"
-        timeHorizon: {{ .Values.keda.timeHorizon | default "2m" | quote }}
-        valueIfNull: {{ .Values.keda.valueIfNull | default 0 | quote }}
-        activationValue: {{ .Values.keda.activationValue | default 0 | quote }}
-        value: {{ .Values.keda.pubsub.messagesPerWorker | default 1 | quote }}
+        timeHorizon: {{ $.Values.keda.timeHorizon | default "2m" | quote }}
+        valueIfNull: {{ $.Values.keda.valueIfNull | default 0 | quote }}
+        activationValue: {{ $.Values.keda.activationValue | default 0 | quote }}
+        value: {{ $.Values.keda.pubsub.messagesPerWorker | default 1 | quote }}
+    {{- end }}
+{{- end }}
 {{- else }}
 # Fallback HPA if KEDA is disabled (CPU-based)
 ---

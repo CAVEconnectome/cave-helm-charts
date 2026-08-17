@@ -27,6 +27,40 @@ skeletoncache:
         memory: 512Mi
         cpu: 200m
   worker:
+    # One worker Deployment per subscription.
+    #
+    # The round-robin consumer polls every subscription it is given, and a blocking pull against an
+    # empty one costs the whole wait. The high-priority and dead-letter queues are empty almost all
+    # the time, so a single combined fleet spent most of its life waiting on them: measured on
+    # minniev7 2026-08-17, 50 workers ran at 23.5% occupancy with ~40s idle per message while
+    # thousands of messages were queued. One queue per fleet removes that, and lets each fleet scale
+    # on its own backlog -- including to zero for the two queues that are usually empty.
+    #
+    # `consume` becomes SKELETON_CACHE_CONSUME_QUEUES (keys: low, high, dead), which is MANDATORY in
+    # the worker and has no default, so the image must understand it. See Chart.yaml appVersion.
+    #
+    # Set `fleets: null` to fall back to the previous single skeletoncache-worker Deployment
+    # consuming all three queues round-robin.
+    fleets:
+      # The bulk of the work. Scales to zero between batches; a cold start costs a pod pull plus
+      # importing pcg_skel/meshparty, which is acceptable for a queue that arrives in bursts.
+      low:
+        consume: low
+        minReplicas: 0
+        maxReplicas: 50
+      # Interactive requests. Held at 1 rather than 0 deliberately: this is the latency-sensitive
+      # queue and a cold start is tens of seconds.
+      high:
+        consume: high
+        minReplicas: 1
+        maxReplicas: 20
+      # Only sees messages that exhausted their delivery attempts, and its handler just appends to
+      # the refusal list, so one pod is plenty.
+      dead:
+        consume: dead
+        minReplicas: 0
+        maxReplicas: 1
+    # Fallbacks for any fleet that does not set its own min/max.
     minReplicas: 1
     maxReplicas: 50
     scaleDownStabilizationSeconds: 120

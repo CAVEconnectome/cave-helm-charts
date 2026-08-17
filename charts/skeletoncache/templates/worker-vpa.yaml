@@ -1,23 +1,28 @@
 {{- if .Values.skeletoncache.worker.vpa.enabled }}
+{{- /* One VPA per fleet; targetRef must name an existing Deployment. */ -}}
+{{- $fleets := $.Values.skeletoncache.worker.fleets | default (dict "" (dict "consume" "low,high,dead")) -}}
+{{- range $suffix, $fleet := $fleets }}
+---
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: skeletoncache-worker-vpa
+  name: skeletoncache-worker{{ if $suffix }}-{{ $suffix }}{{ end }}-vpa
 spec:
   targetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: skeletoncache-worker
+    name: skeletoncache-worker{{ if $suffix }}-{{ $suffix }}{{ end }}
   updatePolicy:
-    updateMode: {{ .Values.skeletoncache.worker.vpa.updateMode | default "Auto" | quote }}
+    updateMode: {{ $.Values.skeletoncache.worker.vpa.updateMode | default "Auto" | quote }}
   resourcePolicy:
     containerPolicies:
       - containerName: 'skeletoncache-worker'
         minAllowed:
-          cpu: {{ .Values.skeletoncache.worker.vpa.minCpu | default "50m" }}
-          memory: {{ .Values.skeletoncache.worker.vpa.minMemory | default "200Mi" }}
+          cpu: {{ $.Values.skeletoncache.worker.vpa.minCpu | default "50m" }}
+          memory: {{ $.Values.skeletoncache.worker.vpa.minMemory | default "200Mi" }}
         maxAllowed:
-          cpu: {{ .Values.skeletoncache.worker.vpa.maxCpu | default "1000m" }}
-          memory: {{ .Values.skeletoncache.worker.vpa.maxMemory | default "2Gi" }}
+          cpu: {{ $.Values.skeletoncache.worker.vpa.maxCpu | default "1000m" }}
+          memory: {{ $.Values.skeletoncache.worker.vpa.maxMemory | default "2Gi" }}
         controlledResources: ["cpu", "memory"]
+{{- end }}
 {{- end }}
