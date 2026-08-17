@@ -63,8 +63,16 @@ materialize:
   # control how many databases it will allow materialization to create
   minDatabases: 1
   maxDatabases: 3
-  querylimit: 500000
   # limits queries to the api
+  querylimit: 500000
+  # Readiness/liveness probe timing for the materialize API pods (not the celery deployments,
+  # which set their own). /health shares the uwsgi worker pool with real traffic, so too tight a
+  # timeout reports a busy pod as an unhealthy one and removes it from the Service; too long a
+  # period makes both detection and recovery coarse. Applies to both probes, so liveness cannot
+  # restart a pod that readiness would have tolerated.
+  apiProbes:
+    timeoutSeconds: 5
+    periodSeconds: 20
   limitsQueryPerMinute: 300
   limitsFastQueryPerMinute: 2000
   # Optional higher per-minute ceiling on the live-query endpoint for callers whose token

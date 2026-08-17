@@ -95,15 +95,15 @@ spec:
               path: /health
               port: 80
             initialDelaySeconds: 5
-            timeoutSeconds: 1
-            periodSeconds: 60
+            timeoutSeconds: {{ .Values.materialize.apiProbes.timeoutSeconds | default 5 }}
+            periodSeconds: {{ .Values.materialize.apiProbes.periodSeconds | default 20 }}
           livenessProbe:
             httpGet:
               path: /health
               port: 80
             initialDelaySeconds: 15
-            timeoutSeconds: 1
-            periodSeconds: 60
+            timeoutSeconds: {{ .Values.materialize.apiProbes.timeoutSeconds | default 5 }}
+            periodSeconds: {{ .Values.materialize.apiProbes.periodSeconds | default 20 }}
         - name: uwsgi-exporter
           image: caveconnectome/uwsgi-export-workers:v14
           # Exposes the metrics endpoint on 0.0.0.0:9101
