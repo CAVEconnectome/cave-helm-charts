@@ -1,0 +1,17 @@
+{{- if .Values.materialize.uwsgiConfig }}
+{{- /*
+  Optional replacement for the uwsgi.ini baked into the image.
+  Mounted over /app/uwsgi.ini with subPath, which replaces that one file and leaves the rest of
+  /app (the application code) untouched. UWSGI_INI already points at that path, so no env change
+  is needed. Lets harakiri / processes / cheaper be retuned with a rollout instead of an image
+  rebuild -- uwsgi only reads the file at startup either way, so a restart is required regardless
+  and subPath's lack of live updates costs nothing.
+*/ -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: materialize-uwsgi
+data:
+  uwsgi.ini: |
+{{ .Values.materialize.uwsgiConfig | indent 4 }}
+{{- end }}
