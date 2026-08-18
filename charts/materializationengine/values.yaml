@@ -120,15 +120,21 @@ materialize:
     # (cheaper-rss-limit-soft is bytes, reload-on-rss is megabytes); the chart converts, so
     # these are always Mi and the values file never carries a raw byte count.
     #
-    # cheaperRssLimitSoftMi stops NEW workers being spawned once the workers' COMBINED rss
-    # passes it. It is a sum of per-worker rss, so shared pages are counted once per worker
-    # and it is NOT a pod-level budget: 8 workers at 250Mi sum to ~2000Mi while the pod is
-    # only ~740Mi. 1536Mi halts growth around 6 workers.
-    cheaperRssLimitSoftMi: 1536
-    # Gracefully recycle a worker over this rss once its current request finishes. Workers
-    # measured steady at ~255Mi (p90 257Mi, max 317Mi), so this only catches one left
-    # permanently inflated by an expensive query. Empty/0 disables.
-    reloadOnRssMi: 400
+    # cheaperRssLimitSoftMi stops NEW workers spawning once the workers' COMBINED rss passes
+    # it. Keep it high; it is a weak guard and a low value does harm. Measured 2026-08-18,
+    # that sum runs 1.56x-3.23x the pod's real rss, so it is nearly uncorrelated with the
+    # thing it appears to bound: a 6-worker pod summed to 1526Mi while using 472Mi, while a
+    # 4-worker pod summed to 1086Mi while using 697Mi. At 1536Mi it throttled the pod with
+    # headroom and ignored the fat one. Cap pod memory with `processes` and the container
+    # limit instead.
+    cheaperRssLimitSoftMi: 2500
+    # Gracefully recycle a worker over this rss once its current request finishes. This is
+    # the guard that actually fires, so keep it near the observed distribution: workers sit
+    # at p50 248Mi / p90 257Mi with outliers at 309-318Mi. A worker's rss does not fall back
+    # after an expensive query, so pod rss ratchets up with whatever queries landed there --
+    # that, not worker count, drove pods to 888-906Mi against an 871Mi limit. 300Mi recycles
+    # the outliers and leaves the p90 alone. Empty/0 disables.
+    reloadOnRssMi: 300
     # Hard backstop: kill a worker at this rss immediately, mid-request. This is the guard
     # against a single runaway query; reload-on-rss cannot help because the offending
     # request never returns. Empty/0 disables.

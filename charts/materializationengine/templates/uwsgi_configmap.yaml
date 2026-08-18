@@ -116,17 +116,29 @@ reload-mercy = {{ $u.reloadMercy | default 605 }}
 ; reload-on-rss and evil-reload-on-rss are in MEGABYTES. Both are expressed in Mi here and
 ; converted below, so the values file never carries a raw byte count like 6442450944.
 ;
-; Don't spawn new workers once the workers' COMBINED rss passes this. It is a SUM of per-worker rss,
-; so shared prefork pages are counted once per worker and this is NOT a pod-level budget: 8 workers
-; at 250Mi sum to ~2000Mi while the pod itself is only ~740Mi. The image default of 6144Mi was
-; unreachable -- 8 workers cannot sum to 6GiB before the node dies -- so it had never once fired.
-cheaper-rss-limit-soft = {{ mul ($u.cheaperRssLimitSoftMi | default 1536 | int) 1048576 }}
+; Don't spawn new workers once the workers' COMBINED rss passes this. Keep it HIGH -- it is a weak
+; guard and a low value does harm.
+;
+; It sums per-worker rss, so shared prefork pages are counted once per worker, and measurement on
+; 2026-08-18 showed that sum runs anywhere from 1.56x to 3.23x the pod's actual rss. It is therefore
+; not merely an imprecise pod-level budget, it is close to uncorrelated with one: a pod with 6
+; workers summed to 1526Mi while using 472Mi, and a pod with 4 workers summed to 1086Mi while using
+; 697Mi. A 1536Mi setting throttled the pod with 400Mi of headroom and left the fatter one free to
+; keep spawning -- the opposite of the intent.
+;
+; The real cap on a pod's memory is `processes` plus the container limit. Use those.
+cheaper-rss-limit-soft = {{ mul ($u.cheaperRssLimitSoftMi | default 2500 | int) 1048576 }}
 {{- if $u.reloadOnRssMi }}
 
-; Gracefully recycle a worker whose own rss exceeds this, after its current request finishes.
-; Profile of 25 live workers on 2026-08-18: baseline 203Mi, steady p50 248Mi, p90 257Mi, max 317Mi.
-; Workers settle near 255Mi rather than leaking without bound, so a threshold comfortably above
-; that only catches a worker left permanently inflated by one expensive query.
+; Gracefully recycle a worker whose own rss exceeds this, once its current request finishes.
+;
+; This is the guard that actually fires, so set it close to the observed distribution rather than
+; far above it. Profile of live workers on 2026-08-18: baseline 203Mi, p50 248Mi, p90 257Mi, and
+; outliers at 309-318Mi. A worker's rss does not fall back after an expensive query -- the pages it
+; dirtied stay private to it -- so pod rss ratchets upward with whatever queries happened to land
+; there. That, not worker count, is what drove pods to 888-906Mi against an 871Mi limit and produced
+; ~475 OOMKills/hour. Recycling the outliers returns those pages; 300Mi catches them while leaving
+; the p90 untouched.
 reload-on-rss = {{ $u.reloadOnRssMi | int }}
 {{- end }}
 {{- if $u.evilReloadOnRssMi }}
