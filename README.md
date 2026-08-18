@@ -35,6 +35,20 @@ now you can search for charts in this repo
 helm search repo cave
 ```
 
+## Versioning and releasing
+
+Read [VERSIONING.md](VERSIONING.md) before bumping a chart. In short:
+
+- **version and appVersion bump together**: In general, we want the version of the chart and the code version to move together.  If you release a new version of the code, this should create an identical new version of the chart. So in general, set `version` equal to the new `appVersion`, with no suffix.
+- **Chart-only change** (templates or values): The exception is if you need to change the chart without releasing new code.  In this case, bump the **patch** of `version` and add an **`-r.N`**
+  suffix, and leave `appVersion` alone. e.g. `5.26.0` → `5.26.1-r.1`.  When a new appVersion comes out, it will supercede this release version. e.g `5.26.1 > 5.26.1.-r.1`
+
+Both halves matter. The patch bump is what makes the newest chart sort *highest* (a prerelease of the
+current version sorts below it, so suffixing without bumping ranks the new chart lowest). Holding
+`appVersion` is what keeps a chart-only release from changing the deployed image — 15 of the 20 charts
+default their image tag to `.Chart.AppVersion`. Use `-r.N` rather than `-rN`, because `r10` sorts
+*below* `r9`.
+
 ## Chart docs
 
 - SkeletonCache: charts/skeletoncache/README.md (rate-limiting defaults and how to override per-minute limits)
