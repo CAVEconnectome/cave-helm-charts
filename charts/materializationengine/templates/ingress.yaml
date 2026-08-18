@@ -11,8 +11,11 @@ metadata:
   name: materializationengine-ingress
   annotations:
     kubernetes.io/ingress.class: nginx
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "360"
+    # Must stay ABOVE materialize.uwsgi.harakiri; api.yaml fails the render if they invert.
+    # Inverted, nginx abandons the request first while the worker keeps computing a response
+    # nobody will read, and harakiri never fires so nothing reports what was stuck.
+    nginx.ingress.kubernetes.io/proxy-read-timeout: {{ .Values.materialize.ingress.proxyReadTimeout | default 600 | quote }}
+    nginx.ingress.kubernetes.io/proxy-send-timeout: {{ .Values.materialize.ingress.proxySendTimeout | default 360 | quote }}
     nginx.ingress.kubernetes.io/x-forwarded-prefix: "true"
     nginx.ingress.kubernetes.io/proxy-next-upstream: "error timeout invalid_header http_502 http_503 http_504"
     nginx.ingress.kubernetes.io/proxy-next-upstream-tries: "3"

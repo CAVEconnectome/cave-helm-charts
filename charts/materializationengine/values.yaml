@@ -78,15 +78,75 @@ materialize:
   # concentrated load on a couple of saturated pods while most sat idle.
   ingress:
     loadBalance: ewma
-  # Optional replacement for the image's /app/uwsgi.ini, mounted with subPath so only that
-  # one file is replaced and the application code in /app is untouched. Empty (default)
-  # uses whatever the image ships. Set it to retune harakiri/processes/cheaper with a
-  # rollout instead of an image rebuild; a pod restart is needed either way because uwsgi
-  # reads the file only at startup, and the checksum annotation triggers one on change.
+    # How long nginx waits for the api before abandoning the request. Must stay ABOVE
+    # uwsgi.harakiri (the chart fails the render otherwise) so the worker gives up first
+    # and reports why, instead of computing a response nobody is still waiting for.
+    proxyReadTimeout: 600
+    proxySendTimeout: 360
+  # uwsgi.ini for the api container, rendered from these values and mounted over
+  # /app/uwsgi.ini with subPath (only that file is replaced; the application code in /app is
+  # untouched). This is the supported way to tune the api's worker pool -- changing a value
+  # here is a rollout, not an image rebuild, and the pod-template checksum triggers the
+  # restart uwsgi needs to reread the file.
+  #
+  # Set enabled: false to fall back to whatever uwsgi.ini the image ships.
   #
   # NOTE: /etc/uwsgi/uwsgi.ini is loaded AFTER this file and wins on conflicts, so socket,
   # chmod-socket, need-app, die-on-term, hook-master-start and show-config cannot be
   # overridden here.
+  uwsgi:
+    enabled: true
+    # Worker pool. Each worker costs ~70-100Mi PRIVATE rss on top of ~180Mi shared by the
+    # prefork, so pod rss ~= 180 + processes * private -- `processes` is the main lever on
+    # the pod's memory ceiling, and must be affordable on the node the api pool runs on.
+    processes: 8
+    cheaper: 4
+    cheaperInitial: 4
+    # Small on purpose: a step of 4 adds ~280-400Mi in a single move, which on an e2-small
+    # api pool (1358Mi allocatable, already 99% committed by requests) took nodes past their
+    # eviction threshold and got pods evicted at ~970Mi against a 670Mi request.
+    cheaperStep: 2
+    cheaperAlgo: busyness
+    cheaperOverload: 20
+    cheaperBusynessMultiplier: 3
+    cheaperBusynessMax: 50
+    cheaperBusynessMin: 20
+    # Seconds before a stuck request is killed. Kept below ingress.proxyReadTimeout.
+    harakiri: 500
+    # Logs the request each killed worker was serving -- without this a harakiri tells you
+    # nothing about which query caused it.
+    harakiriVerbose: true
+    # Memory guards, all in Mi. uwsgi's own units are inconsistent here
+    # (cheaper-rss-limit-soft is bytes, reload-on-rss is megabytes); the chart converts, so
+    # these are always Mi and the values file never carries a raw byte count.
+    #
+    # cheaperRssLimitSoftMi stops NEW workers being spawned once the workers' COMBINED rss
+    # passes it. It is a sum of per-worker rss, so shared pages are counted once per worker
+    # and it is NOT a pod-level budget: 8 workers at 250Mi sum to ~2000Mi while the pod is
+    # only ~740Mi. 1536Mi halts growth around 6 workers.
+    cheaperRssLimitSoftMi: 1536
+    # Gracefully recycle a worker over this rss once its current request finishes. Workers
+    # measured steady at ~255Mi (p90 257Mi, max 317Mi), so this only catches one left
+    # permanently inflated by an expensive query. Empty/0 disables.
+    reloadOnRssMi: 400
+    # Hard backstop: kill a worker at this rss immediately, mid-request. This is the guard
+    # against a single runaway query; reload-on-rss cannot help because the offending
+    # request never returns. Empty/0 disables.
+    evilReloadOnRssMi: 600
+    listen: 128
+    bufferSize: 32768
+    maxRequests: 5000
+    workerReloadMercy: 600
+    reloadMercy: 605
+    pyAutoreload: 1
+    enableThreads: true
+    memoryReport: true
+    statsPort: 9192
+    # Raw uwsgi option lines appended verbatim, for anything not modelled above.
+    extraOptions: []
+  # Escape hatch: whole-file replacement for uwsgi.ini. When non-empty this is used verbatim
+  # and every materialize.uwsgi.* value above is IGNORED. Intended for one-off debugging;
+  # prefer the values above so the running config stays discoverable.
   uwsgiConfig: ""
   apiProbes:
     timeoutSeconds: 5
@@ -145,6 +205,24 @@ materialize:
     requests:
       memory: "700Mi"
       cpu: "200m"
+    # The api container's memory LIMIT is derived from the request above, so retuning the
+    # request moves the ceiling with it and the two cannot drift apart. Normally this ratio
+    # is the only memory knob you need.
+    #
+    # It must stay above real steady-state rss or it will OOMKill healthy pods: measured
+    # ~460Mi at 4 uwsgi workers and ~740-970Mi at 8, i.e. up to ~1.4x a 670Mi request. It
+    # must also stay low enough to actually contain a runaway -- without any limit an
+    # over-allocating request does not fail alone, it pushes the NODE past its eviction
+    # threshold and the kubelet evicts the pod, killing every other in-flight request on it
+    # plus the /health probe that keeps it in the Service.
+    #
+    # Raise `uwsgi.processes` and this ratio together; more workers means more private rss.
+    # Set to 0 to emit no limit at all (not recommended).
+    memoryRequestLimitRatio: 1.5
+    # Absolute override, wins over the ratio. Only for the rare case where the ceiling must
+    # be pinned independently of the request.
+    limits: {}
+      # memory: "1200Mi"
 cluster:
   # required to fill in or choose
   globalServer: ""
