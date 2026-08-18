@@ -76,7 +76,11 @@ spec:
             # live_live_query posts to. Limits bucket per (user id, endpoint), so this leaves
             # every other endpoint's limit for the same identity untouched.
             - name: LIMITER_SERVICE_ACCOUNT_OVERRIDES
-              value: '{"LiveTableQuery":{"query":"{{ . }}/minute"}}'
+              # int64: helmfile round-trips values through JSON, where Go decodes numbers as
+              # float64, so a large plain integer such as 200000000 renders as "2e+08" and
+              # flask_limiter then fails with `couldn't parse rate limit string '2e+08/minute'` --
+              # logged once per request and leaving the endpoint with NO limit at all.
+              value: '{"LiveTableQuery":{"query":"{{ int64 . }}/minute"}}'
             {{- end }}
             - name: STICKY_AUTH_URL
               value: {{ .Values.cluster.globalServer }}/sticky_auth

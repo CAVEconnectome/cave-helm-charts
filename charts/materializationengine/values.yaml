@@ -70,6 +70,14 @@ materialize:
   # timeout reports a busy pod as an unhealthy one and removes it from the Service; too long a
   # period makes both detection and recovery coarse. Applies to both probes, so liveness cannot
   # restart a pod that readiness would have tolerated.
+  # Ingress-level settings for the API.
+  #
+  # loadBalance: ingress-nginx supports round_robin (its default) and ewma. There is no
+  # least_conn; ewma is the least-loaded equivalent. Default here is ewma because
+  # round_robin routes without regard for whether a pod's uwsgi workers are free, which
+  # concentrated load on a couple of saturated pods while most sat idle.
+  ingress:
+    loadBalance: ewma
   apiProbes:
     timeoutSeconds: 5
     periodSeconds: 20

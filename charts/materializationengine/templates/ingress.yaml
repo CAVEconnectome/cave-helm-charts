@@ -16,6 +16,16 @@ metadata:
     nginx.ingress.kubernetes.io/x-forwarded-prefix: "true"
     nginx.ingress.kubernetes.io/proxy-next-upstream: "error timeout invalid_header http_502 http_503 http_504"
     nginx.ingress.kubernetes.io/proxy-next-upstream-tries: "3"
+    # Peak-EWMA instead of the default round_robin. ingress-nginx has no least_conn; ewma is its
+    # least-loaded equivalent, picking the backend with the lowest recent latency/in-flight cost.
+    #
+    # round_robin distributes without any knowledge of whether a backend's uwsgi workers are free.
+    # Measured on minniev7 2026-08-17 at 22:29: two materialize pods were pegged at 100% busy while
+    # 39 sat completely idle (fleet utilisation ~10%), and requests landing on a saturated pod queued
+    # in its 128-deep listen backlog behind multi-minute queries. That is the whole source of the
+    # long tail -- p90 was 0.79s but 77 requests exceeded 60s and 9 exceeded 300s, and the same root
+    # ids that took ~600s under load complete in ~1s when queried in isolation.
+    nginx.ingress.kubernetes.io/load-balance: {{ .Values.materialize.ingress.loadBalance | default "ewma" | quote }}
 spec:
   ingressClassName: nginx
   rules:
