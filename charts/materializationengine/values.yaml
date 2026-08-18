@@ -157,6 +157,26 @@ materialize:
   apiProbes:
     timeoutSeconds: 5
     periodSeconds: 20
+    # Gates liveness and readiness until the app has booted once. Keep this enabled: without it,
+    # liveness kills the container at initialDelaySeconds + failureThreshold*periodSeconds (~55s),
+    # but app boot measured p50 14s idle and p50 40-45s during a fleet-wide restart with a tail past
+    # 75s -- because create_app runs db.create_all() and a GCS configure_cors(), so boot time scales
+    # with how many pods start simultaneously. The result was 57 restarts across 51 pods and a
+    # CrashLoopBackOff, each kill forcing another cold boot that made the next one slower.
+    # 36 * 5s = 180s of boot budget. Overshooting only delays detection of a truly dead container on
+    # first start; undershooting crash-loops the fleet.
+    startup:
+      enabled: true
+      periodSeconds: 5
+      failureThreshold: 36
+    # Liveness must stay MORE tolerant than readiness. /health is served by the same uwsgi worker
+    # pool as real traffic, so a busy pod fails it. Readiness failing just drains the pod (cheap and
+    # correct); liveness failing restarts it and drops in-flight requests. With identical thresholds
+    # they always tripped together, so busy pods were killed rather than drained.
+    liveness:
+      failureThreshold: 6
+    readiness:
+      failureThreshold: 3
   limitsQueryPerMinute: 300
   limitsFastQueryPerMinute: 2000
   # Optional higher per-minute ceiling on the live-query endpoint for callers whose token

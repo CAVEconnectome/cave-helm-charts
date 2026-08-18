@@ -182,20 +182,60 @@ spec:
             limits:
               memory: {{ . }}
             {{- end }}
+          {{- $probes := .Values.materialize.apiProbes | default dict }}
+          {{- $startup := $probes.startup | default dict }}
+          {{- /* hasKey, not `default`: `false | default true` yields TRUE, because Go templates
+                 treat false as empty. Using default here silently ignored `startup.enabled: false`.
+                 Same trap as memoryRequestLimitRatio -- unset must mean "on", false must mean off. */}}
+          {{- $startupEnabled := true }}
+          {{- if hasKey $startup "enabled" }}{{ $startupEnabled = $startup.enabled }}{{ end }}
+          {{- if $startupEnabled }}
+          # Gates liveness AND readiness until the app has booted once, so a slow start can never be
+          # mistaken for a wedged process. Without this, liveness fires at
+          # initialDelaySeconds + failureThreshold*periodSeconds and kills the container mid-boot.
+          #
+          # Measured on minniev7 2026-08-18: `WSGI app ready in N seconds` had p50 14s when idle but
+          # p50 40-45s during a fleet-wide restart, with a tail past 75s -- while liveness (15s delay,
+          # 3 x 20s) killed at ~55s. That produced 41 "failed liveness probe, will be restarted"
+          # events, 57 restarts across 51 pods, and a CrashLoopBackOff: each kill forced another cold
+          # boot, which made the next boot slower, which killed more pods. Node CPU was only 29% p50,
+          # so the contention was on Cloud SQL and GCS -- create_app runs db.create_all() and
+          # StorageService.configure_cors() -- meaning boot time scales with how many pods start at
+          # once, exactly when the fleet is recovering.
+          #
+          # Budget generously: overshooting only delays detection of a genuinely dead container by
+          # this much on FIRST start, while undershooting crash-loops the whole fleet.
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 80
+            periodSeconds: {{ $startup.periodSeconds | default 5 }}
+            timeoutSeconds: {{ $startup.timeoutSeconds | default $probes.timeoutSeconds | default 5 }}
+            failureThreshold: {{ $startup.failureThreshold | default 36 }}
+          {{- end }}
           readinessProbe:
             httpGet:
               path: /health
               port: 80
             initialDelaySeconds: 5
-            timeoutSeconds: {{ .Values.materialize.apiProbes.timeoutSeconds | default 5 }}
-            periodSeconds: {{ .Values.materialize.apiProbes.periodSeconds | default 20 }}
+            timeoutSeconds: {{ $probes.timeoutSeconds | default 5 }}
+            periodSeconds: {{ $probes.periodSeconds | default 20 }}
+            # Kept tight on purpose: readiness is the cheap, correct response to a busy pod --
+            # it sheds traffic to healthier replicas and costs nothing, since the pod stays running.
+            failureThreshold: {{ ($probes.readiness | default dict).failureThreshold | default 3 }}
           livenessProbe:
             httpGet:
               path: /health
               port: 80
             initialDelaySeconds: 15
-            timeoutSeconds: {{ .Values.materialize.apiProbes.timeoutSeconds | default 5 }}
-            periodSeconds: {{ .Values.materialize.apiProbes.periodSeconds | default 20 }}
+            timeoutSeconds: {{ $probes.timeoutSeconds | default 5 }}
+            periodSeconds: {{ $probes.periodSeconds | default 20 }}
+            # Deliberately MORE tolerant than readiness. /health shares the uwsgi worker pool with
+            # real traffic, so a merely-busy pod fails it -- and the two probes previously had
+            # identical thresholds, so they always tripped together and a pod that readiness would
+            # have temporarily drained got restarted instead, dumping its in-flight requests.
+            # Liveness should only catch a process that is actually wedged.
+            failureThreshold: {{ ($probes.liveness | default dict).failureThreshold | default 6 }}
         - name: uwsgi-exporter
           image: caveconnectome/uwsgi-export-workers:v14
           # Exposes the metrics endpoint on 0.0.0.0:9101
