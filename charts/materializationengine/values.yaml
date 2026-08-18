@@ -78,6 +78,16 @@ materialize:
   # concentrated load on a couple of saturated pods while most sat idle.
   ingress:
     loadBalance: ewma
+  # Optional replacement for the image's /app/uwsgi.ini, mounted with subPath so only that
+  # one file is replaced and the application code in /app is untouched. Empty (default)
+  # uses whatever the image ships. Set it to retune harakiri/processes/cheaper with a
+  # rollout instead of an image rebuild; a pod restart is needed either way because uwsgi
+  # reads the file only at startup, and the checksum annotation triggers one on change.
+  #
+  # NOTE: /etc/uwsgi/uwsgi.ini is loaded AFTER this file and wins on conflicts, so socket,
+  # chmod-socket, need-app, die-on-term, hook-master-start and show-config cannot be
+  # overridden here.
+  uwsgiConfig: ""
   apiProbes:
     timeoutSeconds: 5
     periodSeconds: 20

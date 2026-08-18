@@ -19,6 +19,9 @@ spec:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/secrets: {{ include (print $.Template.BasePath "/materialize_secret.yaml") . | sha256sum }}
         checksum/cloudsql: {{ include (print $.Template.BasePath "/cloudsql_secret.yaml") . | sha256sum }}
+        {{- if .Values.materialize.uwsgiConfig }}
+        checksum/uwsgi: {{ include (print $.Template.BasePath "/uwsgi_configmap.yaml") . | sha256sum }}
+        {{- end }}
     spec:
       securityContext:
         sysctls:
@@ -42,6 +45,11 @@ spec:
         - name: cloudsql-instance-credentials-volume
           secret:
             secretName: mat-cloudsql-google-cloud-key
+        {{- if .Values.materialize.uwsgiConfig }}
+        - name: uwsgi-config
+          configMap:
+            name: materialize-uwsgi
+        {{- end }}
       containers:
         - name: materialize
           image: {{ .Values.cluster.dockerRegistry }}/materializationengine:{{ $tag }}
@@ -54,6 +62,13 @@ spec:
               mountPath: /home/nginx/.cloudvolume/secrets
             - name: materializationengine-config-volume
               mountPath: /app/materializationengine/instance/
+            {{- if .Values.materialize.uwsgiConfig }}
+            # subPath: replaces only this file, so the rest of /app (the application code) is
+            # untouched. UWSGI_INI already points here, so nothing else needs changing.
+            - name: uwsgi-config
+              mountPath: /app/uwsgi.ini
+              subPath: uwsgi.ini
+            {{- end }}
           env:
             - name: MATERIALIZATION_ENGINE_SETTINGS
               value: /app/materializationengine/instance/config.cfg
