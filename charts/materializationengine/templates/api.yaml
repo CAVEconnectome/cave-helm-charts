@@ -19,8 +19,12 @@ spec:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/secrets: {{ include (print $.Template.BasePath "/materialize_secret.yaml") . | sha256sum }}
         checksum/cloudsql: {{ include (print $.Template.BasePath "/cloudsql_secret.yaml") . | sha256sum }}
-        {{- if .Values.materialize.uwsgiConfig }}
-        checksum/uwsgi: {{ include (print $.Template.BasePath "/uwsgi_configmap.yaml") . | sha256sum }}
+        {{- with .Values.materialize.uwsgiConfig }}
+        # Hash the value directly rather than `include`-ing the ConfigMap template: an include
+        # creates a cross-file dependency that fails the whole render with "no template ...
+        # associated" if uwsgi_configmap.yaml is missing from a packaged chart (e.g. the new file
+        # was left untracked and a commit -a skipped it). Hashing the content is also more precise.
+        checksum/uwsgi: {{ . | sha256sum }}
         {{- end }}
     spec:
       securityContext:
