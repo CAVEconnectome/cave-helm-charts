@@ -3,6 +3,15 @@ entries:
   annotationengine:
   - apiVersion: v2
     appVersion: 4.41.4
+    created: "2026-08-19T12:35:35.39328012Z"
+    description: A Helm chart for CAVE annotationengine service on Kubernetes
+    digest: 52fe878a0b051904ee93978d644446f6b0052c66711780b7c634fb99e2c95a6b
+    name: annotationengine
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/annotationengine-4.41.5-r.1/annotationengine-4.41.5-r.1.tgz
+    version: 4.41.5-r.1
+  - apiVersion: v2
+    appVersion: 4.41.4
     created: "2026-05-01T19:45:03.242651578Z"
     description: A Helm chart for CAVE annotationengine service on Kubernetes
     digest: f8373ae298ac06bcd2641361ef45596df11aa53015738c8baa9ac82acd892d2e
@@ -672,6 +681,15 @@ entries:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/landingpage-0.1.0/landingpage-0.1.0.tgz
     version: 0.1.0
   materializationengine:
+  - apiVersion: v2
+    appVersion: 5.26.3
+    created: "2026-08-19T12:35:35.609477591Z"
+    description: A Helm chart for CAVE materialization service on Kubernetes
+    digest: 42c2644d94c62ebc09e340c811ea67c8e78068c378c52b20c98c26b8b8a1b832
+    name: materializationengine
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/materializationengine-5.26.4-r.1/materializationengine-5.26.4-r.1.tgz
+    version: 5.26.4-r.1
   - apiVersion: v2
     appVersion: 5.26.3
     created: "2026-08-19T01:11:53.847277109Z"
@@ -2490,4 +2508,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2026-08-19T06:37:04.158421804Z"
+generated: "2026-08-19T12:35:35.610100883Z"
