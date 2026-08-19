@@ -157,6 +157,13 @@ materialize:
   apiProbes:
     timeoutSeconds: 5
     periodSeconds: 20
+    # Probe paths. The split matters: readiness drains a busy-or-DB-broken pod (cheap, reversible)
+    # while liveness restarts only a pod a restart would fix. Both pointed at /health before,
+    # which does a database query on the shared uwsgi worker pool -- so a busy pod got restarted,
+    # and a pod with a corrupted pool would have drained forever without ever being restarted.
+    # Set both to /health to fall back to the old single-endpoint behaviour.
+    readyPath: /health/ready
+    livePath: /health/live
     # Gates liveness and readiness until the app has booted once. Keep this enabled: without it,
     # liveness kills the container at initialDelaySeconds + failureThreshold*periodSeconds (~55s),
     # but app boot measured p50 14s idle and p50 40-45s during a fleet-wide restart with a tail past

@@ -207,7 +207,9 @@ spec:
           # this much on FIRST start, while undershooting crash-loops the whole fleet.
           startupProbe:
             httpGet:
-              path: /health
+              # /health/ready, so startup is only satisfied once the app can actually reach the
+              # database -- not merely once it is listening.
+              path: {{ $probes.readyPath | default "/health/ready" }}
               port: 80
             periodSeconds: {{ $startup.periodSeconds | default 5 }}
             timeoutSeconds: {{ $startup.timeoutSeconds | default $probes.timeoutSeconds | default 5 }}
@@ -215,7 +217,9 @@ spec:
           {{- end }}
           readinessProbe:
             httpGet:
-              path: /health
+              # Drains the pod when its uwsgi pool is saturated or the database is unreachable.
+              # Draining is cheap and reversible: the pod keeps running and rejoins on recovery.
+              path: {{ $probes.readyPath | default "/health/ready" }}
               port: 80
             initialDelaySeconds: 5
             timeoutSeconds: {{ $probes.timeoutSeconds | default 5 }}
@@ -225,7 +229,12 @@ spec:
             failureThreshold: {{ ($probes.readiness | default dict).failureThreshold | default 3 }}
           livenessProbe:
             httpGet:
-              path: /health
+              # /health/live does NO i/o and never fails merely because the pod is busy -- it
+              # reports unhealthy only on the corrupted-connection-pool signature, which is the
+              # one condition a restart actually fixes. Pointing liveness at the same endpoint as
+              # readiness is what restarted 41 merely-busy pods on minniev7 2026-08-18, and would
+              # equally have left a pool-corrupted pod draining forever without ever restarting.
+              path: {{ $probes.livePath | default "/health/live" }}
               port: 80
             initialDelaySeconds: 15
             timeoutSeconds: {{ $probes.timeoutSeconds | default 5 }}
