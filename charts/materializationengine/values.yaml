@@ -7,6 +7,8 @@ annotation:
   # needs to correspond to a aligned volume that you created a database for
   healthAlignedVolumeName: ""
 cloudsql:
+  # google project of the sql instance; if empty, defaults to cluster.googleProject
+  projectId: ""
   sqlInstanceName: ""
   googleSecret: ""
   username: "postgres"

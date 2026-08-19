@@ -1,4 +1,6 @@
 cloudsql:
+  # google project of the sql instance; if empty, defaults to cluster.googleProject
+  projectId: ""
   sqlInstanceName: ""
   googleSecret: ""
   username: "postgres"

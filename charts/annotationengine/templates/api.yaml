@@ -87,7 +87,7 @@ spec:
           command:
             [
               "/cloud_sql_proxy",
-              "-instances={{ .Values.cluster.googleProject}}:{{ .Values.cluster.googleRegion}}:{{ .Values.cloudsql.sqlInstanceName}}=tcp:3306",
+              "-instances={{ .Values.cloudsql.projectId | default .Values.cluster.googleProject }}:{{ .Values.cluster.googleRegion}}:{{ .Values.cloudsql.sqlInstanceName}}=tcp:3306",
               "-credential_file=/secrets/cloudsql/google-secret.json",
             ]
           resources:

@@ -405,7 +405,7 @@ spec:
             - "--port=3306"
             - "--credentials-file=/secrets/cloudsql/google-secret.json"
             - "--max-sigterm-delay=3600s"
-            - "{{ .Values.cluster.googleProject}}:{{ .Values.cluster.googleRegion}}:{{ .Values.cloudsql.sqlInstanceName }}"
+            - "{{ .Values.cloudsql.projectId | default .Values.cluster.googleProject }}:{{ .Values.cluster.googleRegion}}:{{ .Values.cloudsql.sqlInstanceName }}"
           env:
             - name: CSQL_PROXY_HEALTH_CHECK
               value: "true"
