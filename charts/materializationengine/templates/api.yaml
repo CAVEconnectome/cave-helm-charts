@@ -222,6 +222,25 @@ spec:
             # materializationengine.apiWorkerLadder above.
             - name: HEALTH_READY_MAX_BUSY_FRACTION
               value: {{ $busyFrac | quote }}
+            {{- /* hasKey, not `default`: `false | default X` returns X, so an explicit
+                   enabled: false would be swallowed. Same trap as memoryRequestLimitRatio,
+                   startup.enabled and uwsgi.processes. */}}
+            {{- $audit := .Values.materialize.memoryAudit | default dict }}
+            {{- $auditOn := false }}
+            {{- if hasKey $audit "enabled" }}{{ $auditOn = $audit.enabled }}{{ end }}
+            # Emitted UNCONDITIONALLY. The application default in config.py is "true", so omitting
+            # this when disabled would leave the audit running -- the chart has to state the value
+            # either way for its default of off to mean anything.
+            - name: MEMORY_AUDIT_ENABLED
+              value: {{ $auditOn | quote }}
+            {{- if $auditOn }}
+            - name: MEMORY_AUDIT_WARN_DELTA_MB
+              value: {{ $audit.warnDeltaMb | default 100 | quote }}
+            - name: MEMORY_AUDIT_MAX_BODY_BYTES
+              value: {{ $audit.maxBodyBytes | default 2097152 | int64 | quote }}
+            - name: MEMORY_AUDIT_MAX_FILTER_VALUES
+              value: {{ $audit.maxFilterValues | default 8 | quote }}
+            {{- end }}
             - name: MATERIALIZATION_ENGINE_SETTINGS
               value: /app/materializationengine/instance/config.cfg
             - name: GOOGLE_APPLICATION_CREDENTIALS

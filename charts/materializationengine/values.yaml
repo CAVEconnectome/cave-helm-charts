@@ -225,6 +225,31 @@ materialize:
     # queueing. The 50/62.5 ladder is what keeps that from happening, so if you lower this, lower
     # apiTargetBusyPercent with it and verify scale-out still outruns shedding under a real burst.
     readyMaxBusyFraction: 0.625
+  # Per-request RSS accounting (materializationengine/memory_audit.py). Logs a JSON record on the
+  # way IN and on the way OUT of every request, so a request the kernel OOM-kills leaves a `start`
+  # with no matching `end` -- the only way to identify such a request, since a SIGKILLed worker runs
+  # no exception handler, no after_request and no teardown_request.
+  #
+  # Default OFF because it roughly doubles the api's log volume: two lines per request, and at
+  # ~450 skeletons/min with several materialize calls each that is thousands of lines per minute.
+  # Turn it on to diagnose memory problems, then turn it back off.
+  #
+  # NOTE the application default is ON (config.py), so this chart always emits
+  # MEMORY_AUDIT_ENABLED explicitly -- otherwise setting enabled: false here would emit nothing and
+  # the code default would silently re-enable it.
+  memoryAudit:
+    enabled: false
+    # A completed request whose RSS grew by at least this many Mi is logged at WARNING instead of
+    # INFO, so the expensive ones stand out from the stream.
+    warnDeltaMb: 100
+    # Bodies larger than this are not introspected: get_json caches the raw bytes and the parsed
+    # object, so parsing a huge filter payload would add tens of Mi to the very request most likely
+    # to be near the memory ceiling. Its size alone still gets logged.
+    maxBodyBytes: 2097152
+    # Filters with at most this many values are logged WITH their values, which is what makes an
+    # offending request identifiable; longer ones degrade to a count. Root ids are logged as
+    # strings because they exceed 2**53 and a double-parsing consumer would corrupt them.
+    maxFilterValues: 8
   limitsQueryPerMinute: 300
   limitsFastQueryPerMinute: 2000
   # Optional higher per-minute ceiling on the live-query endpoint for callers whose token
