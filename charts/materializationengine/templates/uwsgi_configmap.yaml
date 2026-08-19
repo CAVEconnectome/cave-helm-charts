@@ -51,9 +51,25 @@ stats = 0.0.0.0:{{ $u.statsPort | default 9192 }}
 stats-http = true
 
 ### Worker scaling
-; Maximum number of workers. Each costs ~70-100Mi of PRIVATE rss on top of ~180Mi shared by the
-; prefork, so pod rss ~= 180 + processes * private. Raising this raises the pod's memory ceiling.
-processes = {{ $u.processes | default 8 }}
+; INERT ON ITS OWN -- see the UWSGI_PROCESSES / UWSGI_CHEAPER env vars in api.yaml.
+;
+; The base image bakes ENV UWSGI_PROCESSES=16 and UWSGI_CHEAPER=2, and uwsgi applies option
+; sources in order with LAST WINNING. In production that order is:
+;   1. UWSGI_INI=/app/uwsgi.ini  -> this file
+;   2. the UWSGI_* environment variables
+;   3. --ini /etc/uwsgi/uwsgi.ini (socket/chmod/need-app/die-on-term only)
+; so the env vars land AFTER this file and silently beat whatever is written here. Verified
+; 2026-08-19: with `processes = 8` and `cheaper = 4` below, a live pod reported 16 worker slots
+; and a floor of 2. `cheaper = 4` had been added to stop /health starving behind a single busy
+; worker (the 2026-08-17 503 outage) and had never once taken effect.
+;
+; The chart therefore ALSO emits these two as env vars from the same values, so this file stays a
+; truthful description of the running config. Every other option here has no UWSGI_* counterpart
+; and does take effect from this file.
+;
+; Maximum number of workers. Each costs private rss on top of the shared prefork pages, so this is
+; the main lever on the pod's memory ceiling -- 16 workers is a very different budget from 8.
+processes = {{ index (splitList "," (include "materializationengine.apiWorkerLadder" $)) 0 }}
 
 ; https://uwsgi-docs.readthedocs.io/en/latest/Cheaper.html#busyness-cheaper-algorithm
 cheaper-algo = {{ $u.cheaperAlgo | default "busyness" }}

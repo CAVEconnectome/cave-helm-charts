@@ -27,11 +27,18 @@ spec:
         # scaling the fleet to hold average busy-% at threshold. 2m rides over GMP's ingest lag.
         query: >-
           sum(avg_over_time(uwsgi_perc_busy_workers{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",top_level_controller_name="materialize"}[2m])) or vector(0)
-        # Target AverageValue in percent
-        threshold: "75"
+        # Target AverageValue in percent. Must stay BELOW
+        # materialize.apiProbes.readyMaxBusyFraction (expressed as a percent) so the fleet adds
+        # replicas before individual pods start refusing traffic. If shedding fires first, pods
+        # leave the Service while the deployment is still sized for the old load, concentrating
+        # the same traffic on fewer endpoints -- the opposite of what shedding is for.
+        {{- $ladder := splitList "," (include "materializationengine.apiWorkerLadder" $) }}
+        # Resolved: holds the fleet at {{ index $ladder 1 }} of {{ index $ladder 0 }} busy workers,
+        # while pods shed at {{ index $ladder 2 }}. The render fails if that ordering inverts.
+        threshold: {{ .Values.materialize.apiTargetBusyPercent | default 50 | quote }}
     {{- end }}
     - type: cpu
       metricType: Utilization
       metadata:
-        value: "75"
+        value: {{ .Values.materialize.apiTargetCpuPercent | default 75 | quote }}
 {{- end }}

@@ -19,6 +19,66 @@ was left untracked and `git commit -a` skipped it.
 Normalises through bytes and emits Mi, so any valid request unit (Mi, Gi, G, Ki, bare bytes)
 yields a valid quantity and 1Gi * 1.5 is 1536Mi rather than being rounded to a useless 2Gi.
 */}}
+{{/*
+Worker-count view of the api load ladder, with validation.
+
+Three knobs govern how the api handles rising load, and they are written in three different units,
+so an inconsistent combination is easy to author and impossible to spot by eye:
+
+  materialize.uwsgi.processes                  a count      (max workers per pod)
+  materialize.apiTargetBusyPercent             0-100        (KEDA scale-out target)
+  materialize.apiProbes.readyMaxBusyFraction   0-1          (readiness shed point)
+
+This resolves all three to worker counts and fails the render if they do not form a ladder:
+
+  apiTargetWorkers    = floor(apiTargetBusyPercent / 100 * processes)   fleet held here
+  readyMaxBusyWorkers = ceil(readyMaxBusyFraction * processes)          pod refuses traffic here
+
+  required:  processes > readyMaxBusyWorkers > apiTargetWorkers
+
+Why each inequality matters:
+
+  processes > readyMaxBusyWorkers -- at least one worker must still be free when a pod begins
+    shedding. If they are equal, saturation and shedding coincide and every request arriving during
+    the ~20s readiness detection window piles into the listen backlog with nowhere to go.
+
+  readyMaxBusyWorkers > apiTargetWorkers -- replicas must be added before pods refuse. Inverted,
+    pods leave the Service while the Deployment is still sized for the old load, concentrating the
+    same traffic onto fewer endpoints, which is the opposite of what shedding is for. This ordering
+    was actually inverted in 5.26.3-r.3 (shed at 8 of 16, scale-out at 12) and nothing caught it.
+
+ceil() for the shed point is exact, not approximate: health.py compares `busy / total >= fraction`,
+so ceil(fraction * processes) is precisely the first integer busy-count that trips it.
+
+Returns "processes,apiTargetWorkers,readyMaxBusyWorkers"; callers splitList on ",".
+*/}}
+{{- define "materializationengine.apiWorkerLadder" -}}
+{{- $u := .Values.materialize.uwsgi | default dict -}}
+{{- $probes := .Values.materialize.apiProbes | default dict -}}
+{{- /* hasKey, not `default`: `0 | default 16` yields 16, so an explicit processes: 0 would be
+       silently replaced by the fallback instead of failing validation. Same falsy-zero trap as
+       memoryRequestLimitRatio and startup.enabled. */ -}}
+{{- $processes := 16 -}}
+{{- if hasKey $u "processes" -}}{{- $processes = int $u.processes -}}{{- end -}}
+{{- $pct := float64 (.Values.materialize.apiTargetBusyPercent | default 50) -}}
+{{- /* hasKey, not `default`: 0 disables shedding and `default` would swallow that falsy 0. */ -}}
+{{- $frac := 0.625 -}}
+{{- if hasKey $probes "readyMaxBusyFraction" -}}{{- $frac = float64 $probes.readyMaxBusyFraction -}}{{- end -}}
+{{- if lt $processes 1 -}}
+{{- fail (printf "materialize.uwsgi.processes must be at least 1, got %d" $processes) -}}
+{{- end -}}
+{{- $target := int (floor (divf (mulf $pct (float64 $processes)) 100.0)) -}}
+{{- $shed := int (ceil (mulf $frac (float64 $processes))) -}}
+{{- if gt $frac 0.0 -}}
+{{- if ge $shed $processes -}}
+{{- fail (printf "api load ladder is invalid: readyMaxBusyFraction %v of %d workers sheds at %d busy, leaving no free worker (need readyMaxBusyWorkers < processes). A pod would saturate and shed at the same moment, so requests arriving during the ~20s readiness detection window have nowhere to go. Lower materialize.apiProbes.readyMaxBusyFraction or raise materialize.uwsgi.processes." $frac $processes $shed) -}}
+{{- end -}}
+{{- if le $shed $target -}}
+{{- fail (printf "api load ladder is invalid: KEDA targets %d busy workers (apiTargetBusyPercent %v%% of %d) but pods shed at %d busy (readyMaxBusyFraction %v). Scale-out must come first, so readyMaxBusyWorkers > apiTargetWorkers; as configured pods would leave the Service before replicas are added, concentrating the same traffic on fewer endpoints. Lower materialize.apiTargetBusyPercent or raise materialize.apiProbes.readyMaxBusyFraction." $target $pct $processes $shed $frac) -}}
+{{- end -}}
+{{- end -}}
+{{- printf "%d,%d,%d" $processes $target $shed -}}
+{{- end -}}
 {{- define "materializationengine.apiMemoryLimit" -}}
 {{- $res := .Values.materialize.resources -}}
 {{- $explicit := "" -}}
@@ -126,6 +186,42 @@ spec:
               subPath: uwsgi.ini
             {{- end }}
           env:
+            {{- if (include "materializationengine.uwsgiConfigEffective" .) }}
+            {{- $u := .Values.materialize.uwsgi | default dict }}
+            # UWSGI_PROCESSES / UWSGI_CHEAPER must be set as ENV VARS, not just in uwsgi.ini.
+            #
+            # uwsgi applies option sources in order and the last one wins. In this image the order
+            # is: UWSGI_INI (=/app/uwsgi.ini, the mounted ConfigMap) -> UWSGI_* env vars ->
+            # --ini /etc/uwsgi/uwsgi.ini. The base image bakes ENV UWSGI_PROCESSES=16 and
+            # UWSGI_CHEAPER=2, which therefore beat the mounted ini every time.
+            #
+            # Verified on minniev7 2026-08-19: uwsgi.ini said processes=8 / cheaper=4 while a live
+            # pod reported 16 worker slots and a floor of 2 spawned. The cheaper=4 change -- added
+            # specifically to stop /health starving behind one busy worker after the 2026-08-17 503
+            # outage -- had never taken effect. Emitting them here from the same values keeps the
+            # ini honest and makes values.yaml the single source of truth.
+            {{- $ladderEnv := splitList "," (include "materializationengine.apiWorkerLadder" .) }}
+            - name: UWSGI_PROCESSES
+              value: {{ index $ladderEnv 0 | quote }}
+            - name: UWSGI_CHEAPER
+              value: {{ $u.cheaper | default 4 | quote }}
+            {{- end }}
+            {{- /* hasKey, not `default`: 0 means "disable busy shedding" and `default` would
+                   silently replace that falsy 0 with the fallback. */}}
+            {{- $probesCfg := .Values.materialize.apiProbes | default dict }}
+            {{- $busyFrac := 0.625 }}
+            {{- if hasKey $probesCfg "readyMaxBusyFraction" }}{{ $busyFrac = $probesCfg.readyMaxBusyFraction }}{{ end }}
+            {{- $ladder := splitList "," (include "materializationengine.apiWorkerLadder" .) }}
+            # Busy fraction at which /health/ready reports NOT ready so traffic drains elsewhere.
+            # health.py divides by uwsgi's worker-slot count, which is uwsgi.processes, so the
+            # resolved ladder for this release is:
+            #   {{ index $ladder 0 }} workers per pod
+            #   KEDA holds the fleet at {{ index $ladder 1 }} busy
+            #   a pod refuses traffic at {{ index $ladder 2 }} busy ({{ sub (index $ladder 0 | int) (index $ladder 2 | int) }} workers left as buffer)
+            # The chart fails to render unless processes > shed > target; see
+            # materializationengine.apiWorkerLadder above.
+            - name: HEALTH_READY_MAX_BUSY_FRACTION
+              value: {{ $busyFrac | quote }}
             - name: MATERIALIZATION_ENGINE_SETTINGS
               value: /app/materializationengine/instance/config.cfg
             - name: GOOGLE_APPLICATION_CREDENTIALS
@@ -223,7 +319,9 @@ spec:
               port: 80
             initialDelaySeconds: 5
             timeoutSeconds: {{ $probes.timeoutSeconds | default 5 }}
-            periodSeconds: {{ $probes.periodSeconds | default 20 }}
+            # Readiness may run faster than the shared period: its latency is the window in which
+            # a saturating pod keeps receiving traffic.
+            periodSeconds: {{ ($probes.readiness | default dict).periodSeconds | default $probes.periodSeconds | default 20 }}
             # Kept tight on purpose: readiness is the cheap, correct response to a busy pod --
             # it sheds traffic to healthier replicas and costs nothing, since the pod stays running.
             failureThreshold: {{ ($probes.readiness | default dict).failureThreshold | default 3 }}
@@ -238,7 +336,7 @@ spec:
               port: 80
             initialDelaySeconds: 15
             timeoutSeconds: {{ $probes.timeoutSeconds | default 5 }}
-            periodSeconds: {{ $probes.periodSeconds | default 20 }}
+            periodSeconds: {{ ($probes.liveness | default dict).periodSeconds | default $probes.periodSeconds | default 20 }}
             # Deliberately MORE tolerant than readiness. /health shares the uwsgi worker pool with
             # real traffic, so a merely-busy pod fails it -- and the two probes previously had
             # identical thresholds, so they always tripped together and a pod that readiness would
