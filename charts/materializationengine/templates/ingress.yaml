@@ -16,6 +16,17 @@ metadata:
     # nobody will read, and harakiri never fires so nothing reports what was stuck.
     nginx.ingress.kubernetes.io/proxy-read-timeout: {{ .Values.materialize.ingress.proxyReadTimeout | default 600 | quote }}
     nginx.ingress.kubernetes.io/proxy-send-timeout: {{ .Values.materialize.ingress.proxySendTimeout | default 360 | quote }}
+    # ingress-nginx defaults client_max_body_size to 1m. The v3 /query endpoint takes its filters
+    # in the POST body, and filter_in_dict can carry an arbitrary root-id list -- at ~20 bytes per
+    # id that crosses 1m at roughly 50k ids. Over the cap the INGRESS returns its own nginx 413
+    # page before the request reaches the api, so nothing is logged app-side and the failure is
+    # expensive to trace; pcgl2cache hit exactly this on /attributes.
+    #
+    # Hardening, not a fix for anything observed: measured on minniev7 2026-08-22, materialize
+    # request_length was p50 697B / p99 850B / max 2KB over 9,867 requests, three orders of
+    # magnitude below the cap, and the cluster had zero 413 responses. The skeleton workers send
+    # single-root filters; a bulk caller is what would exceed it.
+    nginx.ingress.kubernetes.io/proxy-body-size: {{ (.Values.materialize.ingress).proxyBodySize | default "10m" | quote }}
     nginx.ingress.kubernetes.io/x-forwarded-prefix: "true"
     nginx.ingress.kubernetes.io/proxy-next-upstream: "error timeout invalid_header http_502 http_503 http_504"
     nginx.ingress.kubernetes.io/proxy-next-upstream-tries: "3"

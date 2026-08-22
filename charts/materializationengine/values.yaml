@@ -95,6 +95,11 @@ materialize:
     # and reports why, instead of computing a response nobody is still waiting for.
     proxyReadTimeout: 600
     proxySendTimeout: 360
+    # Max request body the ingress accepts. ingress-nginx defaults to 1m, which /query can exceed
+    # because filter_in_dict carries a root-id list in the POST body (~20 bytes per id, so ~50k ids
+    # is 1m). Over the cap the ingress returns its own 413 page and the api never sees the request,
+    # so there is nothing app-side to debug. 10m matches pychunkedgraph, pcgl2cache and tourguide.
+    proxyBodySize: "10m"
   # uwsgi.ini for the api container, rendered from these values and mounted over
   # /app/uwsgi.ini with subPath (only that file is replaced; the application code in /app is
   # untouched). This is the supported way to tune the api's worker pool -- changing a value
