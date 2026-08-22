@@ -3,6 +3,15 @@ entries:
   annotationengine:
   - apiVersion: v2
     appVersion: 4.41.4
+    created: "2026-08-22T19:56:34.448168215Z"
+    description: A Helm chart for CAVE annotationengine service on Kubernetes
+    digest: b47f675b05ae852d0b688a26347b4fce03a5ce5c935b2ccfa1d27ee0a6c83433
+    name: annotationengine
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/annotationengine-4.41.5-r.2/annotationengine-4.41.5-r.2.tgz
+    version: 4.41.5-r.2
+  - apiVersion: v2
+    appVersion: 4.41.4
     created: "2026-08-19T12:35:35.39328012Z"
     description: A Helm chart for CAVE annotationengine service on Kubernetes
     digest: 52fe878a0b051904ee93978d644446f6b0052c66711780b7c634fb99e2c95a6b
@@ -202,6 +211,16 @@ entries:
   auth:
   - apiVersion: v2
     appVersion: 2.30.2
+    created: "2026-08-22T19:56:34.576397021Z"
+    description: Neuroglancer auth service (global)
+    digest: c4798df0f795e89904711a3122a10da4ae141cf88930e81163c2f1a06c2a69be
+    name: auth
+    type: application
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/auth-2.30.3-r.1/auth-2.30.3-r.1.tgz
+    version: 2.30.3-r.1
+  - apiVersion: v2
+    appVersion: 2.30.2
     created: "2025-08-29T16:37:14.738626822Z"
     description: Neuroglancer auth service (global)
     digest: 3d1675cfdd560df224791e59ddc52e4fdeb8a0b8983704f8c5810c41b887842a
@@ -221,6 +240,15 @@ entries:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/auth-0.1.0/auth-0.1.0.tgz
     version: 0.1.0
   authinfo:
+  - apiVersion: v2
+    appVersion: 1.0.0
+    created: "2026-08-22T19:56:34.740099473Z"
+    description: Simple auth info endpoint exposing login url and supported datastacks
+    digest: 93daf41c4951240913adf84c75c87a264e856e987a0000b54b0049a0115931af
+    name: authinfo
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/authinfo-0.2.1-r.1/authinfo-0.2.1-r.1.tgz
+    version: 0.2.1-r.1
   - apiVersion: v2
     appVersion: 1.0.0
     created: "2025-11-10T15:31:42.930167824Z"
@@ -333,6 +361,15 @@ entries:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/cert-manager-google-0.1.0/cert-manager-google-0.1.0.tgz
     version: 0.1.0
   dash:
+  - apiVersion: v1
+    appVersion: 1.16.1
+    created: "2026-08-22T19:56:34.846790166Z"
+    description: A Helm chart for CAVE dash on flask service on Kubernetes
+    digest: f1a47c65e68934adfe191dabd0619f4cfe09bc7505bc04407886694df675ed36
+    name: dash
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/dash-1.16.2-r.1/dash-1.16.2-r.1.tgz
+    version: 1.16.2-r.1
   - apiVersion: v1
     appVersion: 1.16.1
     created: "2026-07-19T12:33:39.354365386Z"
@@ -458,6 +495,16 @@ entries:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/edge-0.2.0/edge-0.2.0.tgz
     version: 0.2.0
   emannotationschemas:
+  - apiVersion: v2
+    appVersion: 5.26.3
+    created: "2026-08-22T19:56:34.970869117Z"
+    description: EMAnnotationSchemas service (global)
+    digest: 6625c9e0cac9d73b19f1bb53b0c291fcfd721b5eea6398c2e3e0f5de57c73679
+    name: emannotationschemas
+    type: application
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/emannotationschemas-5.26.4-r.1/emannotationschemas-5.26.4-r.1.tgz
+    version: 5.26.4-r.1
   - apiVersion: v2
     appVersion: 5.26.3
     created: "2026-04-28T18:01:53.566098073Z"
@@ -651,6 +698,16 @@ entries:
   infoservice:
   - apiVersion: v2
     appVersion: 4.3.3
+    created: "2026-08-22T19:56:35.112375991Z"
+    description: Annotation Framework Info Service (global)
+    digest: b8e1abefa3670cb74843263cfcf4dad879b6814b4573bd3c6e7aac5a3cbc5a37
+    name: infoservice
+    type: application
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/infoservice-0.1.1-r.1/infoservice-0.1.1-r.1.tgz
+    version: 0.1.1-r.1
+  - apiVersion: v2
+    appVersion: 4.3.3
     created: "2025-08-19T03:54:51.03608704Z"
     description: Annotation Framework Info Service (global)
     digest: c6d89db83bb62c519f7036e280cdd80added4fd154a9f79c2628f074e77c3abd
@@ -660,6 +717,16 @@ entries:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/infoservice-0.1.0/infoservice-0.1.0.tgz
     version: 0.1.0
   landingpage:
+  - apiVersion: v2
+    appVersion: 1.0.0
+    created: "2026-08-22T19:56:35.246007669Z"
+    description: Static landing page served at the domain root, listing the services
+      running on the deployment
+    digest: 642b53136409bc4b213bfe28370e3e2fa48fde646f7bad8a558badfb0ccf8c72
+    name: landingpage
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/landingpage-0.1.2-r.1/landingpage-0.1.2-r.1.tgz
+    version: 0.1.2-r.1
   - apiVersion: v2
     appVersion: 1.0.0
     created: "2026-07-24T04:45:47.046060305Z"
@@ -1737,6 +1804,16 @@ entries:
   nglstate:
   - apiVersion: v2
     appVersion: 0.7.0
+    created: "2026-08-22T19:56:35.457948846Z"
+    description: Neuroglancer JSON state service (global)
+    digest: 916403bd9d81bda2f35f95f52369244c0b25a473cdf9da64242a8e050f6e09d2
+    name: nglstate
+    type: application
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/nglstate-0.1.1-r.1/nglstate-0.1.1-r.1.tgz
+    version: 0.1.1-r.1
+  - apiVersion: v2
+    appVersion: 0.7.0
     created: "2025-08-19T03:54:51.232259104Z"
     description: Neuroglancer JSON state service (global)
     digest: 8a63ccf1ef013c7d6fabc4009db18ef2c6b28f2e0ffa9206f88194d79fbe4b75
@@ -1911,6 +1988,15 @@ entries:
   pmanagement:
   - apiVersion: v2
     appVersion: 0.31.1
+    created: "2026-08-22T19:56:35.570776284Z"
+    description: A Helm chart for CAVE proofreading management services on Kubernetes
+    digest: 1ab2bc5eae7740fda356d20e27789341a9df1743a516f250d0db9bf179dd8dbd
+    name: pmanagement
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/pmanagement-0.31.2-r.1/pmanagement-0.31.2-r.1.tgz
+    version: 0.31.2-r.1
+  - apiVersion: v2
+    appVersion: 0.31.1
     created: "2026-06-12T16:10:45.935183392Z"
     description: A Helm chart for CAVE proofreading management services on Kubernetes
     digest: b44ae58127c807d0f318b8a737dbe79d538fd85f2be50a24da1c795576ab99be
@@ -1938,6 +2024,15 @@ entries:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/pmanagemt-0.31.1/pmanagemt-0.31.1.tgz
     version: 0.31.1
   pychunkedgraph:
+  - apiVersion: v2
+    appVersion: 2.20.0
+    created: "2026-08-22T19:56:35.696898513Z"
+    description: A Helm chart for CAVE pychunkedgraph services on Kubernetes
+    digest: 42491a66c8d5463409e47a25fd785288c6c192b01004cf9d96ae1d1b396d6646
+    name: pychunkedgraph
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/pychunkedgraph-2.20.1-r.1/pychunkedgraph-2.20.1-r.1.tgz
+    version: 2.20.1-r.1
   - apiVersion: v2
     appVersion: 2.20.0
     created: "2026-08-06T06:43:35.196543952Z"
@@ -2184,6 +2279,15 @@ entries:
     version: 0.23.11-r1
   - apiVersion: v1
     appVersion: vLoggingArchiveFix13
+    created: "2026-08-22T19:56:35.830385084Z"
+    description: Skeleton cache API and workers
+    digest: a704045991cde4dfef202adf4f9b70c1ade0b60f5a98a5964cf7bf1a8fc3b1f5
+    name: skeletoncache
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/skeletoncache-0.23.11-dev5/skeletoncache-0.23.11-dev5.tgz
+    version: 0.23.11-dev5
+  - apiVersion: v1
+    appVersion: vLoggingArchiveFix13
     created: "2026-08-20T14:25:47.867964648Z"
     description: Skeleton cache API and workers
     digest: b2c68090def8e37f85178ef1b81bb46aa1b9d8ff80427712bace520520bea363
@@ -2247,18 +2351,18 @@ entries:
     version: 0.22.49-r2
   - apiVersion: v1
     appVersion: 0.22.49
-    created: "2026-05-22T17:09:17.312733851Z"
+    created: "2026-05-22T17:03:57.799974267Z"
     description: Skeleton cache API and workers
-    digest: 3765b6dc7e048a4d11e5261445bb69f69318e2d2e317d55bdc266e6228209b03
+    digest: 4735ca3c96c5904a5ca8af4aa94447c74441908a950e5edc4ed2005835ea705c
     name: skeletoncache
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/skeletoncache-0.22.49-r1/skeletoncache-0.22.49-r1.tgz
     version: 0.22.49-r1
   - apiVersion: v1
     appVersion: 0.22.49
-    created: "2026-05-22T17:03:57.799974267Z"
+    created: "2026-05-22T17:09:17.312733851Z"
     description: Skeleton cache API and workers
-    digest: 4735ca3c96c5904a5ca8af4aa94447c74441908a950e5edc4ed2005835ea705c
+    digest: 3765b6dc7e048a4d11e5261445bb69f69318e2d2e317d55bdc266e6228209b03
     name: skeletoncache
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/skeletoncache-0.22.49-r1/skeletoncache-0.22.49-r1.tgz
@@ -2438,6 +2542,15 @@ entries:
     version: 2.3.1
   - apiVersion: v1
     appVersion: 2.3.2
+    created: "2026-08-22T19:56:35.953771481Z"
+    description: A Helm chart for CAVE tourguide on flask service on Kubernetes
+    digest: 8634071ca43a08d607948b498259c45fd7a9f555dfb122641d0b510d914ca12f
+    name: tourguide
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.4-r.1/tourguide-0.2.4-r.1.tgz
+    version: 0.2.4-r.1
+  - apiVersion: v1
+    appVersion: 2.3.2
     created: "2025-08-16T09:36:16.142238705Z"
     description: A Helm chart for CAVE tourguide on flask service on Kubernetes
     digest: 90993c980501841cb2ee72324e2284426e4e96bc8b3949b624ebcb9f62087adf
@@ -2544,4 +2657,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2026-08-22T19:30:52.695826727Z"
+generated: "2026-08-22T19:56:35.954739695Z"
