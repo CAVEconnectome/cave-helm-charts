@@ -5,10 +5,25 @@ redis:
 
 # Shared defaults for both deployments
 auth:
+  # Max request body ingress-nginx will accept for this service (nginx default is 1m).
+  ingress:
+    proxyBodySize: "10m"
   # tag: ""                     # optional; defaults to .Chart.AppVersion
   googleSecretFilename: google-secret.json
   oauthSecretFilename: oauth-secret.json
   dbName: "auth"
+  # Flask session signing key. Required — supply via ref+gcpsecrets so it is
+  # stable across releases (changing it invalidates every active session).
+  secretKey: ""
+  # Emails granted admin on first boot, e.g. ["you@example.org"].
+  defaultAdmins: []
+  # Files materialized into the auth-google-cloud-key secret and mounted at
+  # /app/secrets/instance. Must include an entry whose name matches
+  # oauthSecretFilename holding the Google OAuth web client JSON.
+  # secretFiles:
+  #   - name: oauth-secret.json
+  #     value: "ref+gcpsecrets://my-project/auth-oauth-client-globalv1"
+  secretFiles: []
   resources:
     requests:
       memory: 200Mi
@@ -17,15 +32,18 @@ auth:
 
 # Regular auth API
 regular:
+  enabled: true
   replicas: 10
-  oauthSecretName: ""
-  clientSecretName: ""
   urlPrefix: "auth"
 
 # Sticky auth (admin workflows)
 sticky:
+  enabled: true
   replicas: 1
-  oauthSecretName: ""
-  clientSecretName: ""
   urlPrefix: "sticky_auth"
   sessionAffinity: ClientIP
+  sessionLifetimeHours: 1
+  resources:
+    requests:
+      memory: 130Mi
+      cpu: 50m

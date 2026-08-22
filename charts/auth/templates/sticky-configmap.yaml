@@ -7,15 +7,15 @@ data:
     import redis
     import os
     from datetime import timedelta
-    SECRET_KEY = "b${AUTHSERVICE_SECRET_KEY}"
+    SECRET_KEY = {{ .Values.auth.secretKey | required "auth.secretKey is required (Flask session signing key; supply via ref+gcpsecrets)." | quote }}
     SESSION_TYPE = 'redis'
     SESSION_REDIS = redis.from_url('redis://' + os.environ.get('REDISHOST', 'localhost') + ':' + str(os.environ.get('REDISPORT', 6379)))
-    PERMANENT_SESSION_LIFETIME = timedelta(hours=1)
+    PERMANENT_SESSION_LIFETIME = timedelta(hours={{ .Values.sticky.sessionLifetimeHours | default 1 }})
 
-    SQLALCHEMY_DATABASE_URI = "${SQL_DB_TYPE}://${POSTGRES_WRITE_USER}:${POSTGRES_WRITE_USER_PASSWORD}@localhost:5432/${SQL_AUTH_DB_NAME}"
+    SQLALCHEMY_DATABASE_URI = {{ printf "postgres://%s:%s@127.0.0.1:5432/%s" (.Values.cloudsql.username | required "cloudsql.username required") (.Values.cloudsql.password | required "cloudsql.password required") (.Values.auth.dbName | default "auth") | quote }}
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     CORS_SUPPORTS_CREDENTIALS = True
-    DEFAULT_ADMINS = ${AUTH_DEFAULT_ADMINS}
+    DEFAULT_ADMINS = {{ .Values.auth.defaultAdmins | default (list) | toJson }}
 
     STICKY_AUTH = True

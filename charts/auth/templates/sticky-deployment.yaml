@@ -16,11 +16,24 @@ spec:
     metadata:
       labels:
         app: sticky-auth
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/sticky-configmap.yaml") . | sha256sum }}
+        checksum/secrets: {{ include (print $.Template.BasePath "/cloudsql_secret.yaml") . | sha256sum }}
+        checksum/authsecrets: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
     spec:
       volumes:
         - name: cloudsql-instance-credentials-volume
           secret:
             secretName: auth-cloudsql-google-cloud-key
+        - name: auth-secrets-volume
+          secret:
+            secretName: auth-google-cloud-key
+        - name: sticky-auth-config-volume
+          configMap:
+            name: sticky-auth-config
+        - name: auth-uwsgi-volume
+          configMap:
+            name: auth-uwsgiconfig
       containers:
         - name: auth
           image: {{ .Values.auth.image | default $defaultImage }}
@@ -38,9 +51,24 @@ spec:
               value: {{ printf "postgres://%s:%s@127.0.0.1:5432/%s" (.Values.cloudsql.username | required "cloudsql.username required") (.Values.cloudsql.password | required "cloudsql.password required") (.Values.auth.dbName | default "auth") | quote }}
             - name: URL_PREFIX
               value: {{ .Values.sticky.urlPrefix | default "sticky_auth" | quote }}
+            - name: AUTH_CONFIG_SETTINGS
+              value: "/app/config/config.cfg"
+            - name: AUTH_OAUTH_SECRET
+              value: {{ printf "/app/secrets/instance/%s" (.Values.auth.oauthSecretFilename | default "oauth-secret.json") | quote }}
+          resources:
+            {{- toYaml (.Values.sticky.resources | default .Values.auth.resources | default dict) | nindent 12 }}
           volumeMounts:
             - name: cloudsql-instance-credentials-volume
               mountPath: /secrets/cloudsql
+              readOnly: true
+            - name: auth-secrets-volume
+              mountPath: /app/secrets/instance
+              readOnly: true
+            - name: sticky-auth-config-volume
+              mountPath: /app/config
+              readOnly: true
+            - name: auth-uwsgi-volume
+              mountPath: /etc/uwsgi
               readOnly: true
         - name: cloudsql-proxy
           image: gcr.io/cloudsql-docker/gce-proxy:1.33.6
