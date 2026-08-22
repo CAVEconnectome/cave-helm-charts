@@ -1,0 +1,131 @@
+{{- if and .Values.keda.enabled .Values.pcgl2cache.workersAsJobs }}
+{{- $raw := .Values.pcgl2cache.tag | default .Chart.AppVersion -}}
+{{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
+---
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: keda-l2cache-trigger-auth-gcp-credentials
+spec:
+  podIdentity:
+    provider: gcp
+{{- $variants := list
+      (dict "name" "pcgl2cache-worker"              "module" "workers.missing"    "queue" .Values.pcgl2cache.queues.update "exchange" .Values.pcgl2cache.exchanges.update "tuning" .Values.pcgl2cache.workers.update)
+      (dict "name" "pcgl2cache-highpriority-worker" "module" "workers.from_edits" "queue" .Values.pcgl2cache.queues.high   "exchange" .Values.pcgl2cache.exchanges.edits  "tuning" .Values.pcgl2cache.workers.highpriority)
+      (dict "name" "pcgl2cache-lowpriority-worker"  "module" "workers.from_edits" "queue" .Values.pcgl2cache.queues.low    "exchange" .Values.pcgl2cache.exchanges.edits  "tuning" .Values.pcgl2cache.workers.lowpriority)
+}}
+{{- range $v := $variants }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledJob
+metadata:
+  name: {{ $v.name }}
+spec:
+  pollingInterval: {{ $.Values.keda.pollingSeconds | default 15 }}
+  maxReplicaCount: {{ $.Values.pcgl2cache.workerMaxJobs | default 50 }}
+  successfulJobsHistoryLimit: 5
+  failedJobsHistoryLimit: 5
+  rolloutStrategy: gradual
+  # accurate = desiredJobs = ceil(backlog / value) - runningJobCount, so KEDA does not
+  # double-launch for messages already being worked by a running job.
+  scalingStrategy:
+    strategy: accurate
+  jobTargetRef:
+    parallelism: 1
+    completions: 1
+    backoffLimit: 3
+    activeDeadlineSeconds: {{ $v.tuning.jobTimeout | default 300 }}
+    ttlSecondsAfterFinished: 600
+    template:
+      metadata:
+        labels:
+          app: {{ $v.name }}
+      spec:
+        restartPolicy: OnFailure
+        tolerations:
+          - key: "pool"
+            operator: "Equal"
+            value: "{{ $.Values.cluster.meshPool }}"
+            effect: "NoSchedule"
+        nodeSelector:
+          cloud.google.com/gke-nodepool: {{ $.Values.cluster.meshPool }}
+        volumes:
+          - name: google-cloud-key
+            secret:
+              secretName: pcgl2cache-secret
+          - name: pcg-config-volume
+            configMap:
+              name: pcgl2cache-config
+        containers:
+          - name: {{ $v.name }}
+            image: {{ $.Values.cluster.dockerRegistry }}/pcgl2cache:worker_pcgv1_{{ $tag }}
+            imagePullPolicy: Always
+            volumeMounts:
+              - name: google-cloud-key
+                mountPath: /home/nginx/.cloudvolume/secrets
+              - name: pcg-config-volume
+                mountPath: /app/pcgl2cache/app/instance/
+            env:
+              - name: GRAPH_L2CACHE_CONFIG_PATH
+                value: /app/pcgl2cache/app/instance/L2_table_map.yml
+              - name: GOOGLE_APPLICATION_CREDENTIALS
+                value: /home/nginx/.cloudvolume/secrets/{{ $.Values.pcgl2cache.googleSecretFilename }}
+              - name: AUTH_URI
+                value: {{ required "A valid .cluster.globalServer is required!" $.Values.cluster.globalServer }}/auth
+              - name: STICKY_AUTH_URL
+                value: {{ required "A valid .cluster.globalServer is required!" $.Values.cluster.globalServer }}/sticky_auth
+              - name: BIGTABLE_PROJECT
+                value: "{{ $.Values.cluster.dataProjectName | default $.Values.cluster.googleProject }}"
+              - name: BIGTABLE_INSTANCE
+                value: {{ $.Values.pcgl2cache.bigtable.instance | quote }}
+              - name: AUTH_URL
+                value: {{ required "A valid .cluster.globalServer is required!" $.Values.cluster.globalServer }}/auth
+              - name: INFO_URL
+                value: {{ required "A valid .cluster.globalServer is required!" $.Values.cluster.globalServer }}/info
+              - name: APP_SETTINGS
+                value: "pcgl2cache.app.config.DevelopmentConfig"
+              - name: PCGL2CACHE_URL_PREFIX
+                value: l2cache
+              - name: PROJECT_ID
+                value: "{{ $.Values.cluster.dataProjectName | default $.Values.cluster.googleProject }}"
+              - name: PROJECT_NAME
+                value: "{{ $.Values.cluster.googleProject }}"
+              - name: L2CACHE_UPDATE_QUEUE
+                value: {{ $v.queue | quote }}
+              - name: L2CACHE_EXCHANGE
+                value: {{ $v.exchange | quote }}
+              - name: AUTH_USE_REDIS
+                value: "false"
+              - name: DAF_CREDENTIALS
+                value: /home/nginx/.cloudvolume/secrets/{{ $.Values.pcgl2cache.caveSecretFilename }}
+              # Bounded/idle-exit mode (workers/common.py::run_worker). N must equal the
+              # trigger `value` below so KEDA sizes the fleet as ceil(backlog / N).
+              - name: L2CACHE_WORKER_MAX_MESSAGES
+                value: {{ $v.tuning.messagesPerJob | default 1 | quote }}
+              - name: L2CACHE_WORKER_IDLE_TIMEOUT_SECONDS
+                value: {{ $v.tuning.idleTimeoutSeconds | default 30 | quote }}
+            resources:
+              requests:
+                memory: {{ $.Values.pcgl2cache.worker.resources.requests.memory }}
+                cpu: {{ $.Values.pcgl2cache.worker.resources.requests.cpu }}
+              limits:
+                memory: {{ include "pcgl2cache.memLimit" (dict "request" $.Values.pcgl2cache.worker.resources.requests.memory "explicit" ($.Values.pcgl2cache.worker.resources.limits).memory "ratio" $.Values.pcgl2cache.worker.resources.memLimitRatio) }}
+            command:
+              - su
+              - nginx
+              - -c
+              - "python -m {{ $v.module }}"
+  triggers:
+    - type: gcp-pubsub
+      authenticationRef:
+        name: keda-l2cache-trigger-auth-gcp-credentials
+      metadata:
+        mode: "SubscriptionSize"
+        timeHorizon: {{ $.Values.keda.timeHorizon | default "2m" | quote }}
+        valueIfNull: {{ $.Values.keda.valueIfNull | default 0 | quote }}
+        activationValue: {{ $.Values.keda.activationValue | default 0 | quote }}
+        subscriptionName: {{ $v.queue | quote }}
+        # value MUST equal L2CACHE_WORKER_MAX_MESSAGES (N) above.
+        value: {{ $v.tuning.messagesPerJob | default 1 | quote }}
+{{- end }}
+{{- end }}
