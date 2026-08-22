@@ -11,6 +11,10 @@ metadata:
   name: authinfo-ingress
   annotations:
     kubernetes.io/ingress.class: nginx
+    # ingress-nginx defaults client_max_body_size to 1m, and over the cap the INGRESS
+    # returns its own nginx 413 before the request reaches the app -- nothing is logged
+    # app-side, so the failure is expensive to trace. Tune via authinfo.ingress.proxyBodySize.
+    nginx.ingress.kubernetes.io/proxy-body-size: {{ (.Values.authinfo.ingress).proxyBodySize | default "10m" | quote }}
 spec:
   ingressClassName: nginx
   rules:

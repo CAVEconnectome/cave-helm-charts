@@ -8,6 +8,9 @@ cluster:
   standardPool: "standard-pool"
 
 authinfo:
+  # Max request body ingress-nginx will accept for this service (nginx default is 1m).
+  ingress:
+    proxyBodySize: "10m"
   # Fixed ConfigMap name (don’t change between releases)
   configName: authinfo-config
   replicas: 1

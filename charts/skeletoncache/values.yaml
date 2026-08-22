@@ -6,6 +6,9 @@ cluster:
   cluster_prefix: ""
 
 skeletoncache:
+  # Max request body ingress-nginx will accept for this service (nginx default is 1m).
+  ingress:
+    proxyBodySize: "10m"
   tag: ""
   # Per-endpoint rate limits (requests per minute).
   # Units: per-minute. The chart renders these as "<N>/minute" for LIMITER_CATEGORIES.

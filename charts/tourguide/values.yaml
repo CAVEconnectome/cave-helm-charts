@@ -20,6 +20,9 @@ cluster:
   cluster_prefix: ""
   dns_entries: []
 tourguide:
+  # Max request body ingress-nginx will accept for this service (nginx default is 1m).
+  ingress:
+    proxyBodySize: "10m"
   # image tag; defaults to Chart.appVersion if empty
   tag: ""
   # HPA settings

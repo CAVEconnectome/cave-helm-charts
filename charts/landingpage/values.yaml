@@ -8,6 +8,9 @@ cluster:
   dockerRegistry: "docker.io/caveconnectome"
 
 landingpage:
+  # Max request body ingress-nginx will accept for this service (nginx default is 1m).
+  ingress:
+    proxyBodySize: "10m"
   image: nginx:stable
   # Fixed ConfigMap name (don't change between releases)
   configName: landingpage-config

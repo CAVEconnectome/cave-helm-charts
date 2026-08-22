@@ -1,4 +1,7 @@
 dash:
+  # Max request body ingress-nginx will accept for this service (nginx default is 1m).
+  ingress:
+    proxyBodySize: "10m"
   # image tag; if empty defaults to Chart.appVersion; legacy dash.version still honored in templates
   tag: ""
   secretKey: "" # required for session security; should be a long random string

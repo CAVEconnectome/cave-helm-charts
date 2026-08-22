@@ -3,6 +3,9 @@ cloudsql: {}
 redis:
   host: ""
 infoservice:
+  # Max request body ingress-nginx will accept for this service (nginx default is 1m).
+  ingress:
+    proxyBodySize: "10m"
   # tag: ""
   replicas: 1
   targetAvgUtilization: 80

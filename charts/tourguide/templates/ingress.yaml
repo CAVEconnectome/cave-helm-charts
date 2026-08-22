@@ -12,7 +12,10 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
-    nginx.ingress.kubernetes.io/proxy-body-size: 10m
+    # ingress-nginx defaults client_max_body_size to 1m, and over the cap the INGRESS
+    # returns its own nginx 413 before the request reaches the app -- nothing is logged
+    # app-side, so the failure is expensive to trace. Tune via tourguide.ingress.proxyBodySize.
+    nginx.ingress.kubernetes.io/proxy-body-size: {{ (.Values.tourguide.ingress).proxyBodySize | default "10m" | quote }}
     nginx.ingress.kubernetes.io/proxy-send-timeout: "360"
     nginx.ingress.kubernetes.io/x-forwarded-prefix: "true"
     nginx.ingress.kubernetes.io/proxy-next-upstream: "error timeout invalid_header http_502 http_503 http_504"

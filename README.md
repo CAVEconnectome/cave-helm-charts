@@ -49,6 +49,33 @@ current version sorts below it, so suffixing without bumping ranks the new chart
 default their image tag to `.Chart.AppVersion`. Use `-r.N` rather than `-rN`, because `r10` sorts
 *below* `r9`.
 
+## Cross-chart conventions
+
+### Ingress request body size
+
+Every chart that ships an `Ingress` exposes it in the same place — under the service's own values key,
+then `ingress`, then `proxyBodySize`:
+
+```yaml
+materialize:          # or pychunkedgraph, skeletoncache, auth, ...
+  ingress:
+    proxyBodySize: "10m"
+```
+
+It renders to `nginx.ingress.kubernetes.io/proxy-body-size`. The default is `10m` everywhere, against
+ingress-nginx's own default of `1m`. The reason for a uniform, explicit parameter rather than the
+nginx default: over the cap the **ingress** returns its own nginx 413 before the request ever reaches
+the application, so nothing is logged app-side and the failure is expensive to trace. `pcgl2cache` hit
+exactly this on `/l2cache/api/v1/table/<t>/attributes`, which POSTs an L2 id list.
+
+Templates read it as `{{ (.Values.<svc>.ingress).proxyBodySize | default "10m" | quote }}`. The
+parentheses are load-bearing: they make the lookup nil-safe, so a consumer whose values file omits or
+nulls `ingress` still renders instead of failing with `nil pointer evaluating interface {}`.
+
+`edge` is the one chart with a legacy path — the value used to live inside its free-form
+`edge.annotations` map. An explicit `nginx.ingress.kubernetes.io/proxy-body-size` there still wins, and
+is omitted from the merged map so the annotation is emitted exactly once.
+
 ## Chart docs
 
 - SkeletonCache: charts/skeletoncache/README.md (rate-limiting defaults and how to override per-minute limits)

@@ -16,6 +16,9 @@ cluster:
   # optional, used to build Pub/Sub subscription names
   cluster_prefix: ""
 pychunkedgraph:
+  # Max request body ingress-nginx will accept for this service (nginx default is 1m).
+  ingress:
+    proxyBodySize: "10m"
   # image tag; defaults to Chart.appVersion if empty; legacy .version still honored in templates
   tag: ""
   # list of graph IDs; can also be a single comma-separated string for backwards-compatibility

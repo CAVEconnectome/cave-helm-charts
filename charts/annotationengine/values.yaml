@@ -6,6 +6,9 @@ cloudsql:
   username: "postgres"
   password: ""
 annotation:
+  # Max request body ingress-nginx will accept for this service (nginx default is 1m).
+  ingress:
+    proxyBodySize: "10m"
   tag: ""
   # add to this if you want to exclude joint membership in a group name 
   # from applying to group level permissions
