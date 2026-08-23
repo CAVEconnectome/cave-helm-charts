@@ -36,6 +36,80 @@ pychunkedgraph:
     host: ""
     port: 6379
   bigtableInstanceName: "pychunkedgraph"
+
+  # uwsgi.ini, rendered by the chart and mounted over /etc/uwsgi/uwsgi.ini -- the file supervisord
+  # actually loads. Before this existed the only uwsgi config was the one baked into the image, so
+  # none of it was tunable per deployment.
+  #
+  # `defaults` is the shared baseline and reproduces the baked ini exactly, so turning this on
+  # changes nothing by itself. `read` / `write` / `mesh` are overlays merged over it, because the
+  # three tiers have measurably different worker profiles (minniev7 2026-08-22, 8 workers each:
+  # read 173-220Mi, write 223-453Mi, mesh 223-285Mi).
+  uwsgi:
+    enabled: true
+    defaults:
+      # Worker pool. Each worker costs private rss on top of the shared prefork pages, so with the
+      # container memory limit this is the main lever on a pod's memory ceiling.
+      processes: 16
+      cheaper: 8
+      cheaperInitial: 8
+      cheaperStep: 8
+      cheaperAlgo: busyness
+      cheaperOverload: 20
+      cheaperBusynessMultiplier: 3
+      cheaperBusynessMax: 60
+      cheaperBusynessMin: 20
+      # Seconds before a stuck request is killed. harakiriVerbose logs the request it was serving --
+      # without it a harakiri tells you nothing about which request caused it.
+      harakiri: 1200
+      harakiriVerbose: true
+      # Memory guards, all in Mi. uwsgi's own units are inconsistent here (cheaper-rss-limit-soft is
+      # bytes, reload-on-rss is megabytes); the chart converts, so these are always Mi.
+      #
+      # cheaperRssLimitSoftMi stops NEW workers spawning once the workers' COMBINED rss passes it.
+      # Weak guard: it sums per-worker rss, counting shared prefork pages once per worker, so the
+      # sum runs well above the pod's real rss. Bound pod memory with `processes` and the container
+      # limit instead.
+      cheaperRssLimitSoftMi: 6144
+      # Gracefully recycle a worker over this rss once its current request finishes. THIS IS THE
+      # MEMORY-RECYCLE KNOB. 768 is the value baked into the image, and it is above the maximum
+      # per-worker rss measured on all three tiers -- so as shipped it has never once fired. To make
+      # it do something, set it per tier just above the normal spread and below the outliers:
+      #   read  ~230   (p50 200, max 220)
+      #   write ~330   (p50 308, max 453 -- the outliers are the point)
+      #   mesh  ~290   (p50 250, max 285)
+      # Empty/0 disables.
+      reloadOnRssMi: 768
+      # Hard backstop: kill a worker at this rss immediately, mid-request. The only guard against a
+      # single runaway request -- reload-on-rss re-checks rss between requests, so it is
+      # structurally blind to a request that balloons and never returns. Off by default because it
+      # drops the in-flight request; set it above reloadOnRssMi and below the container limit
+      # divided by the worker count. Empty/0 disables.
+      evilReloadOnRssMi: 0
+      listen: 4096
+      bufferSize: 65535
+      maxRequests: 5000
+      workerReloadMercy: 600
+      reloadMercy: 605
+      enableThreads: true
+      memoryReport: true
+      module: run
+      callable: application
+      log4xx: true
+      log5xx: true
+      disableLogging: true
+      statsPort: 9191
+      statsHttpPort: 9192
+      statsInterval: 5
+      # Raw uwsgi option lines appended verbatim, for anything not modelled above.
+      extraOptions: []
+    # Per-tier overlays, merged over `defaults`. Set only what differs.
+    # Each also accepts `configFile`: a whole-file replacement for that tier's uwsgi.ini, which
+    # makes every value above IGNORED for it. For one-off debugging only.
+    read: {}
+    write: {}
+    mesh: {}
+
   # Autoscaling targets for the write/read API tiers (used by KEDA ScaledObjects
   # and the plain-CPU HPA fallback).
   # apiBusyWorkersTarget: target percent of busy uWSGI workers (prometheus trigger)
@@ -48,8 +122,11 @@ pychunkedgraph:
   writeCpuMilli: 500
   # Write pod memory limit = writeMemLimitRatio x request (same scheme as read).
   writeMemLimitRatio: 1.2
-  # VerticalPodAutoscaler for pychunkedgraph (non-read/write) pods. writeMemGb/writeCpuMilli
-  # act as the floor (minAllowed); the VPA reacts up to these caps if the profile grows.
+  # VerticalPodAutoscaler for the WRITE tier -- the Deployment literally named `pychunkedgraph`,
+  # as opposed to `pychunkedgraph-read`. (It does not cover `meshing`, which has no VPA; that tier
+  # is sized by meshMemory/meshCpu and has no autoscaled resources at all.)
+  # writeMemGb/writeCpuMilli act as the floor (minAllowed); the VPA reacts up to these caps if the
+  # profile grows.
   writeVpa:
     enabled: true
     maxMemGb: 10
@@ -72,13 +149,24 @@ pychunkedgraph:
   meshMinReplicas: 1
   meshMaxReplicas: 3
   # mesh-api pod resource requests (full k8s quantities so small defaults are expressible).
-  # Default to the lightweight legacy sizing; raise per-deployment as needed.
-  meshMemory: "200Mi"
+  #
+  # Was "200Mi", inherited from the legacy manifests, and ~7x too small: a meshing pod runs 8 uwsgi
+  # workers (uwsgi.defaults.cheaper) and measured 1412Mi on minniev7 2026-08-22 with workers at
+  # 223-285Mi each. That was survivable only because meshing had no memory LIMIT -- it simply
+  # over-committed the node. With meshMemLimitRatio below now deriving one, 200Mi would have meant a
+  # 300Mi limit on a pod that needs 1.4Gi, i.e. an immediate crash-loop on chart defaults.
+  meshMemory: "2Gi"
   meshCpu: "100m"
   # mesh-api memory limit = meshMemLimitRatio x meshMemory (same scheme as read/write, which use
   # readMemLimitRatio/writeMemLimitRatio). Contains an OOM to the pod instead of letting the node
   # cross its eviction threshold and take neighbours down. Higher than read/write's 1.2 because
   # meshing has no VPA re-fitting its request, so the limit is its only headroom.
+  #
+  # NOTE the limit and uwsgi.defaults.reloadOnRssMi bound the same thing from two directions and
+  # should agree: 8 workers permitted 768Mi each is a ~6.1Gi ceiling, well above the 3Gi this ratio
+  # derives, so a pathological pod OOMs before a single worker is recycled. Lowering
+  # uwsgi.mesh.reloadOnRssMi to ~290 (just over the measured 285Mi max) makes recycling the guard
+  # that fires first and the OOM the backstop, which is the intended order.
   # Set to 0 to emit no limit at all.
   meshMemLimitRatio: 1.5
   # Periodic restart of the meshing Deployment (legacy meshing_pod_recycler CronJob)

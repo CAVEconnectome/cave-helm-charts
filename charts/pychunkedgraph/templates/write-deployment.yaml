@@ -17,6 +17,14 @@ spec:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/secrets: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- with (include "pcg.uwsgiConfigEffective" (dict "root" $ "service" "write")) }}
+        # Restarts the pods when the rendered uwsgi.ini changes. uwsgi reads the file only at
+        # startup, so without this a retune sits in the ConfigMap and never reaches a worker.
+        # `include` (not the file path) so the hash covers the MERGED defaults+overlay, and so a
+        # packaged chart missing uwsgi_configmap.yaml fails the render instead of mounting a
+        # ConfigMap that was never created.
+        checksum/uwsgi: {{ . | sha256sum }}
+        {{- end }}
     spec:
       tolerations:
         - key: "pool"
@@ -32,6 +40,11 @@ spec:
         - name: pcg-config-volume
           configMap:
             name: pychunkedgraph-config
+        {{- if (include "pcg.uwsgiConfigEffective" (dict "root" $ "service" "write")) }}
+        - name: uwsgi-config
+          configMap:
+            name: pychunkedgraph-write-uwsgi
+        {{- end }}
       terminationGracePeriodSeconds: 605
       containers:
         - name: pychunkedgraph
@@ -45,6 +58,14 @@ spec:
               mountPath: /home/nginx/.cloudvolume/secrets
             - name: pcg-config-volume
               mountPath: /app/pychunkedgraph/app/instance/
+            {{- if (include "pcg.uwsgiConfigEffective" (dict "root" $ "service" "write")) }}
+            # subPath replaces this one file and leaves the rest of /etc/uwsgi alone. This is the
+            # path supervisord passes to `uwsgi --ini`, and that command line is processed last, so
+            # it is the copy that decides -- not the identical /app/uwsgi.ini also in the image.
+            - name: uwsgi-config
+              mountPath: /etc/uwsgi/uwsgi.ini
+              subPath: uwsgi.ini
+            {{- end }}
           env:
             - name: GOOGLE_APPLICATION_CREDENTIALS
               value: "/home/nginx/.cloudvolume/secrets/google-secret.json"
