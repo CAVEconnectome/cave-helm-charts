@@ -195,7 +195,16 @@ log-route = uWSGIlog uwsgi
 ; obtain is dropped instead of reaching stdout.
 log-route = uWSGIlog HARAKIRI
 log-route = uWSGIlog Traceback
-log-encoder = json:uWSGIlog {"source":"uWSGI","time":"${strftime:%Y-%m-%dT%H:%M:%S.000Z}","severity":"info","message":"${msg}"}
+; PERCENTS ARE DOUBLED ON PURPOSE -- do not "simplify" them to single %.
+; uwsgi runs its own MAGIC VARIABLE substitution over the ini before ${strftime:} is ever
+; evaluated, and it eats the strftime format: %d becomes the ini's DIRECTORY and %S its
+; FILENAME, while %Y %m %H %M expand to nothing. Unescaped, every log line from these pods
+; carried the timestamp "--/etc/uwsgi/T::uwsgi.ini.000Z" instead of a date -- observed on
+; api6 2026-08-23. Verified with uwsgi's own parser in a pod:
+;   print = %Y-%m-%dT%H:%M:%S.000Z    ->  --/tmp/T::t.ini.000Z     (ini was /tmp/t.ini)
+;   print = %%Y-%%m-%%dT%%H:%%M:%%S.000Z  ->  %Y-%m-%dT%H:%M:%S.000Z  (correct)
+; %% yields a literal % , which is what ${strftime:} needs to see.
+log-encoder = json:uWSGIlog {"source":"uWSGI","time":"${strftime:%%Y-%%m-%%dT%%H:%%M:%%S.000Z}","severity":"info","message":"${msg}"}
 log-encoder = nl:uWSGIlog
 {{- with $u.extraOptions }}
 
