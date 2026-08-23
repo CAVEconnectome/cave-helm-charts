@@ -75,6 +75,12 @@ pychunkedgraph:
   # Default to the lightweight legacy sizing; raise per-deployment as needed.
   meshMemory: "200Mi"
   meshCpu: "100m"
+  # mesh-api memory limit = meshMemLimitRatio x meshMemory (same scheme as read/write, which use
+  # readMemLimitRatio/writeMemLimitRatio). Contains an OOM to the pod instead of letting the node
+  # cross its eviction threshold and take neighbours down. Higher than read/write's 1.2 because
+  # meshing has no VPA re-fitting its request, so the limit is its only headroom.
+  # Set to 0 to emit no limit at all.
+  meshMemLimitRatio: 1.5
   # Periodic restart of the meshing Deployment (legacy meshing_pod_recycler CronJob)
   meshPodRecycler:
     enabled: true

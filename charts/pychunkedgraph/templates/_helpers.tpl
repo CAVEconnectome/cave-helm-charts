@@ -64,6 +64,45 @@
   value: "redis://{{ .Values.limiter.redis.host }}/0"
 {{- end -}}
 
+{{/*
+Memory limit derived from a memory REQUEST, for containers whose request is a k8s quantity string
+rather than the bare-Gb number readMemGb/writeMemGb use.
+
+Why a ratio and not an absolute limit: a container with no memory limit does not fail in isolation
+when it over-allocates -- it pushes the node past its eviction threshold and the kubelet evicts
+pods, taking neighbours down with it. A limit turns that node-wide eviction into a contained
+per-pod OOM kill. But a hand-set absolute limit rots the moment someone retunes the request, and
+it is easy to set one low enough to crash-loop healthy pods or high enough to contain nothing.
+Expressing it as a multiple of the request means the request stays the only number to touch.
+
+Args: request (quantity string), ratio (number), name (values path, for error messages).
+A ratio of 0 returns the empty string, so the caller emits no limit at all.
+
+Normalises through bytes and emits Mi so any valid request unit (Mi, Gi, G, Ki, bare bytes) yields
+a valid quantity, and 200Mi * 1.5 is 300Mi rather than a fractional-byte "0.3Gi" the API rejects.
+*/}}
+{{- define "pcg.memLimit" -}}
+{{- $ratio := .ratio -}}
+{{- if $ratio -}}
+{{- $req := .request | toString -}}
+{{- $num := regexFind "^[0-9.]+" $req -}}
+{{- $unit := regexFind "[A-Za-z]*$" $req -}}
+{{- if not $num -}}{{- fail (printf "pcg.memLimit: %s = %q is not a memory quantity" .name $req) -}}{{- end -}}
+{{- $mult := 1.0 -}}
+{{- if eq $unit "Ki" -}}{{- $mult = 1024.0 -}}
+{{- else if eq $unit "Mi" -}}{{- $mult = 1048576.0 -}}
+{{- else if eq $unit "Gi" -}}{{- $mult = 1073741824.0 -}}
+{{- else if eq $unit "Ti" -}}{{- $mult = 1099511627776.0 -}}
+{{- else if or (eq $unit "K") (eq $unit "k") -}}{{- $mult = 1000.0 -}}
+{{- else if eq $unit "M" -}}{{- $mult = 1000000.0 -}}
+{{- else if eq $unit "G" -}}{{- $mult = 1000000000.0 -}}
+{{- else if eq $unit "T" -}}{{- $mult = 1000000000000.0 -}}
+{{- else if ne $unit "" -}}{{- fail (printf "pcg.memLimit: %s = %q has an unrecognised unit %q" .name $req $unit) -}}
+{{- end -}}
+{{- printf "%dMi" (int64 (ceil (divf (mulf (float64 $num) $mult (float64 $ratio)) 1048576.0))) -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "pcg.uwsgiExporter" -}}
 - name: uwsgi-exporter
   image: caveconnectome/uwsgi-export-workers:v14

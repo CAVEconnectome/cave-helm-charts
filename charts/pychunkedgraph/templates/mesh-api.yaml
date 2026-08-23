@@ -1,5 +1,11 @@
 {{- $raw := .Values.pychunkedgraph.tag | default .Values.pychunkedgraph.version | default .Chart.AppVersion -}}
 {{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
+{{- $meshRequest := .Values.pychunkedgraph.meshMemory | default "200Mi" -}}
+{{- /* hasKey, not `default`: `0 | default 1.5` yields 1.5, so an explicit meshMemLimitRatio: 0 --
+       the escape hatch back to an unlimited container -- would be silently overridden. */ -}}
+{{- $meshRatio := 1.5 -}}
+{{- if hasKey .Values.pychunkedgraph "meshMemLimitRatio" -}}{{- $meshRatio = .Values.pychunkedgraph.meshMemLimitRatio -}}{{- end -}}
+{{- $meshLimit := include "pcg.memLimit" (dict "request" $meshRequest "ratio" $meshRatio "name" "pychunkedgraph.meshMemory") -}}
 
 ---
 apiVersion: apps/v1
@@ -51,8 +57,12 @@ spec:
             {{- include "pcg_env.config" . | nindent 12 }}
           resources:
             requests:
-              memory: {{ .Values.pychunkedgraph.meshMemory | default "200Mi" }}
+              memory: {{ $meshRequest }}
               cpu: {{ .Values.pychunkedgraph.meshCpu | default "100m" }}
+            {{- if $meshLimit }}
+            limits:
+              memory: {{ $meshLimit }}
+            {{- end }}
           readinessProbe:
             httpGet:
               path: /meshing/api/v1
