@@ -62,8 +62,9 @@ materialize:
   # The export streams Postgres rows into an in-memory buffer and flushes
   # when it reaches deltalakeFlushThresholdBytes. Peak worker memory may be a
   # multiple of this value, not equal to it, so lower it if the deltalake
-  # worker OOMs on large tables.
-  deltalakeFlushThresholdBytes: 2147483648
+  # worker OOMs on large tables. Lowered to 512Mb for the default values 
+  # to make large scale tables work with the current default memory settings (aug 25,2026)
+  deltalakeFlushThresholdBytes: 536870912
   # Bounds memory during the post-export optimize (z-order/compact) step.
   deltalakeOptimizeTargetSizeBytes: ""
   deltalakeOptimizeMaxSpillSizeBytes: ""
