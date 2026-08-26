@@ -21,7 +21,44 @@ materialize:
   tag: ""
   # image tag for the celery metric exporter (caveconnectome/celery-metric-exporter)
   # v7 adds the celery_inflight_tasks gauge used by the KEDA in-flight triggers
-  celeryExporterTag: "v7"
+  # v8 stops the exporter reclaiming other workers' in-flight tasks (see celery.* below)
+  celeryExporterTag: "v8"
+  # Settings shared by every process that connects to this redis as a celery broker.
+  #
+  # These exist in one place because they are not per-process settings in practice: the
+  # broker's `unacked` index is GLOBAL, and kombu's restore path reclaims any message
+  # older than the visibility timeout of *whichever* connection happens to notice it. So
+  # the effective timeout for the whole broker is the SMALLEST one configured by any
+  # connected client -- a monitoring sidecar left on kombu's 3600s default silently
+  # requeues a worker's still-running task, which is what happened to a deltalake export
+  # on 2026-08-25: redelivered 3,677s in, and the duplicate failure took the original down
+  # with it.
+  #
+  # Applies to ALL four client types on this broker, which is the point of having it in one
+  # place:
+  #   - the materializationengine workers + beat, via BROKER_TRANSPORT_OPTIONS in the two
+  #     config.cfg ConfigMaps (configmap.yaml, orchestration_configmap.yaml)
+  #   - flower, via the celeryconfig module in celery_broker_configmap.yaml
+  #   - the celery metric exporter, via --visibility-timeout (needs image v8 or newer)
+  #
+  # How the worker path works: create_celery() in celery_worker.py hardcodes a new-style
+  # broker_transport_options dict, then ends with celery.conf.update(app.config). Celery
+  # aliases the legacy uppercase BROKER_TRANSPORT_OPTIONS onto the new-style key, so the
+  # value from config.cfg lands last and wins -- verified against celery 5.5.3 by
+  # replaying create_celery's exact statement sequence. Two things this depends on:
+  #   1. It REPLACES the dict rather than merging, so config.cfg restates socket_timeout
+  #      and socket_connect_timeout. Dropping them from the ConfigMap drops them for real.
+  #   2. It only works because nothing reads celery.conf between the hardcoded update and
+  #      the app.config update. A read there would finalize the settings namespace early
+  #      and the uppercase alias would be ignored. If a MaterializationEngine change ever
+  #      inserts a conf read into that gap, the workers silently revert to 21600 -- check
+  #      `celery.conf.broker_transport_options` in a worker shell after upgrading.
+  # Making create_celery read this from app.config directly would remove both caveats.
+  #
+  # Raising this above 21600 is safe; lowering it re-creates the bug for whichever client
+  # gets the lower value. It must be longer than the longest task any worker runs.
+  celery:
+    visibilityTimeout: 21600
   # need to fill in
   datastacks:
     - ""

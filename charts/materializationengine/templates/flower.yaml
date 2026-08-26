@@ -41,10 +41,25 @@ spec:
           env:
             - name: FLOWER_PORT
               value: "5555"
+            # flower's own --conf is tornado options, not celery settings. Celery's
+            # settings come from a config module named by CELERY_CONFIG_MODULE, which is
+            # exactly what its --config flag sets, so this is the same thing without
+            # depending on a flag flower does not document.
+            - name: CELERY_CONFIG_MODULE
+              value: celeryconfig
+            - name: PYTHONPATH
+              value: /etc/celery-broker
+          volumeMounts:
+            - name: celery-broker-config
+              mountPath: /etc/celery-broker
           ports:
             - containerPort: 5555
           resources:
             requests:
               memory: 150Mi
               cpu: 10m
+      volumes:
+        - name: celery-broker-config
+          configMap:
+            name: celery-broker-config
       restartPolicy: Always

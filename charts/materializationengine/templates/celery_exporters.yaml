@@ -19,7 +19,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: celery-exporter
-          image: {{ .Values.cluster.dockerRegistry}}/celery-metric-exporter:{{ .Values.materialize.celeryExporterTag | default "v7" }}
+          image: {{ .Values.cluster.dockerRegistry}}/celery-metric-exporter:{{ .Values.materialize.celeryExporterTag | default "v8" }}
           command: ["python"]
           args:
             - cli.py
@@ -27,6 +27,12 @@ spec:
             - redis://:{{ .Values.materialize.redis.password}}@{{ .Values.materialize.redis.host}}:{{ .Values.materialize.redis.port}}/0
             - --port
             - "9540"
+            # Same value flower gets from the celery-broker-config module. The exporter
+            # runs an event receiver, so it holds a consuming kombu channel and can
+            # restore unacknowledged messages broker-wide; left on kombu's 3600s default
+            # it reclaims long tasks belonging to other workers. Requires v8 or newer.
+            - --visibility-timeout
+            - "{{ .Values.materialize.celery.visibilityTimeout | default 21600 | int }}"
             - -q
             - {{ .Values.materialize.producerQueueName | default "process" }}
             - -q

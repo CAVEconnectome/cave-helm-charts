@@ -28,6 +28,21 @@ data:
     # Add all other configuration options similarly...
     CELERY_BROKER_URL = REDIS_URL
     CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+    # Celery reads this old-style name and aliases it onto broker_transport_options,
+    # overriding the hardcoded dict in MaterializationEngine's create_celery(). It is a
+    # whole-dict REPLACEMENT, not a merge, so socket_timeout/socket_connect_timeout have
+    # to be restated here or create_celery's values are lost.
+    #
+    # visibility_timeout must match every other client on this broker -- flower (via the
+    # celery-broker-config module) and the metrics exporter (via --visibility-timeout).
+    # The unacked index is global: kombu restores any message older than the visibility
+    # timeout of whichever connection notices it, so the broker's effective timeout is the
+    # smallest value any client sets. All three come from materialize.celery.visibilityTimeout.
+    BROKER_TRANSPORT_OPTIONS = {
+        "visibility_timeout": {{ .Values.materialize.celery.visibilityTimeout | default 21600 | int }},
+        "socket_timeout": 20,
+        "socket_connect_timeout": 20,
+    }
     MATERIALIZATION_ROW_CHUNK_SIZE = 500
     TEST_DB_NAME = "{{ .Values.annotation.healthAlignedVolumeName }}"
     INFO_API_VERSION = 2
