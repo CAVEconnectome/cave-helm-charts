@@ -345,7 +345,13 @@ materialize:
   consumerQueueName: "process"
   deltalakeQueueName: "deltalake"
   orchestrationQueueName: "orchestration"
+  # Unused: WORKER_NAME is derived from deltalakeQueueName so it always matches the
+  # --hostname the worker registers under. Kept so existing overrides do not error.
   celeryDeltalakeWorkerName: "celery-deltalake"
+  # How long Kubernetes waits for the deltalake worker to drain before SIGKILL. Must
+  # exceed the longest export, because the shutdown hook waits for the running task and
+  # the export cannot resume if it is cut short. 3 hours.
+  celeryDeltalakeTerminationGracePeriodSeconds: 10800
   celeryDeltalakeCloudvolumeCacheBytes: "100000000"
   celeryDeltalakeCloudvolumeParallel: "10"
   orchestrationAsJobs: true

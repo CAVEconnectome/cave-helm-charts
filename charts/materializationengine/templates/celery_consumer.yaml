@@ -79,10 +79,20 @@ spec:
               value: {{ .Values.cluster.globalServer }}/auth
             - name: DAF_CREDENTIALS
               value: /home/nginx/.cloudvolume/secrets/cave-secret.json
+            # The preStop hook runs `celery control` / `celery inspect` with no -A, so
+            # without this it dials the default amqp://localhost, fails on the first
+            # command under `bash -e`, and the pod is torn down with no drain at all.
+            # The CLI reads this env var the same way it reads --app.
+            - name: CELERY_APP
+              value: run.celery
             - name: QUEUE_NAME
               value: {{ .Values.materialize.consumerQueueName }}
             - name: WORKER_NAME
-              value: worker.{{ .Values.materialize.consumerQueueName}}
+              # This worker starts without --hostname, so celery registers it as
+              # celery@<pod>, not worker.<queue>@<pod>. The shutdown hook addresses
+              # $WORKER_NAME@$HOSTNAME, so it has to be "celery" or the drain targets a
+              # node that does not exist and exits without waiting for anything.
+              value: celery
             - name: WORKER_HOSTNAME
               valueFrom:
                 fieldRef:

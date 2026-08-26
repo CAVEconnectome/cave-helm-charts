@@ -79,6 +79,12 @@ spec:
               value: {{ .Values.materialize.pychunkedgraphReadServiceUrl | default "http://pychunkedgraph-read-service/" }}
             - name: THROTTLE_QUEUES
               value: "true"
+            # The preStop hook runs `celery control` / `celery inspect` with no -A, so
+            # without this it dials the default amqp://localhost, fails on the first
+            # command under `bash -e`, and the pod is torn down with no drain at all.
+            # The CLI reads this env var the same way it reads --app.
+            - name: CELERY_APP
+              value: run.celery
             - name: QUEUE_NAME
               value: {{ .Values.materialize.producerQueueName }}
             - name: WORKER_NAME

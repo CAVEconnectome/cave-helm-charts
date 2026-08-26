@@ -75,6 +75,12 @@ spec:
               value: {{ .Values.cluster.globalServer }}/auth
             - name: DAF_CREDENTIALS
               value: /home/nginx/.cloudvolume/secrets/cave-secret.json
+            # The preStop hook runs `celery control` / `celery inspect` with no -A, so
+            # without this it dials the default amqp://localhost, fails on the first
+            # command under `bash -e`, and the pod is torn down with no drain at all.
+            # The CLI reads this env var the same way it reads --app.
+            - name: CELERY_APP
+              value: run.celery
             - name: QUEUE_NAME
               value: {{ .Values.materialize.orchestrationQueueName | default "orchestration" }}
             - name: WORKER_NAME

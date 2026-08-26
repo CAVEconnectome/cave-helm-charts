@@ -20,7 +20,11 @@ spec:
         checksum/cloudsql: {{ include (print $.Template.BasePath "/cloudsql_secret.yaml") . | sha256sum }}
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
     spec:
-      terminationGracePeriodSeconds: 30
+      # An export runs for hours and cannot be resumed, so the drain has to be able to
+      # outlast it. At 30s the hook was killed almost immediately: on 2026-08-26 a healthy
+      # export at 82% got "Warm shutdown" and was gone 2 seconds later. This bounds how
+      # long Kubernetes waits for the preStop hook to report no active tasks.
+      terminationGracePeriodSeconds: {{ .Values.materialize.celeryDeltalakeTerminationGracePeriodSeconds | default 10800 }}
       # Scheduled on a NON-preemptible pool, unlike the other celery workers.
       # A synapse-table export runs ~50 min of streaming plus ~100 min of z-order
       # and cannot resume: an interruption loses the whole run, and the partial
@@ -85,10 +89,19 @@ spec:
               value: {{ .Values.cluster.globalServer }}/auth
             - name: DAF_CREDENTIALS
               value: /home/nginx/.cloudvolume/secrets/cave-secret.json
+            # The preStop hook runs `celery control` / `celery inspect` with no -A, so
+            # without this it dials the default amqp://localhost, fails on the first
+            # command under `bash -e`, and the pod is torn down with no drain at all.
+            # The CLI reads this env var the same way it reads --app.
+            - name: CELERY_APP
+              value: run.celery
             - name: QUEUE_NAME
               value: {{ .Values.materialize.deltalakeQueueName }}
             - name: WORKER_NAME
-              value: {{ .Values.materialize.celeryDeltalakeWorkerName }}
+              # Must match --hostname above (worker.<queue>@%h). It was
+              # celeryDeltalakeWorkerName="celery-deltalake", so the hook addressed a
+              # node that does not exist and drained nothing.
+              value: worker.{{ .Values.materialize.deltalakeQueueName }}
             - name: QUEUE_LENGTH_LIMIT
               value: "5000"
             - name: QUEUES_TO_THROTTLE
