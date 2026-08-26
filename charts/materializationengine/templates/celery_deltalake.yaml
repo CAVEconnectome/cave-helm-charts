@@ -21,13 +21,24 @@ spec:
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
     spec:
       terminationGracePeriodSeconds: 30
+      # Scheduled on a NON-preemptible pool, unlike the other celery workers.
+      # A synapse-table export runs ~50 min of streaming plus ~100 min of z-order
+      # and cannot resume: an interruption loses the whole run, and the partial
+      # output then makes the retry fail outright with "already exists". On the
+      # preemptible mesh pool that is not a rare event -- the v1893 export was
+      # preempted at 46.9% after 74 minutes, one of six nodes reclaimed across
+      # these clusters inside half an hour.
+      #
+      # Set deltalakePool back to cluster.meshPool to trade that risk for the
+      # cheaper nodes, once the export can resume from where it stopped.
+      {{- $pool := .Values.materialize.deltalakePool | default .Values.cluster.standardPool }}
       tolerations:
         - key: "pool"
           operator: "Equal"
-          value: "{{ .Values.cluster.meshPool }}"
+          value: "{{ $pool }}"
           effect: "NoSchedule"
       nodeSelector:
-        cloud.google.com/gke-nodepool: {{ .Values.cluster.meshPool }}
+        cloud.google.com/gke-nodepool: {{ $pool }}
       volumes:
         - name: materializationengine-config-volume
           configMap:

@@ -95,6 +95,10 @@ materialize:
   # Output bucket for deltalake exports. If empty, defaults to
   # "<dumpBucketPath>/deltalake_exports". Set to override the location.
   deltalakeOutputBucket: ""
+  # Node pool for the deltalake worker. Empty means cluster.standardPool, which is
+  # non-preemptible -- see the comment in templates/celery_deltalake.yaml. Set this to the
+  # value of cluster.meshPool to put it back on preemptible nodes.
+  deltalakePool: ""
   # Delta Lake export memory tuning.
   # The export streams Postgres rows into an in-memory buffer and flushes
   # when it reaches deltalakeFlushThresholdBytes. Peak worker memory may be a
@@ -103,8 +107,27 @@ materialize:
   # to make large scale tables work with the current default memory settings (aug 25,2026)
   deltalakeFlushThresholdBytes: 536870912
   # Bounds memory during the post-export optimize (z-order/compact) step.
+  #
+  # deltalakeOptimizeMaxSpillSizeBytes is the bytes z-order may hold in memory before
+  # spilling to disk. Left empty, delta-rs picks its own default, which is far above this
+  # container's limit -- so z-order never spills, and peak memory tracks the size of the
+  # LARGEST partition instead. That is what killed the v1822 synapses_pni_2 export on
+  # 2026-08-26: the export itself finished, three of the four lakes optimized flat at
+  # ~1.2 GiB, and the fourth (ctr_pt_position_morton, whose largest partition is 3.4 GiB)
+  # went 1.2 -> 3.3 GiB and was OOMKilled.
+  #
+  # Setting it decouples peak from partition size: measured on a 1.8 GB partition,
+  # unset peaked at 2593 MB while 1 GiB peaked at 1204 MB, and the same 1 GiB setting on a
+  # 0.9 GB partition peaked at 504 MB. Wall time was flat (23.1-24.3 s) across every value
+  # tested, so there is no speed reason to raise this.
+  #
+  # Do NOT set it too low: 128 MiB does not spill gracefully, it fails the optimize with
+  # "DeltaError: Z-order failed while scanning data". 256 MiB was the smallest that worked.
+  # Spilling needs scratch space in the container's filesystem (~20 GB free, no
+  # ephemeral-storage limit set).
+  deltalakeOptimizeMaxSpillSizeBytes: 1073741824
+  # Target output file size for optimize. Empty uses delta.targetFileSize (256 MB).
   deltalakeOptimizeTargetSizeBytes: ""
-  deltalakeOptimizeMaxSpillSizeBytes: ""
   # KEDA scaling targets per-queue
   producerTargetQueueLength: 10
   consumerTargetQueueLength: 10
