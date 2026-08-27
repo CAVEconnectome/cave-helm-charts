@@ -1,21 +1,6 @@
 {{/*
 Memory limit for the api container, derived from its memory REQUEST.
 
-Rationale: the limit and the request must move together. A container with no memory limit does
-not fail in isolation when a request over-allocates -- it takes the whole node past its eviction
-threshold, so the kubelet evicts the pod and every other in-flight request on it dies, /health
-included. But a hand-set absolute limit rots the moment someone retunes the request, and it is
-easy to set one so low it crash-loops healthy pods or so high it contains nothing. Expressing it
-as a multiple of the request means the only number an operator normally touches is the request.
-
-Precedence: an explicit resources.limits.memory wins; otherwise request * memoryRequestLimitRatio;
-set memoryRequestLimitRatio to 0 (or null) to emit no limit at all.
-
-Deliberately defined here rather than in a new templates/_helpers.tpl: `include` creates a
-cross-file dependency that fails the entire render with "no template ... associated" if the new
-file is missing from a packaged chart, which is precisely what happened when uwsgi_configmap.yaml
-was left untracked and `git commit -a` skipped it.
-
 Normalises through bytes and emits Mi, so any valid request unit (Mi, Gi, G, Ki, bare bytes)
 yields a valid quantity and 1Gi * 1.5 is 1536Mi rather than being rounded to a useless 2Gi.
 */}}
