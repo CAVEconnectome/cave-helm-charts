@@ -4,6 +4,21 @@ on:
   push:
     branches:
       - main
+      # Development branches publish to the SAME chart repo as main, which is
+      # what lets one cluster test an unreleased chart while everyone else keeps
+      # resolving the released one.
+      #
+      # The isolation is semver, not the repo: Helm's version resolution skips
+      # prerelease versions unless they are pinned exactly or --devel is passed.
+      # So a chart published from here as 5.27.1-dev.rayN is invisible to
+      # `helm search repo` and to any range constraint, but a helmfile that pins
+      # `version: 5.27.1-dev.ray5` gets it.
+      #
+      # This only works if the branch keeps using a PRERELEASE version in
+      # Chart.yaml (x.y.z-dev.N / x.y.z-r.N). Publishing a plain x.y.z from a
+      # development branch would make it the newest release for every consumer.
+      - ray
+      - "dev/**"
 
 jobs:
   release:
