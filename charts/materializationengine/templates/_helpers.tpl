@@ -38,23 +38,31 @@ Usage:
 {{/*
 materializationengine.appEnv -- baseEnv plus the full Redis and throttle sets.
 
-Every pod running this image uses this. Modules read config at IMPORT time
+SCOPE: the Ray job template ONLY. The api and celery templates deliberately keep
+their own inline env blocks.
+
+These helpers were briefly applied to all seven workload templates. That is
+reverted: consolidating them changed four pods' environments at once, and the
+resulting deployment problems were not worth absorbing alongside a new feature.
+The Ray templates keep using them because they are new -- nothing regresses if
+they are wrong, and the Ray head is the pod that most needs the full set.
+
+Why the full set matters here: several modules read config at IMPORT time
 (throttle.py builds a CeleryThrottle; task.py/monitor.py/upload build Redis
-clients) which runs before any Flask app context exists, so get_config_param
+clients), which runs before any Flask app context exists, so get_config_param
 cannot see config.cfg and falls through to os.environ. A pod missing one of
-these fails at import, in that pod only, long after deploy -- which is how the
-Ray head shipped without QUEUE_LENGTH_LIMIT and died on int(None).
+these fails at import, in that pod only, long after deploy -- which is exactly
+how the Ray head shipped without QUEUE_LENGTH_LIMIT and died on int(None).
 
-Consolidating here also fixed three pieces of drift that had accumulated from
-maintaining the same block in seven places by hand:
+Known divergence in the templates that are NOT using this (left alone on
+purpose, recorded so it is not rediscovered):
 
-  * the api set QUEUE_LENGTH_LIMIT 5001 where everything else used 5000 (typo)
-  * the api set no REDIS_* at all
+  * the api sets QUEUE_LENGTH_LIMIT 5001 where everything else uses 5000
+  * the api sets no REDIS_* at all
   * consumer/producer set REDIS_HOST without REDIS_PORT or REDIS_PASSWORD
 
-That divergence is exactly the failure mode a shared helper prevents, and it is
-invisible until the one pod that needed the missing var runs the code path that
-reads it.
+If those are ever unified, do it as its own change with its own rollout, not as
+a side effect of something else.
 */}}
 {{- define "materializationengine.appEnv" -}}
 {{- include "materializationengine.baseEnv" . }}

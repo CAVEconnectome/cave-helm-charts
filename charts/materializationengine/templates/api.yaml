@@ -139,11 +139,23 @@ spec:
         checksum/uwsgi: {{ . | sha256sum }}
         {{- end }}
     spec:
-      {{- if .Values.ray.enabled }}
-      # Identity that lets the api create RayJob CRs in the ray namespace. Only
-      # bound when ray is enabled, so the default deployment keeps the default SA.
-      serviceAccountName: materialize-ray-submitter
-      {{- end }}
+      # ALWAYS emitted, never conditionally omitted -- "default" is the explicit
+      # off state, not an absent field.
+      #
+      # Omitting it when ray is disabled is a trap: Kubernetes auto-populates the
+      # deprecated `serviceAccount` field from `serviceAccountName`, and Helm
+      # never renders `serviceAccount`, so it is not in Helm's model and Helm
+      # will not remove it. On a rollback that drops `serviceAccountName`, the
+      # API server's defaulting puts it straight back from the leftover
+      # `serviceAccount`. The field survives the rollback while ray_rbac.yaml
+      # stops rendering the ServiceAccount, leaving the Deployment pointing at an
+      # identity that no longer exists -- every new ReplicaSet then fails with
+      # FailedCreate, the old pods can never be retired, and the release looks
+      # applied while running the previous image. That happened on minniev7.
+      #
+      # Emitting a value in both states keeps the field under Helm's management
+      # so it can actually be changed back.
+      serviceAccountName: {{ if .Values.ray.enabled }}materialize-ray-submitter{{ else }}default{{ end }}
       securityContext:
         sysctls:
           - name: net.ipv4.ip_local_port_range
