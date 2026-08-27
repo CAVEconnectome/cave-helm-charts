@@ -1,0 +1,40 @@
+{{- if .Values.ray.enabled }}
+{{- $ns := .Values.ray.namespace | required ".Values.ray.namespace is required when ray.enabled." -}}
+{{/*
+A copy of materializationengine-config in the Ray namespace.
+
+ConfigMaps are namespaced and there is no cross-namespace mount: the RayJob head
+runs in ray.namespace while the release's own config lives in the release
+namespace, so mounting it directly fails the pod at startup with
+"configmap materializationengine-config not found" -- after the cluster has
+already been provisioned, which makes it an expensive way to find out.
+
+The head genuinely needs this file: run_deltalake_export reads
+SQLALCHEMY_DATABASE_URI, DELTALAKE_OUTPUT_BUCKET, the DELTALAKE_* tuning knobs
+and the REDIS_* settings through get_config_param, and the Redis settings are
+what let the driver write the progress the wizard polls.
+
+The content is not duplicated -- it is read back out of the sibling template and
+re-emitted under a different namespace, so the two cannot drift. Rendering
+configmap.yaml requires its `required` values, but they are the same ones the
+release already needs, so this adds no new obligation.
+
+Deliberately the same NAME as the original: the pod spec then reads identically
+in both namespaces, and nothing has to know which copy it mounted.
+*/}}
+{{- $rendered := include (print $.Template.BasePath "/configmap.yaml") . | fromYaml -}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: materializationengine-config
+  namespace: {{ $ns }}
+  labels:
+    app: materialize
+  annotations:
+    # Not helm-managed drift: this is a mirror. If the source changes, this is
+    # re-rendered from it on the next upgrade.
+    materializationengine/mirrored-from: {{ printf "%s/materializationengine-config" .Release.Namespace | quote }}
+data:
+{{ toYaml $rendered.data | indent 2 }}
+{{- end }}
