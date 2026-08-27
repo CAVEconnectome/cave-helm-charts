@@ -139,6 +139,11 @@ spec:
         checksum/uwsgi: {{ . | sha256sum }}
         {{- end }}
     spec:
+      {{- if .Values.ray.enabled }}
+      # Identity that lets the api create RayJob CRs in the ray namespace. Only
+      # bound when ray is enabled, so the default deployment keeps the default SA.
+      serviceAccountName: materialize-ray-submitter
+      {{- end }}
       securityContext:
         sysctls:
           - name: net.ipv4.ip_local_port_range
@@ -166,6 +171,11 @@ spec:
           configMap:
             name: materialize-uwsgi
         {{- end }}
+        {{- if .Values.ray.enabled }}
+        - name: rayjob-template
+          configMap:
+            name: materializationengine-rayjob-template
+        {{- end }}
       containers:
         - name: materialize
           image: {{ .Values.cluster.dockerRegistry }}/materializationengine:{{ $tag }}
@@ -185,7 +195,27 @@ spec:
               mountPath: /app/uwsgi.ini
               subPath: uwsgi.ini
             {{- end }}
+            {{- if .Values.ray.enabled }}
+            # Its own directory, not the instance/ dir -- mounting a second
+            # ConfigMap over instance/ would shadow config.cfg.
+            - name: rayjob-template
+              mountPath: /etc/materializationengine/ray
+              readOnly: true
+            {{- end }}
           env:
+            {{- if .Values.ray.enabled }}
+            # Wiring for materializationengine/ray/submitter.py. The pod spec
+            # itself lives in the mounted template, so nothing about pools,
+            # images or secrets is hardcoded in Python.
+            - name: RAY_ENABLED
+              value: "true"
+            - name: RAY_JOB_TEMPLATE_PATH
+              value: /etc/materializationengine/ray/rayjob-template.yaml
+            - name: RAY_JOB_NAMESPACE
+              value: {{ .Values.ray.namespace | quote }}
+            - name: RAY_JOB_MAX_WORKERS
+              value: {{ .Values.ray.maxWorkers | default 20 | quote }}
+            {{- end }}
             {{- if (include "materializationengine.uwsgiConfigEffective" .) }}
             {{- $u := .Values.materialize.uwsgi | default dict }}
             # UWSGI_PROCESSES / UWSGI_CHEAPER must be set as ENV VARS, not just in uwsgi.ini.

@@ -1,0 +1,222 @@
+{{- if .Values.ray.enabled }}
+{{- $ns := .Values.ray.namespace | required ".Values.ray.namespace is required when ray.enabled." -}}
+{{- $raw := .Values.materialize.tag | default .Values.materialize.version | default .Chart.AppVersion -}}
+{{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
+{{- $ray := .Values.ray -}}
+{{- $head := $ray.head | default dict -}}
+{{- $worker := $ray.worker | default dict -}}
+{{/*
+The RayJob pod-spec skeleton.
+
+This ConfigMap is the seam between Helm and Python. Everything environmental --
+image and registry, node pools, secret mounts, the cloud-sql-proxy sidecar,
+resource requests -- is rendered here, where the values already live. The
+submitter in materializationengine/ray/submitter.py patches in only
+spec.entrypoint, the worker count, and per-job env, then POSTs the result.
+
+That split is what keeps pool names and image tags out of application code, and
+it is why repointing Ray at a dedicated node pool later is a values change rather
+than a code change.
+
+SECURITY -- do not add an Ingress, Gateway, LoadBalancer or NodePort for the head
+service. Ray's job submission API on 8265 has NO authentication (CVE-2023-48022);
+network reachability is the only access control there is. KubeRay creates
+ClusterIP services only, and that is what keeps this off the public internet. Use
+`kubectl port-forward` to reach the dashboard.
+*/}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: materializationengine-rayjob-template
+  labels:
+    app: materialize
+data:
+  rayjob-template.yaml: |
+    apiVersion: ray.io/v1
+    kind: RayJob
+    metadata:
+      # submitter sets generateName; namespace is authoritative here
+      namespace: {{ $ns }}
+    spec:
+      # The entire cost argument rests on this line: when the entrypoint exits,
+      # KubeRay deletes the RayCluster -- head and every worker -- and the
+      # mesh-pool nodes drain back to the pool's floor on their own.
+      shutdownAfterJobFinishes: true
+      # Keeps the CR and `kubectl logs` alive after completion so the api can read
+      # terminal status. The operator's DELETE_RAYJOB_CR_AFTER_JOB_FINISHES must
+      # stay at its default false, or the CR vanishes with the pods and the status
+      # endpoint has nothing to read.
+      ttlSecondsAfterFinished: {{ $ray.ttlSecondsAfterFinished | default 3600 }}
+      # The only backstop against a wedged job holding nodes indefinitely: Ray
+      # worker pods are owned by the RayCluster CR, which is not a controller kind
+      # the cluster autoscaler will evict pods on behalf of. Correct while a job
+      # runs, but it means a hung job pins mesh-pool open until this fires.
+      activeDeadlineSeconds: {{ $ray.activeDeadlineSeconds | default 86400 }}
+      backoffLimit: {{ $ray.backoffLimit | default 1 }}
+      rayClusterSpec:
+        # Must match the ray package installed in the image below.
+        rayVersion: {{ $ray.rayVersion | required ".Values.ray.rayVersion is required." | quote }}
+        enableInTreeAutoscaling: true
+        headGroupSpec:
+          rayStartParams:
+            # No Ray tasks scheduled on the head -- it runs the driver and the
+            # GCS only. Losing the head kills the job, so it must not also be
+            # competing for memory with task execution.
+            num-cpus: "0"
+            dashboard-host: "0.0.0.0"
+          template:
+            spec:
+              # standardPool, NOT meshPool: mesh-pool is preemptible and losing
+              # the head kills the whole job, while losing a worker is only a Ray
+              # retry. Same reasoning that moved the deltalake celery worker off
+              # mesh-pool.
+              nodeSelector:
+                cloud.google.com/gke-nodepool: {{ .Values.cluster.standardPool }}
+              tolerations:
+                - key: "pool"
+                  operator: "Equal"
+                  value: "{{ .Values.cluster.standardPool }}"
+                  effect: "NoSchedule"
+              volumes:
+                - name: google-cloud-key
+                  secret:
+                    secretName: ray-google-cloud-key
+                # Ray spills objects to disk when the object store fills. mesh-pool
+                # and standard-pool nodes have modest disks shared with the OS and
+                # images, so this is capped rather than left to fill the node.
+                - name: ray-spill
+                  emptyDir:
+                    sizeLimit: {{ $ray.spillSizeLimit | default "10Gi" }}
+              containers:
+                - name: ray-head
+                  image: {{ .Values.cluster.dockerRegistry }}/materializationengine:{{ $tag }}
+                  volumeMounts:
+                    - name: google-cloud-key
+                      mountPath: /home/nginx/.cloudvolume/secrets
+                    - name: ray-spill
+                      mountPath: /tmp/ray
+                  env:
+                    - name: GOOGLE_APPLICATION_CREDENTIALS
+                      value: /home/nginx/.cloudvolume/secrets/google-secret.json
+                    - name: DAF_CREDENTIALS
+                      value: /home/nginx/.cloudvolume/secrets/cave-secret.json
+                    - name: AUTH_URI
+                      value: {{ .Values.cluster.globalServer }}/auth
+                    - name: AUTH_URL
+                      value: {{ .Values.cluster.globalServer }}/auth
+                    - name: STICKY_AUTH_URL
+                      value: {{ .Values.cluster.globalServer }}/sticky_auth
+                    - name: MATERIALIZATION_ENGINE_SETTINGS
+                      value: /app/materializationengine/instance/config.cfg
+                  ports:
+                    - { containerPort: 6379, name: gcs-server }
+                    - { containerPort: 8265, name: dashboard }
+                    - { containerPort: 10001, name: client }
+                  resources:
+                    requests:
+                      cpu: {{ (($head.resources).requests).cpu | default "2000m" }}
+                      memory: {{ (($head.resources).requests).memory | default "8Gi" }}
+              initContainers:
+                # Native sidecar (restartPolicy: Always on an initContainer), same
+                # shape as celery_consumer.yaml. Authenticates with the Ray service
+                # account, which holds cloudsql.client -- not the admin-scoped
+                # materialize cloudsql key.
+                - name: cloudsql-proxy
+                  image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.23.0
+                  restartPolicy: Always
+                  args:
+                    - "--port=3306"
+                    - "--credentials-file=/secrets/cloudsql/google-secret.json"
+                    - "--max-sigterm-delay=3600s"
+                    - "{{ .Values.cloudsql.projectId | default .Values.cluster.googleProject }}:{{ .Values.cluster.googleRegion }}:{{ .Values.cloudsql.sqlInstanceName }}"
+                  env:
+                    - { name: CSQL_PROXY_HEALTH_CHECK, value: "true" }
+                    - { name: CSQL_PROXY_HTTP_PORT, value: "9801" }
+                    - { name: CSQL_PROXY_HTTP_ADDRESS, value: "0.0.0.0" }
+                    - { name: CSQL_PROXY_QUITQUITQUIT, value: "true" }
+                    - { name: CSQL_PROXY_ADMIN_PORT, value: "9092" }
+                    - { name: CSQL_PROXY_STRUCTURED_LOGS, value: "true" }
+                  ports:
+                    - containerPort: 9801
+                      protocol: TCP
+                  resources:
+                    requests:
+                      memory: 8Mi
+                      cpu: 10m
+                  securityContext:
+                    runAsUser: 2
+                    allowPrivilegeEscalation: false
+                  startupProbe:
+                    httpGet: { path: /startup, port: 9801, scheme: HTTP }
+                    failureThreshold: 60
+                    periodSeconds: 1
+                    timeoutSeconds: 10
+                  volumeMounts:
+                    - name: google-cloud-key
+                      mountPath: /secrets/cloudsql
+                      readOnly: true
+                  lifecycle:
+                    preStop:
+                      exec:
+                        command: ["sh", "-c", "curl -f -X POST http://localhost:9092/quitquitquit || kill -15 1"]
+        workerGroupSpecs:
+          - groupName: cpu
+            replicas: 0
+            minReplicas: 0
+            # submitter overrides maxReplicas per job
+            maxReplicas: {{ $ray.maxWorkers | default 20 }}
+            rayStartParams: {}
+            template:
+              spec:
+                # mesh-pool: preemptible and already autoscaling 1..50, so Ray
+                # frequently lands on warm nodes and pays no provisioning cost.
+                # Worker loss is a Ray-level retry (see max_retries in the
+                # entrypoint), which is what makes preemptible acceptable here.
+                nodeSelector:
+                  cloud.google.com/gke-nodepool: {{ .Values.cluster.meshPool }}
+                tolerations:
+                  - key: "pool"
+                    operator: "Equal"
+                    value: "{{ .Values.cluster.meshPool }}"
+                    effect: "NoSchedule"
+                # NOTE: deliberately no cluster-autoscaler.kubernetes.io/safe-to-evict
+                # annotation. The orchestration ScaledJob sets it to "false"; doing
+                # that here would stop mesh-pool draining after a job.
+                volumes:
+                  - name: google-cloud-key
+                    secret:
+                      secretName: ray-google-cloud-key
+                  - name: ray-spill
+                    emptyDir:
+                      sizeLimit: {{ $ray.spillSizeLimit | default "10Gi" }}
+                containers:
+                  - name: ray-worker
+                    image: {{ .Values.cluster.dockerRegistry }}/materializationengine:{{ $tag }}
+                    volumeMounts:
+                      - name: google-cloud-key
+                        mountPath: /home/nginx/.cloudvolume/secrets
+                      - name: ray-spill
+                        mountPath: /tmp/ray
+                    env:
+                      - name: GOOGLE_APPLICATION_CREDENTIALS
+                        value: /home/nginx/.cloudvolume/secrets/google-secret.json
+                      - name: DAF_CREDENTIALS
+                        value: /home/nginx/.cloudvolume/secrets/cave-secret.json
+                      - name: AUTH_URI
+                        value: {{ .Values.cluster.globalServer }}/auth
+                      - name: AUTH_URL
+                        value: {{ .Values.cluster.globalServer }}/auth
+                      - name: STICKY_AUTH_URL
+                        value: {{ .Values.cluster.globalServer }}/sticky_auth
+                      - name: MATERIALIZATION_ENGINE_SETTINGS
+                        value: /app/materializationengine/instance/config.cfg
+                    resources:
+                      # Must leave headroom for DaemonSets on a t2d-standard-4
+                      # mesh-pool node (4 vCPU / 16Gi) so several workers pack per
+                      # node. An oversized request silently turns each worker into
+                      # a whole node and multiplies the bill.
+                      requests:
+                        cpu: {{ (($worker.resources).requests).cpu | default "1000m" }}
+                        memory: {{ (($worker.resources).requests).memory | default "3Gi" }}
+{{- end }}

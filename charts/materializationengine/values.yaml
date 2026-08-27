@@ -423,3 +423,62 @@ gmp:
     interval: 30s
     path: /
     port: 9101
+
+# Ephemeral RayJob platform, for long-running jobs that Celery-over-Redis
+# struggles with -- the RayJob CR becomes the durable unit of work, so there is
+# no broker, no ack, no visibility timeout and no redelivery.
+#
+# Nothing here creates a Ray cluster. The chart renders only the RBAC, the
+# credentials Secret and the RayJob pod-spec skeleton; the api creates a RayJob
+# per request, KubeRay stands up a cluster, runs it, and deletes it. No Ray
+# resources exist at rest, so this is inert until a job is submitted.
+#
+# Requires the KubeRay operator (installed by Terraform, enable_ray = true).
+# Values below are normally supplied by ray.defaults.yaml, rendered from
+# modules/local_kubernetes/templates/ray.tpl.
+ray:
+  enabled: false
+
+  # Not "default": Ray's job submission API has no authentication, so RayJobs are
+  # kept out of the shared namespace. Created by Terraform, not by this chart.
+  namespace: "ray-jobs"
+
+  # MUST match the ray package installed in the materializationengine image.
+  rayVersion: "2.57.0"
+
+  # Dedicated least-privilege Ray service account key -- deliberately not the
+  # materialize key. See templates/ray_secret.yaml for why.
+  credentialsSecret: ""
+  secretFiles:
+    - name: google-secret.json
+      value: ""
+    - name: cave-secret.json
+      value: ""
+
+  # Job lifecycle
+  shutdownAfterJobFinishes: true
+  ttlSecondsAfterFinished: 3600
+  # The only backstop against a wedged job pinning mesh-pool nodes open.
+  activeDeadlineSeconds: 86400
+  backoffLimit: 1
+
+  # Cap on Ray's on-disk object spill, so a spilling job cannot fill the node.
+  spillSizeLimit: "10Gi"
+
+  # Default ceiling on worker pods; the submitter overrides per job.
+  maxWorkers: 20
+
+  worker:
+    resources:
+      requests:
+        # Sized so ~4 workers pack onto a t2d-standard-4 mesh-pool node.
+        cpu: "1000m"
+        memory: "3Gi"
+
+  head:
+    resources:
+      requests:
+        # The driver runs on the head, and deltalake's z-order sort is
+        # driver-side, so this is not a bookkeeping-only pod.
+        cpu: "2000m"
+        memory: "8Gi"
