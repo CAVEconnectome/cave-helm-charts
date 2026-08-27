@@ -17,6 +17,20 @@ limiter:
   redis:
     host: ""
 materialize:
+  # Celery backpressure knobs, emitted into EVERY pod running this image by the
+  # materializationengine.appEnv helper.
+  #
+  # They must be environment variables, not just config.cfg entries: throttle.py
+  # builds a module-level CeleryThrottle at import time, before any Flask app
+  # context exists, so get_config_param cannot reach config.cfg and falls back to
+  # os.environ. Unset, int(None) raises and the process dies at import.
+  #
+  # Previously hand-maintained in seven templates, which had drifted: the api
+  # carried 5001 where everything else used 5000.
+  queueLengthLimit: 5000
+  queuesToThrottle: "process"
+  throttleQueues: true
+
   # image tag; if empty defaults to Chart.appVersion; legacy .materialize.version still honored
   tag: ""
   # image tag for the celery metric exporter (caveconnectome/celery-metric-exporter)
@@ -485,6 +499,11 @@ ray:
 
   # Cap on Ray's on-disk object spill, so a spilling job cannot fill the node.
   spillSizeLimit: "10Gi"
+
+  # NOTE: the celery backpressure knobs the Ray pods need
+  # (queueLengthLimit / queuesToThrottle / throttleQueues) live under
+  # `materialize:`, not here -- they are shared by every pod running this image
+  # and are emitted by the materializationengine.throttleEnv helper.
 
   # Default ceiling on worker pods; the submitter overrides per job.
   maxWorkers: 20

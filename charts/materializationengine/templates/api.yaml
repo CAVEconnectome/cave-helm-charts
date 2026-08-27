@@ -281,18 +281,7 @@ spec:
             - name: MEMORY_AUDIT_MAX_FILTER_VALUES
               value: {{ $audit.maxFilterValues | default 8 | quote }}
             {{- end }}
-            - name: MATERIALIZATION_ENGINE_SETTINGS
-              value: /app/materializationengine/instance/config.cfg
-            - name: GOOGLE_APPLICATION_CREDENTIALS
-              value: /home/nginx/.cloudvolume/secrets/google-secret.json
-            - name: AUTH_URI
-              value: {{ .Values.cluster.globalServer }}/auth
-            - name: QUEUE_LENGTH_LIMIT
-              value: "5001"
-            - name: QUEUES_TO_THROTTLE
-              value: process
-            - name: THROTTLE_QUEUES
-              value: "true"
+            {{- include "materializationengine.appEnv" . | nindent 12 }}
             - name: LIMITER_CATEGORIES
               value: '{"query":"{{ .Values.materialize.limitsQueryPerMinute}}/minute","fast_query":"{{ .Values.materialize.limitsFastQueryPerMinute}}/minute"}'
             - name: LIMITER_URI
@@ -308,14 +297,8 @@ spec:
               # logged once per request and leaving the endpoint with NO limit at all.
               value: '{"LiveTableQuery":{"query":"{{ int64 . }}/minute"}}'
             {{- end }}
-            - name: STICKY_AUTH_URL
-              value: {{ .Values.cluster.globalServer }}/sticky_auth
-            - name: AUTH_URL
-              value: {{ .Values.cluster.globalServer }}/auth
             - name: INFO_URL
               value: {{ .Values.cluster.globalServer }}/info
-            - name: DAF_CREDENTIALS
-              value: /home/nginx/.cloudvolume/secrets/cave-secret.json
           resources:
             requests:
               memory: {{ .Values.materialize.resources.requests.memory | default "800Mi" }}
