@@ -110,6 +110,13 @@ data:
                   env:
                     {{- include "materializationengine.appEnv" . | nindent 20 }}
                     {{- include "materializationengine.dataEnv" . | nindent 20 }}
+                    {{- with $ray.optimizeMemoryBytes }}
+                    # Only emitted when explicitly set. Must be <= the worker
+                    # memory request or the demand is unsatisfiable and the job
+                    # hangs rather than failing.
+                    - name: RAY_OPTIMIZE_MEMORY_BYTES
+                      value: {{ . | quote }}
+                    {{- end }}
                   ports:
                     - { containerPort: 6379, name: gcs-server }
                     - { containerPort: 8265, name: dashboard }
@@ -162,7 +169,21 @@ data:
             minReplicas: 0
             # submitter overrides maxReplicas per job
             maxReplicas: {{ $ray.maxWorkers | default 20 }}
-            rayStartParams: {}
+            # Pin Ray's view of the worker to the pod's actual k8s requests.
+            # Left empty, Ray auto-detects from the container -- which with no
+            # memory limit set means it can see the whole NODE, so its scheduling
+            # accounting silently disagrees with what Kubernetes will give the
+            # pod. Stating both makes the autoscaler's feasibility decision match
+            # reality, which is what turns "task is unschedulable" from a silent
+            # hang into something the driver can detect.
+            #
+            # Stated as a plain count rather than parsed out of the k8s cpu
+            # quantity: "1000m" and "2" need different arithmetic and getting it
+            # wrong yields num-cpus 0, which is unschedulable in a different and
+            # equally silent way.
+            rayStartParams:
+              num-cpus: {{ dig "numCpus" 1 $worker | quote }}
+
             template:
               spec:
                 # mesh-pool: preemptible and already autoscaling 1..50, so Ray
