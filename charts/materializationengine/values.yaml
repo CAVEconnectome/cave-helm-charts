@@ -509,11 +509,26 @@ ray:
   maxWorkers: 20
 
   worker:
+    # What Ray is told the worker has, independent of the k8s request below.
+    # One CPU per worker is what gives one optimize task per worker; the driver
+    # asks for num_cpus=1 per task and relies on this to avoid packing.
+    numCpus: 1
     resources:
       requests:
         # Sized so ~4 workers pack onto a t2d-standard-4 mesh-pool node.
         cpu: "1000m"
         memory: "3Gi"
+
+  # Memory Ray reserves per optimize task, passed to the driver as
+  # RAY_OPTIMIZE_MEMORY_BYTES.
+  #
+  # Empty means "reserve none, rely on numCpus" -- the safe default. A value
+  # LARGER than the worker's memory request above is never satisfiable: Ray
+  # cannot build a node that fits, the autoscaler declines to try, and the job
+  # pends silently until activeDeadlineSeconds. That is exactly how a 6 GiB
+  # default against 3 Gi workers hung a job for hours with nothing logged.
+  # If you set this, keep it at or below the worker memory request.
+  optimizeMemoryBytes: ""
 
   head:
     resources:
