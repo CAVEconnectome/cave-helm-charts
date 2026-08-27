@@ -209,6 +209,16 @@ spec:
             # images or secrets is hardcoded in Python.
             - name: RAY_ENABLED
               value: "true"
+            # Whether deltalake exports actually route through Ray. Separate from
+            # RAY_ENABLED so the platform can be installed while exports stay on
+            # celery, and so rolling back is one value rather than a teardown.
+            # dig, not `default`: sprig's default treats false as empty, so
+            # `false | default true` would silently flip an explicit opt-out
+            # back on -- the same falsy trap the README calls out for
+            # minReplicas. Absent means true here: turning ray.enabled on and
+            # saying nothing else routes exports through it.
+            - name: RAY_DELTALAKE_EXPORT
+              value: {{ dig "deltalakeExport" true .Values.ray | quote }}
             - name: RAY_JOB_TEMPLATE_PATH
               value: /etc/materializationengine/ray/rayjob-template.yaml
             - name: RAY_JOB_NAMESPACE

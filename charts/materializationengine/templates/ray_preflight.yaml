@@ -1,0 +1,71 @@
+{{- if .Values.ray.enabled }}
+{{- if .Values.ray.preflight }}
+{{/*
+Fail the release, with instructions, when ray.enabled is set on a cluster whose
+Terraform side has not been applied.
+
+Why this file exists: the chart creates no Ray custom resources -- only RBAC, a
+Secret and the RayJob pod-spec ConfigMap -- so without a check it installs
+perfectly happily against a cluster that has no KubeRay operator, and the first
+person to submit a job gets an opaque "no matches for kind RayJob" hours later.
+The dependency is real but invisible at install time, which is exactly the kind
+that deserves an explicit gate.
+
+Detecting "is Terraform applied" is really "am I online", because
+.Capabilities.APIVersions reports ray.io/v1 as absent both on a cluster missing
+the operator AND during an offline `helm template`, where Helm substitutes a
+fixed built-in API list. Failing on that alone would break local rendering and
+CI for everyone.
+
+`lookup` disambiguates: it returns an empty map during `helm template` and
+`--dry-run=client`, and real data during an actual install/upgrade (and
+`--dry-run=server`). kube-system exists in every real cluster, so a hit means we
+are genuinely connected and the checks below are meaningful.
+
+Set ray.preflight=false to skip, or ray.enabled=false to install without Ray.
+*/}}
+{{- $connected := lookup "v1" "Namespace" "" "kube-system" -}}
+{{- if $connected -}}
+
+{{- $ns := .Values.ray.namespace | default "ray-jobs" -}}
+{{- $missing := list -}}
+{{- if not (.Capabilities.APIVersions.Has "ray.io/v1") -}}
+  {{- $missing = append $missing (printf "the ray.io/v1 API is not registered (the KubeRay operator is not installed)") -}}
+{{- end -}}
+{{- if not (lookup "v1" "Namespace" "" $ns) -}}
+  {{- $missing = append $missing (printf "the %q namespace does not exist" $ns) -}}
+{{- end -}}
+
+{{- if $missing -}}
+{{- fail (printf `
+materializationengine: ray.enabled=true, but this cluster is not ready for it.
+
+Missing:
+  - %s
+
+The Ray platform is provisioned by Terraform, not by this chart. In the
+terragrunt kubernetes unit for this deployment set:
+
+    enable_ray = true
+
+then apply it:
+
+    terragrunt apply
+
+That installs the kuberay-operator Helm release (which registers the ray.io
+CRDs), creates the %q namespace, and provisions the Ray service account plus
+its Secret Manager entry. It also regenerates ray.defaults.yaml -- make sure
+that file is listed under this release's values: in helmfile.yaml, or
+ray.enabled will silently stay false.
+
+Then re-run this release.
+
+To install without Ray for now:      --set ray.enabled=false
+To skip this check (not advised):    --set ray.preflight=false
+`
+  (join "\n  - " $missing) $ns) -}}
+{{- end -}}
+
+{{- end -}}
+{{- end }}
+{{- end }}

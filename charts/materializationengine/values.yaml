@@ -439,6 +439,23 @@ gmp:
 ray:
   enabled: false
 
+  # Fail the release, with instructions, if ray.enabled is set on a cluster where
+  # the Terraform side has not been applied (no KubeRay operator, no namespace).
+  # Without it the chart installs fine and the first submitted job fails instead.
+  # Only runs against a real cluster; offline `helm template` skips it.
+  preflight: true
+
+  # Route Delta Lake exports through Ray instead of the celery deltalake worker.
+  # Server-side: the api decides per deployment, so the wizard offers no choice
+  # and clients need no changes.
+  #
+  # Separate from ray.enabled on purpose. "The platform is installed" and
+  # "production exports run on it" are different decisions -- run the operator,
+  # namespace and RBAC for a while with exports still on celery, then flip this.
+  # Rolling back is this one value, which leaves the platform (and any in-flight
+  # job's records) intact. Has no effect unless ray.enabled.
+  deltalakeExport: true
+
   # Not "default": Ray's job submission API has no authentication, so RayJobs are
   # kept out of the shared namespace. Created by Terraform, not by this chart.
   namespace: "ray-jobs"
