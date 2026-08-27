@@ -759,6 +759,15 @@ entries:
     version: 5.27.1-r.1
   - apiVersion: v2
     appVersion: 5.27.0
+    created: "2026-08-27T13:27:57.020969732Z"
+    description: A Helm chart for CAVE materialization service on Kubernetes
+    digest: 1c35e11f3060c29438d3759d044e2053d5370e5ab1960b761bdf1da43e18b2af
+    name: materializationengine
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/materializationengine-5.27.1-dev.ray1/materializationengine-5.27.1-dev.ray1.tgz
+    version: 5.27.1-dev.ray1
+  - apiVersion: v2
+    appVersion: 5.27.0
     created: "2026-08-27T05:38:48.167207516Z"
     description: A Helm chart for CAVE materialization service on Kubernetes
     digest: 9ef0174bf78b22a94c07e2b4d4d139b938e53bb638ee446a9d61e73270b85fa5
@@ -2756,4 +2765,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2026-08-27T06:50:44.052587442Z"
+generated: "2026-08-27T13:27:57.021961383Z"
