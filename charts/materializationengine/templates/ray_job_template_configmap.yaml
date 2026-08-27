@@ -43,11 +43,14 @@ data:
       # KubeRay deletes the RayCluster -- head and every worker -- and the
       # mesh-pool nodes drain back to the pool's floor on their own.
       shutdownAfterJobFinishes: true
-      # Keeps the CR and `kubectl logs` alive after completion so the api can read
-      # terminal status. The operator's DELETE_RAYJOB_CR_AFTER_JOB_FINISHES must
-      # stay at its default false, or the CR vanishes with the pods and the status
-      # endpoint has nothing to read.
-      ttlSecondsAfterFinished: {{ $ray.ttlSecondsAfterFinished | default 3600 }}
+      # DELAY before KubeRay deletes the RayCluster and submitter, not CR
+      # retention -- a distinction that costs real money to get wrong. The RayJob
+      # CR outlives the pods on its own, because the operator's
+      # DELETE_RAYJOB_CR_AFTER_JOB_FINISHES defaults to false, and that is what
+      # the api's status endpoint reads; pod logs land in Cloud Logging either
+      # way. All this buys is a `kubectl logs` window on the pods, charged at a
+      # full idle head (2 CPU / 8Gi on standard-pool) for the whole duration.
+      ttlSecondsAfterFinished: {{ $ray.ttlSecondsAfterFinished | default 60 }}
       # The only backstop against a wedged job holding nodes indefinitely: Ray
       # worker pods are owned by the RayCluster CR, which is not a controller kind
       # the cluster autoscaler will evict pods on behalf of. Correct while a job

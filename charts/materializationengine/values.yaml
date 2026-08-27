@@ -457,7 +457,11 @@ ray:
 
   # Job lifecycle
   shutdownAfterJobFinishes: true
-  ttlSecondsAfterFinished: 3600
+  # Delay before KubeRay deletes the RayCluster -- not CR retention. The RayJob
+  # CR survives on its own (operator DELETE_RAYJOB_CR_AFTER_JOB_FINISHES=false),
+  # so status polling is unaffected by this. Every second here is a full idle
+  # head pod (2 CPU / 8Gi) still billing after the job is done.
+  ttlSecondsAfterFinished: 60
   # The only backstop against a wedged job pinning mesh-pool nodes open.
   activeDeadlineSeconds: 86400
   backoffLimit: 1
