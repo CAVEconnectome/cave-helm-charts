@@ -53,36 +53,11 @@ spec:
             - name: google-cloud-key
               mountPath: /home/nginx/.cloudvolume/secrets
           env:
-            - name: MATERIALIZATION_ENGINE_SETTINGS
-              value: /app/materializationengine/instance/config.cfg
-            - name: REDIS_HOST
-              value: "{{ .Values.materialize.redis.host }}"
-            - name: REDIS_PORT
-              value: "{{ .Values.materialize.redis.port }}"
-            - name: REDIS_PASSWORD
-              value: "{{ .Values.materialize.redis.password }}" 
-            - name: REDIS_SERVICE_HOST
-              value: {{ .Values.materialize.redis.host }}
+            {{- include "materializationengine.appEnv" . | nindent 12 }}
             - name: MAT_REDIS_PASSWORD
               value: {{ .Values.materialize.redis.password }}
-            - name: GOOGLE_APPLICATION_CREDENTIALS
-              value: /home/nginx/.cloudvolume/secrets/google-secret.json
             - name: LOCAL_SERVER_URL
               value: {{ .Values.materialize.pychunkedgraphReadServiceUrl | default "http://pychunkedgraph-read-service/" }}
-            - name: QUEUE_LENGTH_LIMIT
-              value: "5000"
-            - name: QUEUES_TO_THROTTLE
-              value: process
-            - name: THROTTLE_QUEUES
-              value: "true"
-            - name: AUTH_URI
-              value: {{ .Values.cluster.globalServer }}/auth
-            - name: STICKY_AUTH_URL
-              value: {{ .Values.cluster.globalServer }}/sticky_auth
-            - name: AUTH_URL
-              value: {{ .Values.cluster.globalServer }}/auth
-            - name: DAF_CREDENTIALS
-              value: /home/nginx/.cloudvolume/secrets/cave-secret.json
             - name: CELERY_CLOUDVOLUME_CACHE_BYTES
               value: "100000000"
           resources:

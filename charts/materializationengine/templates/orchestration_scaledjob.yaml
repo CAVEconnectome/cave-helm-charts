@@ -66,28 +66,9 @@ spec:
               - name: google-cloud-key
                 mountPath: /home/nginx/.cloudvolume/secrets
             env:
-              - name: MATERIALIZATION_ENGINE_SETTINGS
-                value: /app/materializationengine/instance/config.cfg
-              - name: REDIS_SERVICE_HOST
-                value: {{ .Values.materialize.redis.host }}
-              - name: REDIS_HOST
-                value: {{ .Values.materialize.redis.host }}
-              - name: REDIS_PORT
-                value: "{{ .Values.materialize.redis.port }}"
-              - name: REDIS_PASSWORD
-                value: {{ .Values.materialize.redis.password | default "" | quote }}
+              {{- include "materializationengine.appEnv" . | nindent 14 }}
               - name: CELERY_BROKER_URL
                 value: redis://:{{ .Values.materialize.redis.password}}@{{ .Values.materialize.redis.host}}:{{ .Values.materialize.redis.port}}/0
-              - name: GOOGLE_APPLICATION_CREDENTIALS
-                value: /home/nginx/.cloudvolume/secrets/google-secret.json
-              - name: AUTH_URI
-                value: {{ .Values.cluster.globalServer }}/auth
-              - name: STICKY_AUTH_URL
-                value: {{ .Values.cluster.globalServer }}/sticky_auth
-              - name: AUTH_URL
-                value: {{ .Values.cluster.globalServer }}/auth
-              - name: DAF_CREDENTIALS
-                value: /home/nginx/.cloudvolume/secrets/cave-secret.json
               # The preStop hook runs `celery control` / `celery inspect` with no -A, so
               # without this it dials the default amqp://localhost, fails on the first
               # command under `bash -e`, and the pod is torn down with no drain at all.
@@ -96,12 +77,6 @@ spec:
                 value: run.celery
               - name: QUEUE_NAME
                 value: {{ .Values.materialize.orchestrationQueueName | default "orchestration" }}
-              - name: QUEUE_LENGTH_LIMIT
-                value: "5000"
-              - name: QUEUES_TO_THROTTLE
-                value: process
-              - name: THROTTLE_QUEUES
-                value: "true"
               - name: WORKER_NAME
                 value: {{ .Values.materialize.celeryOrchestrationWorkerName | default "worker.orchestration" }}
               - name: CELERY_CLOUDVOLUME_CACHE_BYTES
