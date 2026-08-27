@@ -82,6 +82,12 @@ data:
                   value: "{{ .Values.cluster.standardPool }}"
                   effect: "NoSchedule"
               volumes:
+                # The driver reads SQLALCHEMY_DATABASE_URI, DELTALAKE_OUTPUT_BUCKET
+                # and the DELTALAKE_* tuning knobs out of this config, exactly as
+                # the celery deltalake worker does.
+                - name: materializationengine-config-volume
+                  configMap:
+                    name: materializationengine-config
                 - name: google-cloud-key
                   secret:
                     secretName: ray-google-cloud-key
@@ -95,6 +101,8 @@ data:
                 - name: ray-head
                   image: {{ .Values.cluster.dockerRegistry }}/materializationengine:{{ $tag }}
                   volumeMounts:
+                    - name: materializationengine-config-volume
+                      mountPath: /app/materializationengine/instance/
                     - name: google-cloud-key
                       mountPath: /home/nginx/.cloudvolume/secrets
                     - name: ray-spill
@@ -187,6 +195,13 @@ data:
                 # annotation. The orchestration ScaledJob sets it to "false"; doing
                 # that here would stop mesh-pool draining after a job.
                 volumes:
+                  # Kept symmetric with the head. The optimize tasks only need
+                  # GCS credentials, but a worker whose volumeMount names a
+                  # volume that does not exist fails to start at all, and later
+                  # entrypoints (spatial lookup) will want the DB config here.
+                  - name: materializationengine-config-volume
+                    configMap:
+                      name: materializationengine-config
                   - name: google-cloud-key
                     secret:
                       secretName: ray-google-cloud-key
@@ -197,6 +212,8 @@ data:
                   - name: ray-worker
                     image: {{ .Values.cluster.dockerRegistry }}/materializationengine:{{ $tag }}
                     volumeMounts:
+                      - name: materializationengine-config-volume
+                        mountPath: /app/materializationengine/instance/
                       - name: google-cloud-key
                         mountPath: /home/nginx/.cloudvolume/secrets
                       - name: ray-spill
