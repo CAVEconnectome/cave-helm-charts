@@ -1,0 +1,64 @@
+{{- if .Values.ray.enabled }}
+{{- $ns := .Values.ray.namespace | required ".Values.ray.namespace is required when ray.enabled." -}}
+{{/*
+RBAC for the ephemeral RayJob platform.
+
+The api pods create RayJob CRs at request time -- that is the whole point of the
+pattern: the RayJob CR becomes the durable unit of work instead of a Celery
+message, so there is no broker, no ack, no visibility timeout and no redelivery.
+Creating a CR needs an identity with permission to do so, which is what this file
+grants.
+
+Scoped to the ray namespace rather than cluster-wide, and to rayjobs rather than
+all of ray.io. The api runs in the release namespace while RayJobs live in
+`ray.namespace`, so this is a Role in the ray namespace with a RoleBinding whose
+subject names the api's ServiceAccount in the release namespace -- subjects carry
+their own namespace, so a cross-namespace binding like this is legal and is
+narrower than the ClusterRole it replaces.
+
+The namespace itself is created by Terraform (modules/local_kubernetes/helm.tf),
+not here, so that helm-uninstalling this chart cannot take a running job's CRs
+with it.
+*/}}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: materialize-ray-submitter
+  labels:
+    app: materialize
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: materialize-ray-submitter
+  namespace: {{ $ns }}
+rules:
+  - apiGroups: ["ray.io"]
+    resources: ["rayjobs"]
+    verbs: ["create", "get", "list", "watch", "delete"]
+  # Read-only on the resources KubeRay creates for a job, so the api can surface
+  # why a job is stuck (pending pods, image pull failures) without a second
+  # identity. Deliberately no write verbs: the api submits and observes, KubeRay
+  # owns the lifecycle.
+  - apiGroups: ["ray.io"]
+    resources: ["rayclusters"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods", "pods/log", "events"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: materialize-ray-submitter
+  namespace: {{ $ns }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: materialize-ray-submitter
+subjects:
+  - kind: ServiceAccount
+    name: materialize-ray-submitter
+    namespace: {{ .Release.Namespace }}
+{{- end }}
