@@ -35,9 +35,47 @@ pcgl2cache:
       # request. These API pods run 8 uwsgi workers minimum and idle well over 900Mi, so
       # a ratio near 1.0 would OOM-kill them on startup. Check actual usage per
       # deployment before lowering the ratio.
-      memLimitRatio: 1.5
+      # 2.0, not 1.5. The image's uwsgi.ini sets `cheaper = 8`, a FLOOR uwsgi never
+      # drops below, and 8 workers under load measured ~147Mi each on minniev7:
+      #   8 x 147Mi + ~170Mi (master + nginx + interpreter) = ~1346Mi
+      # against the old 1350Mi limit -- 4Mi of headroom. The pods were not
+      # over-scaling into an OOM, they did not fit at their MINIMUM worker count
+      # once requests got heavy. Capping worker growth alone cannot fix that, which
+      # is why this moved as well as pcgl2cache.api.uwsgi below.
+      memLimitRatio: 2.0
       limits: {}
         # memory: 1500Mi   # explicit override; wins over memLimitRatio
+    # uwsgi worker sizing, kept in the same place as the memory it consumes.
+    #
+    # The image's uwsgi.ini grows the worker pool on busyness (cheaper-algo =
+    # busyness, +8 workers at a time, up to processes = 64) and only stops at
+    # cheaper-rss-limit-soft, which the image sets to 6 GiB. Nothing in that
+    # config knows what the container's memory limit is, so on a 1350Mi pod uwsgi
+    # will happily spawn past it and be OOMKilled -- repeatedly. That is what
+    # OOMKilled every pcgl2cache api pod on minniev7 (50+ restarts each) once an
+    # external client started a sustained bulk sweep.
+    #
+    # Measured on that deployment: ~814Mi idle with the initial 8 workers, and
+    # working set climbing to the 1350Mi limit under load.
+    uwsgi:
+      # Mount a uwsgi.ini over the image's own. Required for the two settings below
+      # to have any effect at all: the container runs `uwsgi --ini
+      # /etc/uwsgi/uwsgi.ini` and uwsgi applies that ini AFTER UWSGI_* env vars, so
+      # environment variables cannot override it. The mounted file %includes the
+      # image's original and then restates only these options.
+      enabled: true
+      # Fraction of the container memory limit at which uwsgi stops spawning NEW
+      # workers. Not a cap on usage -- workers already running keep growing -- so
+      # it must trip early enough that the remainder still fits.
+      # 0.7 of the 1800Mi limit is ~1260Mi: the 8-worker floor (~1176Mi loaded)
+      # still fits under it, a 9th trips the gate, and ~540Mi is left for the
+      # workers already running to grow into.
+      rssLimitFraction: 0.7
+      # Hard ceiling on worker count, well below the ini's 64. At the ~100Mi per
+      # worker measured here, 16 is already more than a 1350Mi pod can hold; the
+      # RSS fraction above is what actually binds first. Raise the memory limit
+      # and this together, never one alone.
+      processes: 16
   worker:
     minReplicas: 0
     maxReplicas: 50

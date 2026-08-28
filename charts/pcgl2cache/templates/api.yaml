@@ -15,6 +15,11 @@ spec:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum | quote }}
         checksum/secrets: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum | quote }}
+        {{- if .Values.pcgl2cache.api.uwsgi.enabled }}
+        # Without this a memory retune changes only the ConfigMap, the Deployment spec
+        # is unchanged, and no pod ever restarts to pick up the new worker ceiling.
+        checksum/uwsgi: {{ include (print $.Template.BasePath "/uwsgi_configmap.yaml") . | sha256sum | quote }}
+        {{- end }}
     spec:
       tolerations:
         - key: "pool"
@@ -30,6 +35,11 @@ spec:
         - name: pcg-config-volume
           configMap:
             name: pcgl2cache-config
+        {{- if .Values.pcgl2cache.api.uwsgi.enabled }}
+        - name: uwsgi-config
+          configMap:
+            name: pcgl2cache-uwsgi
+        {{- end }}
       terminationGracePeriodSeconds: 10
       containers:
         - name: pcgl2cache
@@ -42,7 +52,26 @@ spec:
               mountPath: /home/nginx/.cloudvolume/secrets
             - name: pcg-config-volume
               mountPath: /app/pcgl2cache/app/instance/
+            {{- if .Values.pcgl2cache.api.uwsgi.enabled }}
+            # subPath: replaces ONLY this file, leaving the rest of /etc/uwsgi alone.
+            # This is the exact path the container's `uwsgi --ini` argument points at,
+            # which is why overriding here works where environment variables do not.
+            # It %includes /app/uwsgi.ini (the untouched original) and then restates
+            # the two options that must track the container's memory limit.
+            - name: uwsgi-config
+              mountPath: /etc/uwsgi/uwsgi.ini
+              subPath: uwsgi.ini
+            {{- end }}
           env:
+            {{- /*
+              NOTE: uwsgi worker sizing is NOT settable from here. This image starts
+              `uwsgi --ini /etc/uwsgi/uwsgi.ini`, and uwsgi applies the ini AFTER
+              UWSGI_* environment variables, so for single-value options the ini wins.
+              Verified with --show-config: UWSGI_PROCESSES=3 is parsed, then the ini's
+              `processes = 64` overrides it. Setting UWSGI_CHEAPER_RSS_LIMIT_SOFT or
+              UWSGI_PROCESSES here would look like a fix and do nothing.
+              See values.yaml pcgl2cache.api.uwsgi for where this is actually controlled.
+            */}}
             - name: GRAPH_L2CACHE_CONFIG_PATH
               value: /app/pcgl2cache/app/instance/L2_table_map.yml
             - name: GOOGLE_APPLICATION_CREDENTIALS

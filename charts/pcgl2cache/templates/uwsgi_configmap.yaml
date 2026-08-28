@@ -1,0 +1,57 @@
+{{- if .Values.pcgl2cache.api.uwsgi.enabled }}
+{{- $apiRes := .Values.pcgl2cache.api.resources }}
+{{- $memLimit := include "pcgl2cache.memLimit" (dict "request" $apiRes.requests.memory "explicit" ($apiRes.limits).memory "ratio" $apiRes.memLimitRatio) }}
+{{- $uw := .Values.pcgl2cache.api.uwsgi }}
+{{/*
+Overrides for the image's uwsgi worker sizing.
+
+THE PROBLEM
+The image ships /etc/uwsgi/uwsgi.ini with `cheaper-rss-limit-soft = 6442450944`
+(6 GiB) and `processes = 64`. Those say: keep spawning workers, 8 at a time, on
+busyness, until total RSS reaches 6 GiB. Nothing in that file knows the
+container's memory limit, which this chart sets to {{ $memLimit }}. So under
+sustained load uwsgi spawns straight past the cgroup limit and the kernel kills
+the pod -- repeatedly. On minniev7 that was 50+ OOMKills per pod (exit 137)
+across every api replica once an external client started a bulk sweep.
+
+WHY THIS IS A FILE AND NOT ENV VARS
+It has to be. The container runs `uwsgi --ini /etc/uwsgi/uwsgi.ini`, and uwsgi
+applies that ini AFTER UWSGI_* environment variables; for single-value options
+the last parse wins, so the ini beats the environment. Confirmed with
+--show-config: UWSGI_PROCESSES=3 is read, then `processes = 64` from the ini
+overrides it. Setting env vars here would look like a fix and change nothing.
+
+WHY %include RATHER THAN A FULL COPY
+/app/uwsgi.ini and /etc/uwsgi/uwsgi.ini are byte-identical in the image (verified
+by md5). Including the untouched copy and then restating only the two options we
+care about keeps every other image setting authoritative -- harakiri, buffer
+sizes, the busyness thresholds -- so this file does not silently pin them to
+whatever they were when it was written. Only what appears below is overridden.
+
+cheaper-rss-limit-soft additionally requires memory-report, which the image
+already enables.
+*/}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pcgl2cache-uwsgi
+  labels:
+    app: pcgl2cache
+data:
+  uwsgi.ini: |
+    [uwsgi]
+    # The image's own config, unmodified. Overrides follow and win.
+    %include /app/uwsgi.ini
+
+    # Stop spawning new workers at a fraction of the CONTAINER limit
+    # ({{ $memLimit }}), not the image's 6 GiB. This is a spawn gate, not a usage
+    # cap -- workers already running keep growing -- so it must trip while there
+    # is still room for them to do so.
+    cheaper-rss-limit-soft = {{ include "pcgl2cache.rssLimitSoft" (dict "limit" $memLimit "fraction" $uw.rssLimitFraction) }}
+
+    # Hard ceiling on worker count, well below the image's 64. At the ~100Mi per
+    # worker measured on minniev7, 64 workers would need ~6.4Gi. The RSS gate
+    # above normally binds first; this bounds the damage if RSS sampling lags.
+    processes = {{ $uw.processes }}
+{{- end }}
