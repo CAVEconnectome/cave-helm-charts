@@ -21,7 +21,7 @@ the last parse wins, so the ini beats the environment. Confirmed with
 --show-config: UWSGI_PROCESSES=3 is read, then `processes = 64` from the ini
 overrides it. Setting env vars here would look like a fix and change nothing.
 
-WHY %include RATHER THAN A FULL COPY
+WHY AN INCLUDE RATHER THAN A FULL COPY
 /app/uwsgi.ini and /etc/uwsgi/uwsgi.ini are byte-identical in the image (verified
 by md5). Including the untouched copy and then restating only the two options we
 care about keeps every other image setting authoritative -- harakiri, buffer
@@ -42,7 +42,15 @@ data:
   uwsgi.ini: |
     [uwsgi]
     # The image's own config, unmodified. Overrides follow and win.
-    %include /app/uwsgi.ini
+    #
+    # `ini =`, NOT `%include`. %include is not a uwsgi directive: uwsgi silently
+    # ignores it, so the image's settings are never loaded and only the two lines
+    # below survive. That drops memory-report, which cheaper-rss-limit-soft
+    # REQUIRES -- uwsgi then refuses to start with "enabling
+    # cheaper-rss-limit-soft requires enabling also memory-report" and the pod
+    # never serves at all. Confirmed with --show-config: `ini =` emits the image's
+    # values first and ours after (last wins); %include emits ours alone.
+    ini = /app/uwsgi.ini
 
     # Stop spawning new workers at a fraction of the CONTAINER limit
     # ({{ $memLimit }}), not the image's 6 GiB. This is a spawn gate, not a usage
