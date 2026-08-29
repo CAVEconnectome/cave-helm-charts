@@ -1,3 +1,30 @@
+# Rate limiting. Top-level `limiter:` matching annotation, pychunkedgraph and
+# materializationengine, so the Terraform module fills it the same way it fills
+# theirs -- redis.host comes from pcgl2cache.defaults.yaml, not by hand.
+#
+# Buckets by authenticated user id, not client address: every request arrives via
+# the ingress and real clients sit behind shared NAT gateways, so an
+# address-keyed limit would see one IP for the whole world. Per-user is what stops
+# one caller's bulk job from starving everyone else.
+limiter:
+  redis:
+    # Supplied by Terraform. EMPTY MEANS NOT ENFORCED: flask_limiter falls back to
+    # per-process memory, so each of ~30 replicas x up to 16 uwsgi workers keeps
+    # its own counter and the real ceiling is the configured value times ~480.
+    # The app logs a warning when categories are set without this.
+    host: ""
+    db: 1   # separate db from any cache/job use on the same instance
+  # Per-category limits, any flask_limiter syntax. Empty enforces nothing.
+  categories:
+    attributes: "600/minute"
+    metadata: "60/minute"
+  # Elevated ceilings for service-account tokens: internal callers funnel through
+  # one endpoint and would otherwise exhaust a single bucket however many
+  # replicas they run. Still a real limit, not an exemption.
+  serviceAccountCategories:
+    attributes: "6000/minute"
+  serviceAccountOverrides: {}
+
 cluster:
   dockerRegistry: docker.io/caveconnectome
   globalServer: ""

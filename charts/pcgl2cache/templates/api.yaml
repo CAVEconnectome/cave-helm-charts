@@ -72,6 +72,29 @@ spec:
               UWSGI_PROCESSES here would look like a fix and do nothing.
               See values.yaml pcgl2cache.api.uwsgi for where this is actually controlled.
             */}}
+            {{- $lim := .Values.limiter | default dict }}
+            {{- $redis := $lim.redis | default dict }}
+            # Rate limiting. LIMITER_URI must point at shared storage or each uwsgi
+            # worker counts separately and the configured limits mean nothing across
+            # ~30 replicas; the app logs a warning if categories are set without it.
+            # An empty redis.host deliberately emits no LIMITER_URI, so the default
+            # is unlimited-but-loud rather than silently-per-process.
+            {{- if $redis.host }}
+            - name: LIMITER_URI
+              value: "redis://{{ $redis.host }}:{{ $redis.port | default 6379 }}/{{ $redis.db | default 1 }}"
+            {{- end }}
+            {{- with $lim.categories }}
+            - name: LIMITER_CATEGORIES
+              value: {{ toJson . | quote }}
+            {{- end }}
+            {{- with $lim.serviceAccountCategories }}
+            - name: LIMITER_SERVICE_ACCOUNT_CATEGORIES
+              value: {{ toJson . | quote }}
+            {{- end }}
+            {{- with $lim.serviceAccountOverrides }}
+            - name: LIMITER_SERVICE_ACCOUNT_OVERRIDES
+              value: {{ toJson . | quote }}
+            {{- end }}
             - name: GRAPH_L2CACHE_CONFIG_PATH
               value: /app/pcgl2cache/app/instance/L2_table_map.yml
             - name: GOOGLE_APPLICATION_CREDENTIALS
