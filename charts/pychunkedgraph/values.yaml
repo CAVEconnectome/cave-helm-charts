@@ -196,14 +196,14 @@ keda:
     messagesPerWorker: 1
     # Polling and cooldown periods (seconds)
     pollingSeconds: 30
-    cooldownSeconds: 60
+    cooldownSeconds: 3600
   # enable KEDA scaling for remeshworker; when true, HPA is disabled and KEDA ScaledObject is created
   remeshWorker:
     # How many messages per worker we target; 1 means aim for ~1 message per active worker
     messagesPerWorker: 1
     # Polling and cooldown periods (seconds)
     pollingSeconds: 30
-    cooldownSeconds: 60
+    cooldownSeconds: 600
   # Metric lookback window for faster detection
   timeHorizon: "2m"
   # When no series is returned, treat as 0
