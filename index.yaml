@@ -363,6 +363,15 @@ entries:
   dash:
   - apiVersion: v1
     appVersion: 1.17.0
+    created: "2026-09-12T04:59:53.932259217Z"
+    description: A Helm chart for CAVE dash on flask service on Kubernetes
+    digest: b33d7e2780cf8816bc5a3cf6fa20c3f45b0b0811ad1b7cc07237c665acc5fdc2
+    name: dash
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/dash-1.17.1/dash-1.17.1.tgz
+    version: 1.17.1
+  - apiVersion: v1
+    appVersion: 1.17.0
     created: "2026-09-12T04:15:34.231061235Z"
     description: A Helm chart for CAVE dash on flask service on Kubernetes
     digest: 8cbc797241468d5f2575b1732120a5cadc8815f3498bbf78f5c9b5fe5074d43e
@@ -2882,4 +2891,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2026-09-12T04:15:34.23172292Z"
+generated: "2026-09-12T04:59:53.933043543Z"
