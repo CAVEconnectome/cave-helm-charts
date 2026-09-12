@@ -27,6 +27,31 @@ metadata:
   name: materialize-ray-submitter
   labels:
     app: materialize
+  annotations:
+    # Survive removal from the manifest. This is what makes a rollback to a
+    # pre-ray chart safe WITHOUT any configuration change first.
+    #
+    # Kubernetes mirrors serviceAccountName into the deprecated `serviceAccount`
+    # field. No chart ever lists that alias, so nothing removes it, and the API
+    # server re-defaults serviceAccountName from it -- verified directly: apply
+    # with the field, re-apply without it under the same field manager, and it
+    # persists. A chart that predates this feature cannot be changed to clean it
+    # up, so the field WILL still say materialize-ray-submitter after a rollback.
+    #
+    # That is only fatal if the ServiceAccount is gone: the Deployment then names
+    # an identity that does not exist and every new ReplicaSet fails with
+    # FailedCreate, silently, while the old pods keep running the old image. That
+    # is what stranded minniev7. Keeping the SA makes the stale reference resolve
+    # to a real (permission-less, once the RoleBinding goes) identity, so pods
+    # schedule and the rollback simply works.
+    #
+    # Verified end to end: install with ray -> upgrade to a chart with no SA and
+    # no serviceAccountName -> pods stay Running; and the reverse, plus
+    # uninstall/reinstall, re-adopt it cleanly.
+    #
+    # Cost: an unused ServiceAccount lingers after uninstall. It grants nothing
+    # without its RoleBinding, which is not kept.
+    helm.sh/resource-policy: keep
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
