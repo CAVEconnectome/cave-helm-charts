@@ -2,6 +2,15 @@ apiVersion: v1
 entries:
   annotationengine:
   - apiVersion: v2
+    appVersion: 4.41.6
+    created: "2026-09-25T16:52:25.339179361Z"
+    description: A Helm chart for CAVE annotationengine service on Kubernetes
+    digest: 48f9814b6ab15e9c5f624ff1efb49c6ed0257dc542b3db305a6c957e77e1ae4b
+    name: annotationengine
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/annotationengine-4.41.6/annotationengine-4.41.6.tgz
+    version: 4.41.6
+  - apiVersion: v2
     appVersion: 4.41.4
     created: "2026-08-22T19:56:34.448168215Z"
     description: A Helm chart for CAVE annotationengine service on Kubernetes
@@ -2909,4 +2918,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2026-09-24T21:19:53.00727911Z"
+generated: "2026-09-25T16:52:25.340502869Z"
