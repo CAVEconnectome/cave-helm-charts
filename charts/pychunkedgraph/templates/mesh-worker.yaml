@@ -14,6 +14,8 @@ spec:
     metadata:
       labels:
         app: meshworker
+      annotations:
+        checksum/secrets: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
     spec:
       tolerations:
         - key: "pool"
