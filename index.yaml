@@ -2278,6 +2278,15 @@ entries:
   pychunkedgraph:
   - apiVersion: v2
     appVersion: 2.20.0
+    created: "2026-10-02T15:40:39.329901234Z"
+    description: A Helm chart for CAVE pychunkedgraph services on Kubernetes
+    digest: 9ae02f95e3fa2e127da852a6972cbbae33c8914775aa36817744a8ea5e423569
+    name: pychunkedgraph
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/pychunkedgraph-2.20.3/pychunkedgraph-2.20.3.tgz
+    version: 2.20.3
+  - apiVersion: v2
+    appVersion: 2.20.0
     created: "2026-09-26T15:55:29.649641881Z"
     description: A Helm chart for CAVE pychunkedgraph services on Kubernetes
     digest: bed7cd27733d6cf068a9570dab7f117f86bed09d42feb6413fbbcdf79cef4a36
@@ -2359,18 +2368,18 @@ entries:
     version: 2.20.0-r5
   - apiVersion: v2
     appVersion: 2.20.0
-    created: "2026-07-19T15:25:23.938465803Z"
+    created: "2026-07-24T06:40:53.43454273Z"
     description: A Helm chart for CAVE pychunkedgraph services on Kubernetes
-    digest: f8b8be394f2bdbf26ce3c02e41bbaaaac3e3f4641b41b4c0e46b13557869847e
+    digest: 11f79715837e3e2c50c2d99a2e3cfdc06c48ffcff843ed318f32ff6f177bfff1
     name: pychunkedgraph
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/pychunkedgraph-2.20.0-r4/pychunkedgraph-2.20.0-r4.tgz
     version: 2.20.0-r4
   - apiVersion: v2
     appVersion: 2.20.0
-    created: "2026-07-24T06:40:53.43454273Z"
+    created: "2026-07-19T15:25:23.938465803Z"
     description: A Helm chart for CAVE pychunkedgraph services on Kubernetes
-    digest: 11f79715837e3e2c50c2d99a2e3cfdc06c48ffcff843ed318f32ff6f177bfff1
+    digest: f8b8be394f2bdbf26ce3c02e41bbaaaac3e3f4641b41b4c0e46b13557869847e
     name: pychunkedgraph
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/pychunkedgraph-2.20.0-r4/pychunkedgraph-2.20.0-r4.tgz
@@ -2954,4 +2963,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2026-10-02T15:28:37.831448321Z"
+generated: "2026-10-02T15:40:39.330653605Z"
