@@ -17,6 +17,20 @@ limiter:
   redis:
     host: ""
 materialize:
+  # Celery backpressure knobs, emitted into EVERY pod running this image by the
+  # materializationengine.appEnv helper.
+  #
+  # They must be environment variables, not just config.cfg entries: throttle.py
+  # builds a module-level CeleryThrottle at import time, before any Flask app
+  # context exists, so get_config_param cannot reach config.cfg and falls back to
+  # os.environ. Unset, int(None) raises and the process dies at import.
+  #
+  # Previously hand-maintained in seven templates, which had drifted: the api
+  # carried 5001 where everything else used 5000.
+  queueLengthLimit: 5000
+  queuesToThrottle: "process"
+  throttleQueues: true
+
   # image tag; if empty defaults to Chart.appVersion; legacy .materialize.version still honored
   tag: ""
   # image tag for the celery metric exporter (caveconnectome/celery-metric-exporter)
@@ -423,3 +437,103 @@ gmp:
     interval: 30s
     path: /
     port: 9101
+
+# Ephemeral RayJob platform, for long-running jobs that Celery-over-Redis
+# struggles with -- the RayJob CR becomes the durable unit of work, so there is
+# no broker, no ack, no visibility timeout and no redelivery.
+#
+# Nothing here creates a Ray cluster. The chart renders only the RBAC, the
+# credentials Secret and the RayJob pod-spec skeleton; the api creates a RayJob
+# per request, KubeRay stands up a cluster, runs it, and deletes it. No Ray
+# resources exist at rest, so this is inert until a job is submitted.
+#
+# Requires the KubeRay operator (installed by Terraform, enable_ray = true).
+# Values below are normally supplied by ray.defaults.yaml, rendered from
+# modules/local_kubernetes/templates/ray.tpl.
+ray:
+  enabled: false
+
+  # Fail the release, with instructions, if ray.enabled is set on a cluster where
+  # the Terraform side has not been applied (no KubeRay operator, no namespace).
+  # Without it the chart installs fine and the first submitted job fails instead.
+  # Only runs against a real cluster; offline `helm template` skips it.
+  preflight: true
+
+  # Route Delta Lake exports through Ray instead of the celery deltalake worker.
+  # Server-side: the api decides per deployment, so the wizard offers no choice
+  # and clients need no changes.
+  #
+  # Separate from ray.enabled on purpose. "The platform is installed" and
+  # "production exports run on it" are different decisions -- run the operator,
+  # namespace and RBAC for a while with exports still on celery, then flip this.
+  # Rolling back is this one value, which leaves the platform (and any in-flight
+  # job's records) intact. Has no effect unless ray.enabled.
+  deltalakeExport: true
+
+  # Not "default": Ray's job submission API has no authentication, so RayJobs are
+  # kept out of the shared namespace. Created by Terraform, not by this chart.
+  namespace: "ray-jobs"
+
+  # MUST match the ray package installed in the materializationengine image.
+  rayVersion: "2.57.0"
+
+  # Dedicated least-privilege Ray service account key -- deliberately not the
+  # materialize key. See templates/ray_secret.yaml for why.
+  credentialsSecret: ""
+  secretFiles:
+    - name: google-secret.json
+      value: ""
+    - name: cave-secret.json
+      value: ""
+
+  # Job lifecycle
+  shutdownAfterJobFinishes: true
+  # Delay before KubeRay deletes the RayCluster -- not CR retention. The RayJob
+  # CR survives on its own (operator DELETE_RAYJOB_CR_AFTER_JOB_FINISHES=false),
+  # so status polling is unaffected by this. Every second here is a full idle
+  # head pod (2 CPU / 8Gi) still billing after the job is done.
+  ttlSecondsAfterFinished: 60
+  # The only backstop against a wedged job pinning mesh-pool nodes open.
+  activeDeadlineSeconds: 86400
+  backoffLimit: 1
+
+  # Cap on Ray's on-disk object spill, so a spilling job cannot fill the node.
+  spillSizeLimit: "10Gi"
+
+  # NOTE: the celery backpressure knobs the Ray pods need
+  # (queueLengthLimit / queuesToThrottle / throttleQueues) live under
+  # `materialize:`, not here -- they are shared by every pod running this image
+  # and are emitted by the materializationengine.throttleEnv helper.
+
+  # Default ceiling on worker pods; the submitter overrides per job.
+  maxWorkers: 20
+
+  worker:
+    # What Ray is told the worker has, independent of the k8s request below.
+    # One CPU per worker is what gives one optimize task per worker; the driver
+    # asks for num_cpus=1 per task and relies on this to avoid packing.
+    numCpus: 1
+    resources:
+      requests:
+        # Sized so ~4 workers pack onto a t2d-standard-4 mesh-pool node.
+        cpu: "1000m"
+        memory: "3Gi"
+
+  # Memory Ray reserves per optimize task, passed to the driver as
+  # RAY_OPTIMIZE_MEMORY_BYTES.
+  #
+  # Empty means "reserve none, rely on numCpus" -- the safe default. A value
+  # LARGER than the worker's memory request above is never satisfiable: Ray
+  # cannot build a node that fits, the autoscaler declines to try, and the job
+  # pends silently until activeDeadlineSeconds. That is exactly how a 6 GiB
+  # default against 3 Gi workers hung a job for hours with nothing logged.
+  # If you set this, keep it at or below the worker memory request.
+  optimizeMemoryBytes: ""
+
+  head:
+    resources:
+      requests:
+        # The driver runs on the head, and deltalake's z-order sort is
+        # driver-side, so this is not a bookkeeping-only pod.
+        cpu: "2000m"
+        memory: "8Gi"

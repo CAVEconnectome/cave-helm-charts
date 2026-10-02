@@ -139,6 +139,23 @@ spec:
         checksum/uwsgi: {{ . | sha256sum }}
         {{- end }}
     spec:
+      # ALWAYS emitted, never conditionally omitted -- "default" is the explicit
+      # off state, not an absent field.
+      #
+      # Omitting it when ray is disabled is a trap: Kubernetes auto-populates the
+      # deprecated `serviceAccount` field from `serviceAccountName`, and Helm
+      # never renders `serviceAccount`, so it is not in Helm's model and Helm
+      # will not remove it. On a rollback that drops `serviceAccountName`, the
+      # API server's defaulting puts it straight back from the leftover
+      # `serviceAccount`. The field survives the rollback while ray_rbac.yaml
+      # stops rendering the ServiceAccount, leaving the Deployment pointing at an
+      # identity that no longer exists -- every new ReplicaSet then fails with
+      # FailedCreate, the old pods can never be retired, and the release looks
+      # applied while running the previous image. That happened on minniev7.
+      #
+      # Emitting a value in both states keeps the field under Helm's management
+      # so it can actually be changed back.
+      serviceAccountName: {{ if .Values.ray.enabled }}materialize-ray-submitter{{ else }}default{{ end }}
       securityContext:
         sysctls:
           - name: net.ipv4.ip_local_port_range
@@ -166,6 +183,11 @@ spec:
           configMap:
             name: materialize-uwsgi
         {{- end }}
+        {{- if .Values.ray.enabled }}
+        - name: rayjob-template
+          configMap:
+            name: materializationengine-rayjob-template
+        {{- end }}
       containers:
         - name: materialize
           image: {{ .Values.cluster.dockerRegistry }}/materializationengine:{{ $tag }}
@@ -185,7 +207,37 @@ spec:
               mountPath: /app/uwsgi.ini
               subPath: uwsgi.ini
             {{- end }}
+            {{- if .Values.ray.enabled }}
+            # Its own directory, not the instance/ dir -- mounting a second
+            # ConfigMap over instance/ would shadow config.cfg.
+            - name: rayjob-template
+              mountPath: /etc/materializationengine/ray
+              readOnly: true
+            {{- end }}
           env:
+            {{- if .Values.ray.enabled }}
+            # Wiring for materializationengine/ray/submitter.py. The pod spec
+            # itself lives in the mounted template, so nothing about pools,
+            # images or secrets is hardcoded in Python.
+            - name: RAY_ENABLED
+              value: "true"
+            # Whether deltalake exports actually route through Ray. Separate from
+            # RAY_ENABLED so the platform can be installed while exports stay on
+            # celery, and so rolling back is one value rather than a teardown.
+            # dig, not `default`: sprig's default treats false as empty, so
+            # `false | default true` would silently flip an explicit opt-out
+            # back on -- the same falsy trap the README calls out for
+            # minReplicas. Absent means true here: turning ray.enabled on and
+            # saying nothing else routes exports through it.
+            - name: RAY_DELTALAKE_EXPORT
+              value: {{ dig "deltalakeExport" true .Values.ray | quote }}
+            - name: RAY_JOB_TEMPLATE_PATH
+              value: /etc/materializationengine/ray/rayjob-template.yaml
+            - name: RAY_JOB_NAMESPACE
+              value: {{ .Values.ray.namespace | quote }}
+            - name: RAY_JOB_MAX_WORKERS
+              value: {{ .Values.ray.maxWorkers | default 20 | quote }}
+            {{- end }}
             {{- if (include "materializationengine.uwsgiConfigEffective" .) }}
             {{- $u := .Values.materialize.uwsgi | default dict }}
             # UWSGI_PROCESSES / UWSGI_CHEAPER must be set as ENV VARS, not just in uwsgi.ini.
