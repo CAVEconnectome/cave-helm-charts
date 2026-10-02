@@ -57,6 +57,8 @@ spec:
               value: {{ .Values.materialize.redis.host }}
             - name: REDIS_HOST
               value: {{ .Values.materialize.redis.host }}
+            - name: REDIS_PORT
+              value: "{{ .Values.materialize.redis.port }}"
             - name: REDIS_PASSWORD
               value: {{ .Values.materialize.redis.password }}
             - name: CELERY_BROKER_URL
