@@ -36,7 +36,8 @@ materialize:
   # image tag for the celery metric exporter (caveconnectome/celery-metric-exporter)
   # v7 adds the celery_inflight_tasks gauge used by the KEDA in-flight triggers
   # v8 stops the exporter reclaiming other workers' in-flight tasks (see celery.* below)
-  celeryExporterTag: "v8"
+  # v9 adds --unacked-key, which the chart now always passes (the consumer's own unacked hash)
+  celeryExporterTag: "v9"
   # Settings shared by every process that connects to this redis as a celery broker.
   #
   # These exist in one place because they are not per-process settings in practice: the
@@ -73,6 +74,12 @@ materialize:
   # gets the lower value. It must be longer than the longest task any worker runs.
   celery:
     visibilityTimeout: 21600
+    # The consumer tracks its claimed messages in its own unacked keys, which only
+    # consumers restore, so it uses this instead of visibilityTimeout: how long a
+    # consumer task can stay claimed before it is requeued (e.g. after its pod is evicted
+    # or its node preempted). Must exceed the longest acks_late process-queue task, or a
+    # task still running is handed to a second worker.
+    consumerVisibilityTimeout: 300
   # need to fill in
   datastacks:
     - ""
@@ -343,7 +350,11 @@ materialize:
   celeryProducerCpu: "100m"
   celeryProducerMemory: "400Mi"
   celeryConsumerCpu: "100m"
-  celeryConsumerMemory: "400Mi"
+  # Consumers (concurrency 2) used ~1.0-1.27Gi each during an upload spatial lookup on
+  # ltv7 (2026-10-03); requesting 400Mi let nodes overpack and evict them mid-task.
+  celeryConsumerMemory: "1536Mi"
+  # optional; unset means no limit
+  celeryConsumerMemoryLimit: ""
   celeryDeltalakeCpu: "950m"
   celeryDeltalakeMemory: "4000Mi"
   # Optional memory ceiling for the deltalake worker. Empty means no limit

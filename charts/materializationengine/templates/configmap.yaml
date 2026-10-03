@@ -38,11 +38,22 @@ data:
     # The unacked index is global: kombu restores any message older than the visibility
     # timeout of whichever connection notices it, so the broker's effective timeout is the
     # smallest value any client sets. All three come from materialize.celery.visibilityTimeout.
+    #
+    # The one exception: a worker pool given CELERY_UNACKED_KEY_PREFIX tracks its claimed
+    # messages in its own unacked keys, which only that pool restores, so it can use a
+    # shorter CELERY_VISIBILITY_TIMEOUT without requeueing other pools' long-running tasks.
+    # The consumer does this (see celery_consumer.yaml).
     BROKER_TRANSPORT_OPTIONS = {
-        "visibility_timeout": {{ .Values.materialize.celery.visibilityTimeout | default 21600 | int }},
+        "visibility_timeout": int(os.environ.get("CELERY_VISIBILITY_TIMEOUT", {{ .Values.materialize.celery.visibilityTimeout | default 21600 | int }})),
         "socket_timeout": 20,
         "socket_connect_timeout": 20,
     }
+    if os.environ.get("CELERY_UNACKED_KEY_PREFIX"):
+        BROKER_TRANSPORT_OPTIONS.update({
+            "unacked_key": os.environ["CELERY_UNACKED_KEY_PREFIX"] + "_unacked",
+            "unacked_index_key": os.environ["CELERY_UNACKED_KEY_PREFIX"] + "_unacked_index",
+            "unacked_mutex_key": os.environ["CELERY_UNACKED_KEY_PREFIX"] + "_unacked_mutex",
+        })
     MATERIALIZATION_ROW_CHUNK_SIZE = 500
     TEST_DB_NAME = "{{ .Values.annotation.healthAlignedVolumeName }}"
     INFO_API_VERSION = 2

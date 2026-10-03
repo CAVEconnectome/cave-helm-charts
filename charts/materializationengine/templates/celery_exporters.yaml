@@ -19,7 +19,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: celery-exporter
-          image: {{ .Values.cluster.dockerRegistry}}/celery-metric-exporter:{{ .Values.materialize.celeryExporterTag | default "v8" }}
+          image: {{ .Values.cluster.dockerRegistry}}/celery-metric-exporter:{{ .Values.materialize.celeryExporterTag | default "v9" }}
           command: ["python"]
           args:
             - cli.py
@@ -43,6 +43,13 @@ spec:
 {{- end }}
             - -q
             - {{ .Values.materialize.orchestrationQueueName | default "orchestration" }}
+            # The consumer tracks its claimed messages in its own hash (see
+            # celery_consumer.yaml); count it too, or celery_inflight_tasks for its queue
+            # reads zero and KEDA scales the consumer down mid-task. Needs exporter v9+.
+            - --unacked-key
+            - unacked
+            - --unacked-key
+            - {{ printf "%s_unacked" (.Values.materialize.consumerQueueName | default "process") }}
           ports:
             - name: metrics
               containerPort: 9540

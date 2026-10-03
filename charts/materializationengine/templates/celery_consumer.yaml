@@ -109,10 +109,25 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.uid
+            # Track this pool's claimed messages in its own unacked keys (config.cfg reads
+            # these), so a lost pod's tasks are requeued after a short visibility timeout
+            # instead of the broker-wide one sized for long orchestration/workflow tasks.
+            # The timeout must still exceed the longest process-queue task, or a running
+            # task is handed to a second worker. The exporter counts this hash too (see
+            # celery_exporters.yaml), which is what keeps KEDA from scaling the consumer
+            # down while its tasks are in flight.
+            - name: CELERY_UNACKED_KEY_PREFIX
+              value: {{ .Values.materialize.consumerQueueName | default "process" | quote }}
+            - name: CELERY_VISIBILITY_TIMEOUT
+              value: {{ .Values.materialize.celery.consumerVisibilityTimeout | default 300 | int | quote }}
           resources:
             requests:
               cpu: {{ .Values.materialize.celeryConsumerCpu }}
               memory: {{ .Values.materialize.celeryConsumerMemory }}
+{{- if .Values.materialize.celeryConsumerMemoryLimit }}
+            limits:
+              memory: {{ .Values.materialize.celeryConsumerMemoryLimit }}
+{{- end }}
           lifecycle:
             preStop:
               exec:
