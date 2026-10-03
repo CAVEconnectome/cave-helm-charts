@@ -61,6 +61,12 @@ spec:
               value: "{{ .Values.materialize.redis.port }}"
             - name: REDIS_PASSWORD
               value: {{ .Values.materialize.redis.password }}
+            # kvdb_gateway reads these at import; the spatial lookup's root id lookups
+            # (process:process_and_insert_sub_batch) go straight to Bigtable
+            - name: BIGTABLE_PROJECT
+              value: {{ .Values.cluster.bigtableProject | default .Values.cluster.googleProject | quote }}
+            - name: BIGTABLE_INSTANCE
+              value: {{ .Values.cluster.bigtableInstance | default "pychunkedgraph" | quote }}
             - name: QUEUE_LENGTH_LIMIT
               value: "5000"
             - name: QUEUES_TO_THROTTLE

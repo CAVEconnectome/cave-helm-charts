@@ -63,6 +63,11 @@ spec:
               value: "{{ .Values.materialize.redis.port }}"
             - name: REDIS_PASSWORD
               value: {{ .Values.materialize.redis.password | quote }}
+            # kvdb_gateway reads these at import, for root id lookups straight from Bigtable
+            - name: BIGTABLE_PROJECT
+              value: {{ .Values.cluster.bigtableProject | default .Values.cluster.googleProject | quote }}
+            - name: BIGTABLE_INSTANCE
+              value: {{ .Values.cluster.bigtableInstance | default "pychunkedgraph" | quote }}
             - name: CELERY_BROKER_URL
               value: redis://:{{ .Values.materialize.redis.password}}@{{ .Values.materialize.redis.host}}:{{ .Values.materialize.redis.port}}/0
             - name: GOOGLE_APPLICATION_CREDENTIALS

@@ -117,7 +117,7 @@ spec:
             - name: BIGTABLE_PROJECT
               value: {{ .Values.cluster.bigtableProject | default .Values.cluster.googleProject | quote }}
             - name: BIGTABLE_INSTANCE
-              value: {{ .Values.cluster.bigtableInstance | default "" | quote }}
+              value: {{ .Values.cluster.bigtableInstance | default "pychunkedgraph" | quote }}
             - name: WORKER_HOSTNAME
               valueFrom:
                 fieldRef:
