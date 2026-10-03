@@ -50,6 +50,8 @@ data:
     DAYS_TO_EXPIRE = 7
     LTS_DAYS_TO_EXPIRE = 30
     SQL_INSTANCE_NAME = "{{ .Values.cloudsql.sqlInstanceName }}"
+    # project the Cloud SQL instance lives in, for Cloud SQL Admin API imports/exports
+    SQL_INSTANCE_PROJECT = "{{ .Values.cloudsql.projectId | default .Values.cluster.googleProject }}"
     # database number config
     MIN_DATABASES = {{ .Values.materialize.minDatabases | default 1 }}
     MAX_DATABASES = {{ .Values.materialize.maxDatabases | default 3 }}  

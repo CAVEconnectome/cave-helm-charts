@@ -51,6 +51,8 @@ data:
     LTS_DAYS_TO_EXPIRE = 30
     # process_and_upload reads this here and passes it to process:upload_to_db
     SQL_INSTANCE_NAME = "{{ .Values.cloudsql.sqlInstanceName }}"
+    # project the Cloud SQL instance lives in, for Cloud SQL Admin API imports/exports
+    SQL_INSTANCE_PROJECT = "{{ .Values.cloudsql.projectId | default .Values.cluster.googleProject }}"
     # database number config
     MIN_DATABASES = {{ .Values.materialize.minDatabases | default 1 }}
     MAX_DATABASES = {{ .Values.materialize.maxDatabases | default 3 }}  
