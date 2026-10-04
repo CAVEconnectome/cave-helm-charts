@@ -252,7 +252,7 @@ materialize:
     maxRequests: 5000
     workerReloadMercy: 600
     reloadMercy: 605
-    pyAutoreload: 1
+    pyAutoreload: 0
     enableThreads: true
     memoryReport: true
     statsPort: 9192

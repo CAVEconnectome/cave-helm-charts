@@ -35,7 +35,12 @@ api.yaml rendering happily and mounting a ConfigMap that was never created.
 module = {{ $u.module | default "run" }}
 callable = {{ $u.callable | default "application" }}
 need-app = true
-py-autoreload = {{ $u.pyAutoreload | default 1 }}
+{{- if $u.pyAutoreload }}
+; Development only: every worker re-stats every loaded module (~3,600) each N seconds.
+; At 1s that was ~2% of a core per idle worker on ltv7 (2026-10-04), and a deployed
+; image's source never changes.
+py-autoreload = {{ $u.pyAutoreload }}
+{{- end }}
 socket = /tmp/uwsgi.sock
 chown-socket = nginx:nginx
 chmod-socket = 664
