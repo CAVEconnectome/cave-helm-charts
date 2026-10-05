@@ -151,7 +151,9 @@ materialize:
   deltalakeOptimizeTargetSizeBytes: ""
   # KEDA scaling targets per-queue
   producerTargetQueueLength: 10
-  consumerTargetQueueLength: 10
+  # One consumer per this many waiting process-queue tasks; match celeryConsumerConcurrency.
+  # At 10, 25 queued tasks asked for 3 consumers (6 running, 19 waiting) on ltv7.
+  consumerTargetQueueLength: 2
   deltalakeTargetQueueLength: 2
   schedulerReplicas: 1
   # control how many databases it will allow materialization to create
