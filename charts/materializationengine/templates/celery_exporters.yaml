@@ -43,13 +43,17 @@ spec:
 {{- end }}
             - -q
             - {{ .Values.materialize.orchestrationQueueName | default "orchestration" }}
-            # The consumer tracks its claimed messages in its own hash (see
-            # celery_consumer.yaml); count it too, or celery_inflight_tasks for its queue
+            - -q
+            - {{ .Values.materialize.spatialQueueName }}
+            # The consumer and spatial workers track their claimed messages in their own
+            # hashes (see celery_consumer.yaml); count it too, or celery_inflight_tasks for its queue
             # reads zero and KEDA scales the consumer down mid-task. Needs exporter v9+.
             - --unacked-key
             - unacked
             - --unacked-key
             - {{ printf "%s_unacked" (.Values.materialize.consumerQueueName | default "process") }}
+            - --unacked-key
+            - {{ printf "%s_unacked" .Values.materialize.spatialQueueName }}
           ports:
             - name: metrics
               containerPort: 9540

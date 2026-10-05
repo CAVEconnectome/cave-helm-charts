@@ -80,6 +80,9 @@ materialize:
     # or its node preempted). Must exceed the longest acks_late process-queue task, or a
     # task still running is handed to a second worker.
     consumerVisibilityTimeout: 300
+    # The same for the spatial workers (templates/celery_spatial.yaml). Must exceed the
+    # longest spatial lookup chunk task.
+    spatialVisibilityTimeout: 300
   # need to fill in
   datastacks:
     - ""
@@ -109,6 +112,8 @@ materialize:
   producerMaxReplicas: 5
   consumerMinReplicas: 0
   consumerMaxReplicas: 50
+  spatialMinReplicas: 0
+  spatialMaxReplicas: 50
   # dedicated worker for deltalake queue
   deltalakeEnabled: true
   deltalakeMinReplicas: 1
@@ -155,6 +160,8 @@ materialize:
   # At 10, 25 queued tasks asked for 3 consumers (6 running, 19 waiting) on ltv7.
   consumerTargetQueueLength: 2
   deltalakeTargetQueueLength: 2
+  # One spatial worker per this many waiting chunk tasks; match celerySpatialConcurrency.
+  spatialTargetQueueLength: 2
   schedulerReplicas: 1
   # control how many databases it will allow materialization to create
   minDatabases: 1
@@ -352,11 +359,18 @@ materialize:
   celeryProducerCpu: "100m"
   celeryProducerMemory: "400Mi"
   celeryConsumerCpu: "100m"
-  # Consumers (concurrency 2) used ~1.0-1.27Gi each during an upload spatial lookup on
-  # ltv7 (2026-10-03); requesting 400Mi let nodes overpack and evict them mid-task.
-  celeryConsumerMemory: "1536Mi"
+  # The upload spatial lookup, which needed 1536Mi here, now runs on the spatial workers.
+  celeryConsumerMemory: "512Mi"
   # optional; unset means no limit
   celeryConsumerMemoryLimit: ""
+  # Spatial workers (concurrency 2) used ~0.9 core and ~1.0-1.27Gi each during an upload
+  # spatial lookup on ltv7 (2026-10-03..05). At 100m the scheduler packed 5 onto one
+  # 4-vCPU node, and at 400Mi nodes overpacked and evicted them mid-task.
+  celerySpatialCpu: "900m"
+  celerySpatialMemory: "1536Mi"
+  # optional; unset means no limit
+  celerySpatialMemoryLimit: ""
+  celerySpatialCloudvolumeCacheBytes: "100000000"
   celeryDeltalakeCpu: "950m"
   celeryDeltalakeMemory: "4000Mi"
   # Optional memory ceiling for the deltalake worker. Empty means no limit
@@ -367,10 +381,14 @@ materialize:
   celeryProducerConcurrency: 2
   celeryConsumerConcurrency: 2
   celeryDeltalakeConcurrency: 2
+  celerySpatialConcurrency: 2
   # name of celery queues, likely fine as defaults
   producerQueueName: "workflow"
   consumerQueueName: "process"
   deltalakeQueueName: "deltalake"
+  # Needs a materializationengine image that routes the spatial lookup tasks here
+  # (task names spatial:*); older images send them to the process queue.
+  spatialQueueName: "spatial"
   orchestrationQueueName: "orchestration"
   # Unused: WORKER_NAME is derived from deltalakeQueueName so it always matches the
   # --hostname the worker registers under. Kept so existing overrides do not error.

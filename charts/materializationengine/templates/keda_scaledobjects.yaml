@@ -80,6 +80,34 @@ spec:
         threshold: "{{ .Values.materialize.celeryConsumerConcurrency | default 1 }}"
       authenticationRef:
         name: keda-gcm-auth
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: celery-spatial-queue
+spec:
+  minReplicaCount: {{ .Values.materialize.spatialMinReplicas }}
+  maxReplicaCount: {{ .Values.materialize.spatialMaxReplicas }}
+  scaleTargetRef:
+    name: celery-spatial
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: https://monitoring.googleapis.com/v1/projects/{{ .Values.cluster.googleProject }}/location/global/prometheus
+        query: >-
+          avg(avg_over_time(celery_queue_length{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",queue_name="{{ .Values.materialize.spatialQueueName }}"}[2m])) or vector(0)
+        threshold: "{{ .Values.materialize.spatialTargetQueueLength }}"
+      authenticationRef:
+        name: keda-gcm-auth
+    # In-flight floor, as for the consumer above.
+    - type: prometheus
+      metadata:
+        serverAddress: https://monitoring.googleapis.com/v1/projects/{{ .Values.cluster.googleProject }}/location/global/prometheus
+        query: >-
+          avg(max_over_time(celery_inflight_tasks{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",queue_name="{{ .Values.materialize.spatialQueueName }}"}[2m])) or vector(0)
+        threshold: "{{ .Values.materialize.celerySpatialConcurrency | default 1 }}"
+      authenticationRef:
+        name: keda-gcm-auth
 {{- if .Values.materialize.deltalakeEnabled }}
 ---
 apiVersion: keda.sh/v1alpha1

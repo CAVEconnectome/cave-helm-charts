@@ -1,0 +1,204 @@
+{{- $raw := .Values.materialize.tag | default .Values.materialize.version | default .Chart.AppVersion -}}
+{{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
+
+# Workers for the spatial queue: the upload spatial lookup's chunk tasks
+# (spatial:process_chunk, spatial:process_and_insert_sub_batch). Each uses about a core
+# and up to ~1.5Gi, against a fraction of that for the short tasks on the process queue,
+# so they get their own pool sized for them rather than every consumer being sized for
+# the heaviest task it might pick up.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery-spatial
+spec:
+  selector:
+    matchLabels:
+      app: celery-spatial
+  template:
+    metadata:
+      labels:
+        app: celery-spatial
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secrets: {{ include (print $.Template.BasePath "/materialize_secret.yaml") . | sha256sum }}
+        checksum/cloudsql: {{ include (print $.Template.BasePath "/cloudsql_secret.yaml") . | sha256sum }}
+    spec:
+      terminationGracePeriodSeconds: 30
+      tolerations:
+        - key: "pool"
+          operator: "Equal"
+          value: "{{ .Values.cluster.meshPool }}"
+          effect: "NoSchedule"
+      nodeSelector:
+        cloud.google.com/gke-nodepool: {{ .Values.cluster.meshPool }}
+      volumes:
+        - name: materializationengine-config-volume
+          configMap:
+            name: materializationengine-config
+        - name: google-cloud-key
+          secret:
+            secretName: materialize-google-cloud-key
+        - name: cloudsql-instance-credentials-volume
+          secret:
+            secretName: mat-cloudsql-google-cloud-key
+      containers:
+        - name: celery
+          image: {{ .Values.cluster.dockerRegistry }}/materializationengine:{{ $tag }}
+          command: ["/bin/sh"]
+          args:
+            - -c
+            - |
+              exec su nginx -c 'celery --app=run.celery worker --pool=prefork --hostname=worker.{{ .Values.materialize.spatialQueueName }}@%h --queues={{ .Values.materialize.spatialQueueName }} --loglevel=info -E -Ofair --concurrency={{ .Values.materialize.celerySpatialConcurrency }}'
+          volumeMounts:
+            - name: materializationengine-config-volume
+              mountPath: /app/materializationengine/instance/
+            - name: google-cloud-key
+              mountPath: /home/nginx/.cloudvolume/secrets
+          env:
+            - name: MATERIALIZATION_ENGINE_SETTINGS
+              value: /app/materializationengine/instance/config.cfg
+            - name: REDIS_SERVICE_HOST
+              value: {{ .Values.materialize.redis.host }}
+            - name: REDIS_HOST
+              value: {{ .Values.materialize.redis.host }}
+            - name: REDIS_PORT
+              value: "{{ .Values.materialize.redis.port }}"
+            - name: REDIS_PASSWORD
+              value: {{ .Values.materialize.redis.password }}
+            # kvdb_gateway reads these at import; the spatial lookup's root id lookups
+            # (spatial:process_and_insert_sub_batch) go straight to Bigtable
+            - name: BIGTABLE_PROJECT
+              value: {{ .Values.cluster.bigtableProject | default .Values.cluster.googleProject | quote }}
+            - name: BIGTABLE_INSTANCE
+              value: {{ .Values.cluster.bigtableInstance | default "pychunkedgraph" | quote }}
+            - name: QUEUE_LENGTH_LIMIT
+              value: "5000"
+            - name: QUEUES_TO_THROTTLE
+              value: process
+            - name: LOCAL_SERVER_URL
+              value: {{ .Values.materialize.pychunkedgraphReadServiceUrl | default "http://pychunkedgraph-read-service/" }}
+            - name: THROTTLE_QUEUES
+              value: "true"
+            - name: CELERY_BROKER_URL
+              value: redis://:{{ .Values.materialize.redis.password}}@{{ .Values.materialize.redis.host}}:{{ .Values.materialize.redis.port}}/0
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /home/nginx/.cloudvolume/secrets/google-secret.json
+            - name: AUTH_URI
+              value: {{ .Values.cluster.globalServer }}/auth
+            - name: STICKY_AUTH_URL
+              value: {{ .Values.cluster.globalServer }}/sticky_auth
+            - name: AUTH_URL
+              value: {{ .Values.cluster.globalServer }}/auth
+            - name: DAF_CREDENTIALS
+              value: /home/nginx/.cloudvolume/secrets/cave-secret.json
+            # The preStop hook runs `celery control` / `celery inspect` with no -A, so
+            # without this it dials the default amqp://localhost, fails on the first
+            # command under `bash -e`, and the pod is torn down with no drain at all.
+            # The CLI reads this env var the same way it reads --app.
+            - name: CELERY_APP
+              value: run.celery
+            - name: QUEUE_NAME
+              value: {{ .Values.materialize.spatialQueueName }}
+            - name: WORKER_NAME
+              # Must match --hostname above (worker.<queue>@%h): the shutdown hook
+              # addresses $WORKER_NAME@$HOSTNAME.
+              value: worker.{{ .Values.materialize.spatialQueueName }}
+            - name: CELERY_CLOUDVOLUME_CACHE_BYTES
+              value: "{{ .Values.materialize.celerySpatialCloudvolumeCacheBytes }}"
+            - name: WORKER_HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.uid
+            # Own unacked keys and a short visibility timeout, as for the consumer (see
+            # celery_consumer.yaml): these pods are preemptible, and their tasks are
+            # chunk-sized and safe to rerun. The exporter counts this hash so KEDA keeps
+            # the pods up while tasks are in flight (celery_exporters.yaml).
+            - name: CELERY_UNACKED_KEY_PREFIX
+              value: {{ .Values.materialize.spatialQueueName | quote }}
+            - name: CELERY_VISIBILITY_TIMEOUT
+              value: {{ .Values.materialize.celery.spatialVisibilityTimeout | default 300 | int | quote }}
+          resources:
+            requests:
+              cpu: {{ .Values.materialize.celerySpatialCpu }}
+              memory: {{ .Values.materialize.celerySpatialMemory }}
+{{- if .Values.materialize.celerySpatialMemoryLimit }}
+            limits:
+              memory: {{ .Values.materialize.celerySpatialMemoryLimit }}
+{{- end }}
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/home/nginx/gracefully_shutdown_celery.sh"]
+      initContainers:
+        - name: cloudsql-proxy
+          image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.23.0
+          restartPolicy: Always
+          args:
+            - "--port=3306"
+            - "--credentials-file=/secrets/cloudsql/google-secret.json"
+            - "--max-sigterm-delay=3600s"
+            - "{{ .Values.cloudsql.projectId | default .Values.cluster.googleProject }}:{{ .Values.cluster.googleRegion}}:{{ .Values.cloudsql.sqlInstanceName }}"
+          env:
+            - name: CSQL_PROXY_HEALTH_CHECK
+              value: "true"
+            - name: CSQL_PROXY_HTTP_PORT
+              value: "9801"
+            - name: CSQL_PROXY_HTTP_ADDRESS
+              value: 0.0.0.0
+            - name: CSQL_PROXY_QUITQUITQUIT
+              value: "true"
+            - name: CSQL_PROXY_ADMIN_PORT
+              value: "9092"
+            - name: CSQL_PROXY_STRUCTURED_LOGS
+              value: "true"
+          ports:
+            - containerPort: 9801
+              protocol: TCP
+          resources:
+            requests:
+              memory: 8Mi
+              cpu: 10m
+          securityContext:
+            runAsUser: 2 # non-root user
+            allowPrivilegeEscalation: false
+          startupProbe:
+            failureThreshold: 60
+            httpGet:
+              path: /startup
+              port: 9801
+              scheme: HTTP
+            periodSeconds: 1
+            successThreshold: 1
+            timeoutSeconds: 10
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /liveness
+              port: 9801
+              scheme: HTTP
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /readiness
+              port: 9801
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 10
+            successThreshold: 1
+            failureThreshold: 6
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "curl -f -X POST http://localhost:9092/quitquitquit || kill -15 1"]
+          volumeMounts:
+            - name: cloudsql-instance-credentials-volume
+              mountPath: /secrets/cloudsql
+              readOnly: true
+      restartPolicy: Always
