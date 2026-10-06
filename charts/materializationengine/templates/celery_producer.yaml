@@ -45,7 +45,7 @@ spec:
           args:
             - -c
             - |
-              exec su nginx -c 'celery --app=run.celery worker --pool=prefork --hostname=worker.workflow@%h --queues={{ .Values.materialize.producerQueueName}} --loglevel=info -E -Ofair --concurrency={{ .Values.materialize.celeryProducerConcurrency }}'
+              exec {{ include "materializationengine.asNginx" . }} sh -c 'exec celery --app=run.celery worker --pool=prefork --hostname=worker.workflow@%h --queues={{ .Values.materialize.producerQueueName}} --loglevel=info -E -Ofair --concurrency={{ .Values.materialize.celeryProducerConcurrency }}'
           volumeMounts:
             - name: materializationengine-config-volume
               mountPath: /app/materializationengine/instance/

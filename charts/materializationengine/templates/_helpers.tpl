@@ -149,3 +149,16 @@ Separate from appEnv: it configures the proxy container, not the app.
 - name: CSQL_PROXY_STRUCTURED_LOGS
   value: "true"
 {{- end -}}
+
+
+{{/*
+Switch to the nginx user without staying in the process tree. `su nginx -c` stays as the
+parent: on SIGTERM it forwards the signal and exits about 2 seconds later, and as the
+container's main process its exit ends the container, killing celery mid warm shutdown
+whatever terminationGracePeriodSeconds is (ltv7 transfer_to_production, 2026-10-06).
+setpriv execs the command, so celery itself receives SIGTERM and drains its tasks. su
+used to set HOME, which cloudvolume needs to find ~/.cloudvolume/secrets.
+*/}}
+{{- define "materializationengine.asNginx" -}}
+env HOME=/home/nginx USER=nginx LOGNAME=nginx setpriv --reuid=nginx --regid=nginx --init-groups
+{{- end }}
