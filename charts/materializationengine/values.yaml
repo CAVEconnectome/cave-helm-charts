@@ -363,10 +363,11 @@ materialize:
   celeryConsumerMemory: "512Mi"
   # optional; unset means no limit
   celeryConsumerMemoryLimit: ""
-  # Spatial workers (concurrency 2) used ~0.9 core and ~1.0-1.27Gi each during an upload
-  # spatial lookup on ltv7 (2026-10-03..05). At 100m the scheduler packed 5 onto one
-  # 4-vCPU node, and at 400Mi nodes overpacked and evicted them mid-task.
-  celerySpatialCpu: "900m"
+  # Spatial workers (concurrency 2) used 0.86-0.95 core each, peaking near 1 core, with
+  # ~500-row chunks on ltv7 test8 (2026-10-06), and ~0.9-1.0Gi (up to 1.27Gi on earlier
+  # runs). At 100m the scheduler packed 5 onto one 4-vCPU node, and at 400Mi nodes
+  # overpacked and evicted them mid-task. 1000m still fits 3 per 4-vCPU node.
+  celerySpatialCpu: "1000m"
   celerySpatialMemory: "1536Mi"
   # optional; unset means no limit
   celerySpatialMemoryLimit: ""
