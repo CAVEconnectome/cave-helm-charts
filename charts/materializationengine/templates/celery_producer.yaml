@@ -18,6 +18,11 @@ spec:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/secrets: {{ include (print $.Template.BasePath "/materialize_secret.yaml") . | sha256sum }}
         checksum/cloudsql: {{ include (print $.Template.BasePath "/cloudsql_secret.yaml") . | sha256sum }}
+        # The producer runs the long workflow-queue tasks (upload import, clustering,
+        # transfer_to_production). On 2026-10-06 the cluster autoscaler deleted it for a
+        # node scale-down mid transfer_to_production, leaving the segmentation table
+        # copied but without indexes, and the task claimed for the 6h visibility timeout.
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
     spec:
       terminationGracePeriodSeconds: 6000 # change grace period to one hour
       tolerations:
