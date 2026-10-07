@@ -121,6 +121,9 @@ materialize:
   # Output bucket for deltalake exports. If empty, defaults to
   # "<dumpBucketPath>/deltalake_exports". Set to override the location.
   deltalakeOutputBucket: ""
+  # Record each update_root_ids run's root ID updates as Parquet + Delta Lake under
+  # "<dumpBucketPath>/root_id_updates/<datastack>/<run>/<table>". Needs dumpBucketPath.
+  rootIdUpdateLog: false
   # Node pool for the deltalake worker. Empty means cluster.standardPool, which is
   # non-preemptible -- see the comment in templates/celery_deltalake.yaml. Set this to the
   # value of cluster.meshPool to put it back on preemptible nodes.
