@@ -15,7 +15,8 @@ metadata:
     # returns its own nginx 413 before the request reaches the app -- nothing is logged
     # app-side, so the failure is expensive to trace. Tune via annotation.ingress.proxyBodySize.
     nginx.ingress.kubernetes.io/proxy-body-size: {{ (.Values.annotation.ingress).proxyBodySize | default "10m" | quote }}
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    # uwsgi harakiri must stay below this; the uwsgi.ini template enforces it.
+    nginx.ingress.kubernetes.io/proxy-read-timeout: {{ (.Values.annotation.ingress).proxyReadTimeout | default 600 | quote }}
     nginx.ingress.kubernetes.io/proxy-send-timeout: "360"
     nginx.ingress.kubernetes.io/x-forwarded-prefix: "true"
 spec:
