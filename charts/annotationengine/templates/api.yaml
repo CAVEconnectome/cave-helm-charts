@@ -64,6 +64,14 @@ spec:
               value: {{ .Values.cluster.globalServer }}/info
             - name: DAF_CREDENTIALS
               value: /home/nginx/.cloudvolume/secrets/cave-secret.json
+            {{- if .Values.gmp.enabled }}
+            # uWSGI stats server for the uwsgi-exporter sidecar. The image's uwsgi.ini has
+            # none, so turn it on here (uwsgi reads any option from UWSGI_<OPTION>).
+            - name: UWSGI_STATS
+              value: "0.0.0.0:{{ .Values.annotation.uwsgiStatsPort | default 9192 }}"
+            - name: UWSGI_STATS_HTTP
+              value: "true"
+            {{- end }}
           resources:
             requests:
               memory: 300Mi
@@ -82,6 +90,32 @@ spec:
             initialDelaySeconds: 15
             timeoutSeconds: 1
             periodSeconds: 60
+        {{- if .Values.gmp.enabled }}
+        # Exports uwsgi_perc_busy_workers for GMP (see podmonitor.yaml), which the KEDA
+        # ScaledObject in scaler.yaml scales on.
+        - name: uwsgi-exporter
+          image: caveconnectome/uwsgi-export-workers:v14
+          ports:
+            - containerPort: {{ .Values.gmp.scrape.port | default 9101 }}
+          env:
+            - name: UWSGI_STATS_URL
+              value: "http://localhost:{{ .Values.annotation.uwsgiStatsPort | default 9192 }}"
+          # cpu request required: KEDA's cpu trigger needs every container in the
+          # pod to declare a cpu request.
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 50m
+              memory: 64Mi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+        {{- end }}
         - name: cloudsql-proxy
           image: gcr.io/cloudsql-docker/gce-proxy:1.33.6
           command:

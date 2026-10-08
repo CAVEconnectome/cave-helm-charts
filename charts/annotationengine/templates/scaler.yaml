@@ -1,3 +1,53 @@
+{{- if .Values.keda.enabled }}
+{{- if .Values.gmp.enabled }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: annotationengine-keda-auth
+spec:
+  podIdentity:
+    provider: gcp
+{{- end }}
+---
+# Scale on how busy the uwsgi workers are (and CPU), not memory: an idle uwsgi pod
+# holds most of its memory, so a memory target kept idle replicas from scaling down.
+# Upgrading from the HorizontalPodAutoscaler: delete hpa/annotationengine-scaler first,
+# or KEDA's admission webhook refuses this ScaledObject while that HPA still exists.
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: annotationengine-api
+  annotations:
+    validations.keda.sh/hpa-ownership: "true"
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: annotationengine
+  minReplicaCount: {{ max 1 (.Values.annotation.minReplicas | default 1 | int) }}
+  maxReplicaCount: {{ .Values.annotation.maxReplicas | default 5 }}
+  triggers:
+    {{- if .Values.gmp.enabled }}
+    # busy-workers % scraped from the uwsgi-exporter via GMP, scoped to this
+    # cluster/namespace/controller.
+    - type: prometheus
+      authenticationRef:
+        name: annotationengine-keda-auth
+      metadata:
+        serverAddress: https://monitoring.googleapis.com/v1/projects/{{ .Values.cluster.googleProject }}/location/global/prometheus
+        # sum() not avg(): uwsgi_perc_busy_workers is a per-pod 0-100 ratio under a KEDA
+        # AverageValue target (HPA divides the reported value by pod count), so
+        # desired = ceil(replicas * meanBusy% / threshold). 2m rides over GMP's ingest lag.
+        query: >-
+          sum(avg_over_time(uwsgi_perc_busy_workers{cluster="{{ .Values.cluster.cluster }}",namespace="{{ .Release.Namespace }}",top_level_controller_name="annotationengine"}[2m])) or vector(0)
+        threshold: "{{ .Values.annotation.busyWorkersTarget | default 75 }}"
+    {{- end }}
+    - type: cpu
+      metricType: Utilization
+      metadata:
+        value: "{{ .Values.annotation.cpuTarget | default 75 }}"
+{{- else }}
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -15,10 +65,5 @@ spec:
         name: cpu
         target:
           type: Utilization
-          averageUtilization: 75
-    - type: Resource
-      resource:
-        name: memory
-        target:
-          type: Utilization
-          averageUtilization: 75
+          averageUtilization: {{ .Values.annotation.cpuTarget | default 75 }}
+{{- end }}
