@@ -18,6 +18,10 @@ spec:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/secrets: {{ include (print $.Template.BasePath "/annotation_secret.yaml") . | sha256sum }}
         checksum/cloudsql: {{ include (print $.Template.BasePath "/cloudsql_secret.yaml") . | sha256sum }}
+        {{- with (include "annotationengine.uwsgiConfigEffective" .) }}
+        # Hash the content (not an include of the ConfigMap) so a uwsgi retune restarts pods.
+        checksum/uwsgi: {{ . | sha256sum }}
+        {{- end }}
     spec:
       tolerations:
         - key: "pool"
@@ -36,6 +40,11 @@ spec:
         - name: cloudsql-instance-credentials-volume
           secret:
             secretName: ann-cloudsql-google-cloud-key
+        {{- if (include "annotationengine.uwsgiConfigEffective" .) }}
+        - name: uwsgi-config
+          configMap:
+            name: annotationengine-uwsgi
+        {{- end }}
       containers:
         - name: annotationengine
           image: {{ .Values.cluster.dockerRegistry}}/annotationengine:{{ $tag }}
@@ -47,6 +56,13 @@ spec:
               mountPath: /home/nginx/.cloudvolume/secrets
             - name: annotation-engine-config-volume
               mountPath: /app/annotationengine/instance/
+            {{- if (include "annotationengine.uwsgiConfigEffective" .) }}
+            # subPath: replaces only this file, so the rest of /app (the application code) is
+            # untouched. UWSGI_INI already points here, so nothing else needs changing.
+            - name: uwsgi-config
+              mountPath: /app/uwsgi.ini
+              subPath: uwsgi.ini
+            {{- end }}
           env:
             - name: GOOGLE_APPLICATION_CREDENTIALS
               value: /home/nginx/.cloudvolume/secrets/google-secret.json
@@ -64,6 +80,27 @@ spec:
               value: {{ .Values.cluster.globalServer }}/info
             - name: DAF_CREDENTIALS
               value: /home/nginx/.cloudvolume/secrets/cave-secret.json
+            {{- $u := .Values.annotation.uwsgi | default dict }}
+            {{- $chartIni := and $u.enabled (not .Values.annotation.uwsgiConfig) }}
+            {{- if (include "annotationengine.uwsgiConfigEffective" .) }}
+            # UWSGI_PROCESSES / UWSGI_CHEAPER must be set as ENV VARS, not just in uwsgi.ini: the
+            # base image bakes ENV UWSGI_PROCESSES=16 and UWSGI_CHEAPER=2, and uwsgi applies env
+            # vars after UWSGI_INI, so they would beat the mounted file. Emitted from the same
+            # values so the ini stays a truthful picture of the running config.
+            - name: UWSGI_PROCESSES
+              value: {{ (hasKey $u "processes") | ternary $u.processes 16 | quote }}
+            - name: UWSGI_CHEAPER
+              value: {{ $u.cheaper | default 2 | quote }}
+            {{- end }}
+            {{- if and .Values.gmp.enabled (not $chartIni) }}
+            # uWSGI stats server for the uwsgi-exporter sidecar, when the chart does not own
+            # uwsgi.ini (the chart's ini turns it on itself). uwsgi reads any option from
+            # UWSGI_<OPTION>.
+            - name: UWSGI_STATS
+              value: "0.0.0.0:{{ $u.statsPort | default 9192 }}"
+            - name: UWSGI_STATS_HTTP
+              value: "true"
+            {{- end }}
           resources:
             requests:
               memory: 300Mi
@@ -82,6 +119,32 @@ spec:
             initialDelaySeconds: 15
             timeoutSeconds: 1
             periodSeconds: 60
+        {{- if .Values.gmp.enabled }}
+        # Exports uwsgi_perc_busy_workers for GMP (see podmonitor.yaml), which the KEDA
+        # ScaledObject in scaler.yaml scales on.
+        - name: uwsgi-exporter
+          image: caveconnectome/uwsgi-export-workers:v14
+          ports:
+            - containerPort: {{ .Values.gmp.scrape.port | default 9101 }}
+          env:
+            - name: UWSGI_STATS_URL
+              value: "http://localhost:{{ (.Values.annotation.uwsgi | default dict).statsPort | default 9192 }}"
+          # cpu request required: KEDA's cpu trigger needs every container in the
+          # pod to declare a cpu request.
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 50m
+              memory: 64Mi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+        {{- end }}
         - name: cloudsql-proxy
           image: gcr.io/cloudsql-docker/gce-proxy:1.33.6
           command:

@@ -9,6 +9,8 @@ annotation:
   # Max request body ingress-nginx will accept for this service (nginx default is 1m).
   ingress:
     proxyBodySize: "10m"
+    # Seconds nginx waits for a response; uwsgi.harakiri must stay below it.
+    proxyReadTimeout: 600
   tag: ""
   # add to this if you want to exclude joint membership in a group name 
   # from applying to group level permissions
@@ -19,6 +21,53 @@ annotation:
   healthAlignedVolumeName: ""
   minReplicas:  1
   maxReplicas: 10
+  # Autoscaling targets (see templates/scaler.yaml): average % of busy uwsgi workers
+  # (needs keda + gmp) and CPU utilization of the request.
+  busyWorkersTarget: 75
+  cpuTarget: 75
+  # The chart owns /app/uwsgi.ini (templates/uwsgi_configmap.yaml, the same framework as the
+  # materializationengine chart). The defaults reproduce what the image ran before: its own
+  # uwsgi.ini, with processes/cheaper as the base image's UWSGI_PROCESSES=16 / UWSGI_CHEAPER=2 env
+  # vars made them, plus the stats server the uwsgi-exporter reads.
+  #
+  # NOTE /etc/uwsgi/uwsgi.ini is loaded AFTER this file and wins on conflicts, so socket,
+  # chmod-socket, need-app, die-on-term, hook-master-start and show-config cannot be
+  # overridden here.
+  uwsgi:
+    enabled: true
+    # Worker pool. ALSO emitted as UWSGI_PROCESSES / UWSGI_CHEAPER env vars, because the base
+    # image bakes those and they beat uwsgi.ini; set them here only.
+    processes: 16
+    cheaper: 2
+    # Optional, emitted only when set: cheaperInitial, cheaperStep, and the busyness algorithm
+    # (cheaperAlgo: busyness, with cheaperOverload, cheaperBusynessMultiplier,
+    # cheaperBusynessMax, cheaperBusynessMin).
+    cheaperAlgo: ""
+    # Seconds before a stuck request is killed. Kept below ingress.proxyReadTimeout.
+    harakiri: 590
+    harakiriVerbose: false
+    # Memory guards, all in Mi (empty/0 disables). reload-on-rss recycles a worker over this
+    # rss once its request finishes; evil-reload-on-rss kills it mid-request.
+    reloadOnRssMi: 128
+    evilReloadOnRssMi: 0
+    cheaperRssLimitSoftMi: 0
+    listen: 128
+    bufferSize: 32768
+    maxRequests: 2048
+    maxWorkerLifetime: 3600
+    workerReloadMercy: 600
+    reloadMercy: 600
+    muleReloadMercy: 600
+    httpTimeout: 600
+    socketTimeout: 600
+    enableThreads: true
+    # uWSGI stats server port read by the uwsgi-exporter sidecar
+    statsPort: 9192
+    # Raw uwsgi option lines appended verbatim, for anything not modelled above.
+    extraOptions: []
+  # Escape hatch: whole-file replacement for uwsgi.ini. When non-empty this is used verbatim
+  # and every annotation.uwsgi.* value above is IGNORED. For one-off debugging.
+  uwsgiConfig: ""
   # Per-category rate limits (requests per minute). The chart renders these as
   # "<N>/minute" into the LIMITER_CATEGORIES env var.
   limits:
@@ -33,6 +82,16 @@ annotation:
     # need to fill in with path to secret file
     - name: cave-secret.json
       value: ""
+# Scale with a KEDA ScaledObject (false: a CPU-only HorizontalPodAutoscaler).
+keda:
+  enabled: true
+# Google Managed Prometheus scraping of the uwsgi-exporter for busy-workers autoscaling
+gmp:
+  enabled: true
+  scrape:
+    interval: 30s
+    path: /
+    port: 9101
 limiter:
   redis:
     host: ""
