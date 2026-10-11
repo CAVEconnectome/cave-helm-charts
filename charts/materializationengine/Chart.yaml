@@ -1,5 +1,5 @@
 apiVersion: v2
 name: materializationengine
 description: A Helm chart for CAVE materialization service on Kubernetes
-version: 5.30.0-rootLog8
-appVersion: "vRootLog8"
+version: 5.30.0-rootLog9
+appVersion: "vRootLog9"
