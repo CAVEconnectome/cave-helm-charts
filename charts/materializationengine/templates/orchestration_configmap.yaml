@@ -117,6 +117,9 @@ data:
     {{- if .Values.materialize.deltalakeOptimizeMaxSpillSizeBytes }}
     DELTALAKE_OPTIMIZE_MAX_SPILL_SIZE_BYTES = {{ .Values.materialize.deltalakeOptimizeMaxSpillSizeBytes | int64 }}
     {{- end }}
+    {{- if .Values.materialize.deltalakeMaxRowGroupSize }}
+    DELTALAKE_MAX_ROW_GROUP_SIZE = {{ .Values.materialize.deltalakeMaxRowGroupSize | int64 }}
+    {{- end }}
     # Celery worker autoshutdown settings for orchestration pods
     CELERY_WORKER_AUTOSHUTDOWN_ENABLED = {{ if hasKey .Values.materialize "orchestrationAutoshutdownEnabled" }}{{ if .Values.materialize.orchestrationAutoshutdownEnabled }}True{{ else }}False{{ end }}{{ else }}True{{ end }}
     CELERY_WORKER_AUTOSHUTDOWN_MAX_TASKS = {{ .Values.materialize.orchestrationAutoshutdownMaxTasks | default 1 }}
