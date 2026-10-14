@@ -118,3 +118,6 @@ data:
     {{- if .Values.materialize.deltalakeOptimizeMaxSpillSizeBytes }}
     DELTALAKE_OPTIMIZE_MAX_SPILL_SIZE_BYTES = {{ .Values.materialize.deltalakeOptimizeMaxSpillSizeBytes | int64 }}
     {{- end }}
+    {{- if .Values.materialize.deltalakeMaxRowGroupSize }}
+    DELTALAKE_MAX_ROW_GROUP_SIZE = {{ .Values.materialize.deltalakeMaxRowGroupSize | int64 }}
+    {{- end }}

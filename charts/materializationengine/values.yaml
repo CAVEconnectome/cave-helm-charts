@@ -163,6 +163,11 @@ materialize:
   deltalakeOptimizeMaxSpillSizeBytes: 1073741824
   # Target output file size for optimize. Empty uses delta.targetFileSize (256 MB).
   deltalakeOptimizeTargetSizeBytes: ""
+  # Rows per Parquet row group in the exported files. Smaller row groups let a lookup by
+  # the partition column read less (one root of a synapse table: ~5 MB at ~540k rows per
+  # group, ~0.2 MB at 16384). Empty keeps delta-rs's default. It is the export wizard's
+  # starting value, and each output spec can override it.
+  deltalakeMaxRowGroupSize: ""
   # KEDA scaling targets per-queue
   producerTargetQueueLength: 10
   # One consumer per this many waiting process-queue tasks; match celeryConsumerConcurrency.
