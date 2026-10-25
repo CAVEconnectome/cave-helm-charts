@@ -37,7 +37,10 @@ materialize:
   # v7 adds the celery_inflight_tasks gauge used by the KEDA in-flight triggers
   # v8 stops the exporter reclaiming other workers' in-flight tasks (see celery.* below)
   # v9 adds --unacked-key, which the chart now always passes (the consumer's own unacked hash)
-  celeryExporterTag: "v9"
+  # v10 adds --restore-stale-unacked, which the chart now always passes: it requeues a
+  #     message a dead worker left claimed (no worker may be running to do it, e.g. when
+  #     an orchestration job pod is lost)
+  celeryExporterTag: "v10"
   # Settings shared by every process that connects to this redis as a celery broker.
   #
   # These exist in one place because they are not per-process settings in practice: the
@@ -76,9 +79,9 @@ materialize:
     # 25 h: longer than orchestrationJobTimeout (the 24 h job deadline). The long upload
     # steps (import and index builds, cluster, transfer) run in orchestration job pods
     # and are acked late, so a task still running when this expires would be handed to
-    # a second pod. A message whose pod died is restored after this long (by the
-    # metrics exporter, which consumes on the default unacked key) and a new job pod
-    # resumes it. Was 21600; raising it is safe, lowering it is not (see above).
+    # a second pod. A message whose pod died is restored after this long by the metrics
+    # exporter (--restore-stale-unacked) and a new job pod resumes it. Was 21600;
+    # raising it is safe, lowering it is not (see above).
     visibilityTimeout: 90000
     # The consumer tracks its claimed messages in its own unacked keys, which only
     # consumers restore, so it uses this instead of visibilityTimeout: how long a
