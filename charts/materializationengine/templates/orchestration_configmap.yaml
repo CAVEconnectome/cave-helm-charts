@@ -37,11 +37,21 @@ data:
     # celery-broker-config module) and the metrics exporter (via --visibility-timeout).
     # The unacked index is global: kombu restores any message older than the visibility
     # timeout of whichever connection notices it, so the broker's effective timeout is the
-    # smallest value any client sets. All three come from materialize.celery.visibilityTimeout.
+    # smallest value any client sets.
+    #
+    # The orchestration job pods are the exception, like the consumer: they track their
+    # claimed messages in their own unacked keys, which only they restore, with their own
+    # timeout. Their long tasks (an upload's import and index builds, the transfer, a
+    # materialization) are acked late so a lost pod's task is redelivered; the timeout
+    # must exceed the job deadline (orchestrationJobTimeout), or a task still running
+    # would be handed to a second pod.
     BROKER_TRANSPORT_OPTIONS = {
-        "visibility_timeout": {{ .Values.materialize.celery.visibilityTimeout | default 21600 | int }},
+        "visibility_timeout": {{ .Values.materialize.celery.orchestrationVisibilityTimeout | default 90000 | int }},
         "socket_timeout": 20,
         "socket_connect_timeout": 20,
+        "unacked_key": "{{ .Values.materialize.orchestrationQueueName | default "orchestration" }}_unacked",
+        "unacked_index_key": "{{ .Values.materialize.orchestrationQueueName | default "orchestration" }}_unacked_index",
+        "unacked_mutex_key": "{{ .Values.materialize.orchestrationQueueName | default "orchestration" }}_unacked_mutex",
     }
     MATERIALIZATION_ROW_CHUNK_SIZE = 500
     TEST_DB_NAME = "{{ .Values.annotation.healthAlignedVolumeName }}"

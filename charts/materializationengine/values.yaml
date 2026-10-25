@@ -83,6 +83,10 @@ materialize:
     # The same for the spatial workers (templates/celery_spatial.yaml). Must exceed the
     # longest spatial lookup chunk task.
     spatialVisibilityTimeout: 300
+    # The same for the orchestration job pods (templates/orchestration_configmap.yaml),
+    # whose long tasks are acked late. Must exceed orchestrationJobTimeout (the job
+    # deadline, 86400 s by default), or a task still running is handed to a second pod.
+    orchestrationVisibilityTimeout: 90000
   # need to fill in
   datastacks:
     - ""
