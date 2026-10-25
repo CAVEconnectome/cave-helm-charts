@@ -73,7 +73,13 @@ materialize:
   # Raising this above 21600 is safe; lowering it re-creates the bug for whichever client
   # gets the lower value. It must be longer than the longest task any worker runs.
   celery:
-    visibilityTimeout: 21600
+    # 25 h: longer than orchestrationJobTimeout (the 24 h job deadline). The long upload
+    # steps (import and index builds, cluster, transfer) run in orchestration job pods
+    # and are acked late, so a task still running when this expires would be handed to
+    # a second pod. A message whose pod died is restored after this long (by the
+    # metrics exporter, which consumes on the default unacked key) and a new job pod
+    # resumes it. Was 21600; raising it is safe, lowering it is not (see above).
+    visibilityTimeout: 90000
     # The consumer tracks its claimed messages in its own unacked keys, which only
     # consumers restore, so it uses this instead of visibilityTimeout: how long a
     # consumer task can stay claimed before it is requeued (e.g. after its pod is evicted
