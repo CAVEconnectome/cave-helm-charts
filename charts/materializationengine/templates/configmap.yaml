@@ -104,6 +104,13 @@ data:
     {{- if .Values.materialize.dumpBucketPath }}
     MATERIALIZATION_DUMP_BUCKET = "{{ .Values.materialize.dumpBucketPath }}"
     {{- end }}
+    {{- with .Values.materialize.rootIdUpdateLog }}
+    {{- if kindIs "map" . }}
+    ROOT_ID_UPDATE_LOG = {{ toJson . }}
+    {{- else }}
+    ROOT_ID_UPDATE_LOG = True
+    {{- end }}
+    {{- end }}
     {{- if .Values.materialize.deltalakeOutputBucket }}
     DELTALAKE_OUTPUT_BUCKET = "{{ .Values.materialize.deltalakeOutputBucket }}"
     {{- else if .Values.materialize.dumpBucketPath }}

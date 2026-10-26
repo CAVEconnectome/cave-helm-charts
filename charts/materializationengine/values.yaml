@@ -130,6 +130,13 @@ materialize:
   # Output bucket for deltalake exports. If empty, defaults to
   # "<dumpBucketPath>/deltalake_exports". Set to override the location.
   deltalakeOutputBucket: ""
+  # Record every update_root_ids run's root ID updates in one append-only Delta table
+  # per annotation table, "<dumpBucketPath>/root_id_updates/<datastack>/<table>".
+  # Needs dumpBucketPath.
+  # true for every table, or only chosen annotation tables per datastack ("*" = all):
+  #   rootIdUpdateLog:
+  #     minnie65_phase3_v1: [synapses_pni_2]
+  rootIdUpdateLog: false
   # Node pool for the deltalake worker. Empty means cluster.standardPool, which is
   # non-preemptible -- see the comment in templates/celery_deltalake.yaml. Set this to the
   # value of cluster.meshPool to put it back on preemptible nodes.
