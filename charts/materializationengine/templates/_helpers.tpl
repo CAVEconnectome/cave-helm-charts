@@ -121,7 +121,9 @@ along with the Bigtable target and the pychunkedgraph read endpoint.
 - name: BIGTABLE_PROJECT
   value: {{ .Values.cluster.bigtableProject | default .Values.cluster.googleProject | quote }}
 - name: BIGTABLE_INSTANCE
-  value: {{ .Values.cluster.bigtableInstance | default "" | quote }}
+  # same default as the celery templates (and terraform's bigtable_instance_name):
+  # empty made root id lookups ask for projects/<p>/instances//tables/<pcg table>
+  value: {{ .Values.cluster.bigtableInstance | default "pychunkedgraph" | quote }}
 - name: LOCAL_SERVER_URL
   value: {{ dig "pychunkedgraphReadServiceUrl" "http://pychunkedgraph-read-service/" $m | quote }}
 - name: CLOUDVOLUME_PARALLEL
