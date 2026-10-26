@@ -31,6 +31,13 @@ materialize:
   queuesToThrottle: "process"
   throttleQueues: true
 
+  # maintenance_work_mem for bulk upload index builds (staging annotation indexes and
+  # the production rebuild in the transfer), e.g. "6GB". Each upload builds one index
+  # at a time with it; other index builds keep 1GB. Keep it well under the instance's
+  # RAM minus shared_buffers: Cloud SQL cancels sessions that use too much. Empty
+  # leaves today's behaviour.
+  uploadIndexMaintenanceWorkMem: ""
+
   # Database (on the app's Cloud SQL instance) holding Ray-run uploads' state;
   # the pods create it, and its tables, if missing. See ray.upload.
   uploadStateDatabase: upload_state
