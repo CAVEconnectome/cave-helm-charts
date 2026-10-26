@@ -894,6 +894,15 @@ entries:
     version: 5.31.1-rayUp4
   - apiVersion: v2
     appVersion: vRayUp1
+    created: "2026-10-26T21:18:08.476468295Z"
+    description: A Helm chart for CAVE materialization service on Kubernetes
+    digest: 1739ea0d98057d49adb20edd47eab7e353109fb170b721e1f4aaec155caf9b12
+    name: materializationengine
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/materializationengine-5.31.1-rayUp4/materializationengine-5.31.1-rayUp4.tgz
+    version: 5.31.1-rayUp4
+  - apiVersion: v2
+    appVersion: vRayUp1
     created: "2026-10-26T13:48:03.749616615Z"
     description: A Helm chart for CAVE materialization service on Kubernetes
     digest: ee9f6a4f82aa61c12708c4ea8c551de4cc23441831f2dabd92c4582da019d7e1
@@ -3260,4 +3269,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2026-10-26T21:11:44.752008218Z"
+generated: "2026-10-26T21:18:08.477316793Z"
