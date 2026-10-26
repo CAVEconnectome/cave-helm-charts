@@ -130,8 +130,9 @@ materialize:
   # Output bucket for deltalake exports. If empty, defaults to
   # "<dumpBucketPath>/deltalake_exports". Set to override the location.
   deltalakeOutputBucket: ""
-  # Record each update_root_ids run's root ID updates as Parquet + Delta Lake under
-  # "<dumpBucketPath>/root_id_updates/<datastack>/<run>/<table>". Needs dumpBucketPath.
+  # Record every update_root_ids run's root ID updates in one append-only Delta table
+  # per annotation table, "<dumpBucketPath>/root_id_updates/<datastack>/<table>".
+  # Needs dumpBucketPath.
   # true for every table, or only chosen annotation tables per datastack ("*" = all):
   #   rootIdUpdateLog:
   #     minnie65_phase3_v1: [synapses_pni_2]
