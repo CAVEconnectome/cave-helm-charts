@@ -96,8 +96,11 @@ data:
       {{ end }}
     {{ end }}
     AUTH_SHARED_EXCLUDED_GROUPS={{ .Values.annotation.excludedPermissionGroups | toJson }}
-    DB_CONNECTION_POOL_SIZE = 5 
-    DB_CONNECTION_MAX_OVERFLOW = 5
+    # Ray bulk upload workers set smaller pools through the environment
+    DB_CONNECTION_POOL_SIZE = int(os.environ.get("DB_CONNECTION_POOL_SIZE", 5))
+    DB_CONNECTION_MAX_OVERFLOW = int(os.environ.get("DB_CONNECTION_MAX_OVERFLOW", 5))
+    # The upload state database (Ray-run uploads), created by the app if missing
+    UPLOAD_STATE_DATABASE = "{{ dig "uploadStateDatabase" "upload_state" .Values.materialize }}"
     {{- if .Values.materialize.uploadBucketName }}
     MATERIALIZATION_UPLOAD_BUCKET_PATH = "{{ .Values.materialize.uploadBucketName }}"
     {{- end }}

@@ -5,6 +5,7 @@
 {{- $ray := .Values.ray -}}
 {{- $head := $ray.head | default dict -}}
 {{- $worker := $ray.worker | default dict -}}
+{{- $workerProxy := or $ray.upload (dig "cloudsqlProxy" false $worker) -}}
 {{/*
 The RayJob pod-spec skeleton.
 
@@ -110,6 +111,9 @@ data:
                   env:
                     {{- include "materializationengine.appEnv" . | nindent 20 }}
                     {{- include "materializationengine.dataEnv" . | nindent 20 }}
+                    {{- if $ray.upload }}
+                    {{- include "materializationengine.rayUploadEnv" . | nindent 20 }}
+                    {{- end }}
                     {{- with $ray.optimizeMemoryBytes }}
                     # Only emitted when explicitly set. Must be <= the worker
                     # memory request or the demand is unsatisfiable and the job
@@ -126,43 +130,9 @@ data:
                       cpu: {{ (($head.resources).requests).cpu | default "2000m" }}
                       memory: {{ (($head.resources).requests).memory | default "8Gi" }}
               initContainers:
-                # Native sidecar (restartPolicy: Always on an initContainer), same
-                # shape as celery_consumer.yaml. Authenticates with the Ray service
-                # account, which holds cloudsql.client -- not the admin-scoped
-                # materialize cloudsql key.
-                - name: cloudsql-proxy
-                  image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.23.0
-                  restartPolicy: Always
-                  args:
-                    - "--port=3306"
-                    - "--credentials-file=/secrets/cloudsql/google-secret.json"
-                    - "--max-sigterm-delay=3600s"
-                    - "{{ .Values.cloudsql.projectId | default .Values.cluster.googleProject }}:{{ .Values.cluster.googleRegion }}:{{ .Values.cloudsql.sqlInstanceName }}"
-                  env:
-                    {{- include "materializationengine.cloudsqlProxyEnv" . | nindent 20 }}
-                  ports:
-                    - containerPort: 9801
-                      protocol: TCP
-                  resources:
-                    requests:
-                      memory: 8Mi
-                      cpu: 10m
-                  securityContext:
-                    runAsUser: 2
-                    allowPrivilegeEscalation: false
-                  startupProbe:
-                    httpGet: { path: /startup, port: 9801, scheme: HTTP }
-                    failureThreshold: 60
-                    periodSeconds: 1
-                    timeoutSeconds: 10
-                  volumeMounts:
-                    - name: google-cloud-key
-                      mountPath: /secrets/cloudsql
-                      readOnly: true
-                  lifecycle:
-                    preStop:
-                      exec:
-                        command: ["sh", "-c", "curl -f -X POST http://localhost:9092/quitquitquit || kill -15 1"]
+                # Native sidecar authenticating with the Ray service account, which
+                # holds cloudsql.client -- not the admin-scoped materialize key.
+                {{- include "materializationengine.rayCloudsqlProxy" . | nindent 16 }}
         workerGroupSpecs:
           - groupName: cpu
             replicas: 0
@@ -227,6 +197,18 @@ data:
                     env:
                       {{- include "materializationengine.appEnv" . | nindent 22 }}
                       {{- include "materializationengine.dataEnv" . | nindent 22 }}
+                      {{- if $ray.upload }}
+                      {{- include "materializationengine.rayUploadEnv" . | nindent 22 }}
+                      {{- end }}
+                      {{- if $workerProxy }}
+                      # Each worker holds a connection or two (one task per worker),
+                      # not the app's default pool; the instance's connection budget
+                      # has to cover maxWorkers of them.
+                      - name: DB_CONNECTION_POOL_SIZE
+                        value: {{ dig "dbPoolSize" 2 $worker | quote }}
+                      - name: DB_CONNECTION_MAX_OVERFLOW
+                        value: {{ dig "dbMaxOverflow" 2 $worker | quote }}
+                      {{- end }}
                     resources:
                       # Must leave headroom for DaemonSets on a t2d-standard-4
                       # mesh-pool node (4 vCPU / 16Gi) so several workers pack per
@@ -235,4 +217,11 @@ data:
                       requests:
                         cpu: {{ (($worker.resources).requests).cpu | default "1000m" }}
                         memory: {{ (($worker.resources).requests).memory | default "3Gi" }}
+                {{- if $workerProxy }}
+                # Bulk upload chunk tasks read and write the staging database
+                # themselves, through their own proxy (the head's is not reachable
+                # from other pods).
+                initContainers:
+                  {{- include "materializationengine.rayCloudsqlProxy" . | nindent 18 }}
+                {{- end }}
 {{- end }}

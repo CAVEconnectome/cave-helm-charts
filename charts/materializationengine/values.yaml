@@ -31,6 +31,18 @@ materialize:
   queuesToThrottle: "process"
   throttleQueues: true
 
+  # Database (on the app's Cloud SQL instance) holding Ray-run uploads' state;
+  # the pods create it, and its tables, if missing. See ray.upload.
+  uploadStateDatabase: upload_state
+  # The daily CronJob that keeps it small (rendered with ray.upload).
+  uploadStateCleanup:
+    enabled: true
+    schedule: "23 4 * * *"
+    retentionDays: 30
+    # failed or cancelled uploads' staging tables are dropped after this
+    stagingGraceHours: 48
+    rayjobRetentionDays: 7
+
   # image tag; if empty defaults to Chart.appVersion; legacy .materialize.version still honored
   tag: ""
   # image tag for the celery metric exporter (caveconnectome/celery-metric-exporter)
@@ -522,6 +534,26 @@ ray:
   # job's records) intact. Has no effect unless ray.enabled.
   deltalakeExport: true
 
+  # Run each bulk upload as one RayJob (rayjobs/entrypoints/bulk_upload.py)
+  # instead of the celery chain. Its state lives in the upload state database
+  # (materialize.uploadStateDatabase, created by the pods if missing), not redis,
+  # so a lost head pod resumes where it stopped on KubeRay's retry. Turns on the
+  # workers' cloud-sql-proxy and the upload-state-cleanup CronJob. The Ray service
+  # account needs the upload bucket, Cloud SQL import and Bigtable read grants
+  # (terraform-google-cave modules/local_kubernetes). Has no effect unless
+  # ray.enabled.
+  upload: false
+  # Worker pods for one upload (default maxWorkers); also bounded by maxWorkers'
+  # role as the template ceiling.
+  uploadMaxWorkers: ""
+  # Spatial chunks / CSV parts in flight at once (about 1-2 x workers).
+  uploadMaxInFlight: 32
+  # A 337M-row upload takes over a day; the template default (24 h) is too short.
+  uploadActiveDeadlineSeconds: 259200
+  # Testing only: the upload driver exits at this point, as a lost head would
+  # ("after:<stage>" or "spatial_chunk:<n>").
+  uploadFaultInject: ""
+
   # Not "default": Ray's job submission API has no authentication, so RayJobs are
   # kept out of the shared namespace. Created by Terraform, not by this chart.
   namespace: "ray-jobs"
@@ -565,6 +597,13 @@ ray:
     # One CPU per worker is what gives one optimize task per worker; the driver
     # asks for num_cpus=1 per task and relies on this to avoid packing.
     numCpus: 1
+    # A cloud-sql-proxy sidecar on each worker (always on with ray.upload).
+    cloudsqlProxy: false
+    # Database pool of a worker that has the proxy: one task per worker needs a
+    # connection or two. maxWorkers x (dbPoolSize + dbMaxOverflow) must fit in the
+    # instance's connection budget alongside everything else.
+    dbPoolSize: 2
+    dbMaxOverflow: 2
     resources:
       requests:
         # Sized so ~4 workers pack onto a t2d-standard-4 mesh-pool node.

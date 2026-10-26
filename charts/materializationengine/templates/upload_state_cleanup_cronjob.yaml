@@ -1,0 +1,104 @@
+{{- $cleanup := .Values.materialize.uploadStateCleanup | default dict -}}
+{{- if and .Values.ray.enabled .Values.ray.upload (dig "enabled" true $cleanup) }}
+{{- $raw := .Values.materialize.tag | default .Values.materialize.version | default .Chart.AppVersion -}}
+{{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
+# Daily upkeep of the upload state database (materializationengine.upload_state.cleanup):
+#   * deletes Ray-run uploads not updated for retentionDays, with all their rows
+#   * ends uploads whose RayJob is over (or gone) while they were still running
+#   * drops staging tables that failed or cancelled uploads left, after stagingGraceHours
+#   * deletes bulk upload RayJob CRs finished more than rayjobRetentionDays ago
+# It creates the database if it is missing, as the api and the driver do.
+#
+# Runs as materialize-ray-submitter, whose Role in the ray namespace can list and
+# delete RayJobs.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: upload-state-cleanup
+  labels:
+    app: materialize
+spec:
+  schedule: {{ dig "schedule" "23 4 * * *" $cleanup | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: {{ dig "activeDeadlineSeconds" 3600 $cleanup }}
+      template:
+        metadata:
+          labels:
+            app: upload-state-cleanup
+        spec:
+          restartPolicy: Never
+          serviceAccountName: materialize-ray-submitter
+          tolerations:
+            - key: "pool"
+              operator: "Equal"
+              value: "{{ .Values.cluster.standardPool }}"
+              effect: "NoSchedule"
+          nodeSelector:
+            cloud.google.com/gke-nodepool: {{ .Values.cluster.standardPool }}
+          volumes:
+            - name: materializationengine-config-volume
+              configMap:
+                name: materializationengine-config
+            - name: google-cloud-key
+              secret:
+                secretName: materialize-google-cloud-key
+            - name: cloudsql-instance-credentials-volume
+              secret:
+                secretName: mat-cloudsql-google-cloud-key
+          containers:
+            - name: upload-state-cleanup
+              image: {{ .Values.cluster.dockerRegistry }}/materializationengine:{{ $tag }}
+              command: ["python", "-m", "materializationengine.upload_state.cleanup"]
+              args:
+                - --retention-days={{ dig "retentionDays" 30 $cleanup }}
+                - --reconcile
+                - --staging-grace-hours={{ dig "stagingGraceHours" 48 $cleanup }}
+                - --rayjob-retention-days={{ dig "rayjobRetentionDays" 7 $cleanup }}
+              volumeMounts:
+                - name: materializationengine-config-volume
+                  mountPath: /app/materializationengine/instance/
+                - name: google-cloud-key
+                  mountPath: /home/nginx/.cloudvolume/secrets
+              env:
+                {{- include "materializationengine.appEnv" . | nindent 16 }}
+                - name: RAY_ENABLED
+                  value: "true"
+                - name: RAY_JOB_NAMESPACE
+                  value: {{ .Values.ray.namespace | quote }}
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 512Mi
+          initContainers:
+            # Native sidecar: exits with the Job's container.
+            - name: cloudsql-proxy
+              image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.23.0
+              restartPolicy: Always
+              args:
+                - "--port=3306"
+                - "--credentials-file=/secrets/cloudsql/google-secret.json"
+                - "{{ .Values.cloudsql.projectId | default .Values.cluster.googleProject }}:{{ .Values.cluster.googleRegion }}:{{ .Values.cloudsql.sqlInstanceName }}"
+              env:
+                {{- include "materializationengine.cloudsqlProxyEnv" . | nindent 16 }}
+              resources:
+                requests:
+                  memory: 8Mi
+                  cpu: 10m
+              securityContext:
+                runAsUser: 2
+                allowPrivilegeEscalation: false
+              startupProbe:
+                httpGet: { path: /startup, port: 9801, scheme: HTTP }
+                failureThreshold: 60
+                periodSeconds: 1
+                timeoutSeconds: 10
+              volumeMounts:
+                - name: cloudsql-instance-credentials-volume
+                  mountPath: /secrets/cloudsql
+                  readOnly: true
+{{- end }}
