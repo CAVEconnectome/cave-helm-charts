@@ -22,7 +22,8 @@ CI for everyone.
 `--dry-run=server`). kube-system exists in every real cluster, so a hit means we
 are genuinely connected and the checks below are meaningful.
 
-Set ray.preflight=false to skip, or ray.enabled=false to install without Ray.
+Set ray.preflight=false to skip, or ray.enabled=false to install without Ray
+(ray.upload=false to install Ray without bulk uploads).
 */}}
 {{- $connected := lookup "v1" "Namespace" "" "kube-system" -}}
 {{- if $connected -}}
@@ -64,6 +65,48 @@ To install without Ray for now:      --set ray.enabled=false
 To skip this check (not advised):    --set ray.preflight=false
 `
   (join "\n  - " $missing) $ns) -}}
+{{- end -}}
+
+{{- /*
+ray.upload needs IAM grants on the Ray service account (upload bucket, Cloud SQL
+import, Bigtable read) that Helm cannot see. Terraform's enable_ray_upload records
+the version of those grants on the Ray namespace; an older module records nothing.
+Without the check, an upload fails mid-run on its first denied call.
+*/ -}}
+{{- if .Values.ray.upload -}}
+{{- $need := 1 -}}
+{{- $have := 0 -}}
+{{- with (lookup "v1" "Namespace" "" $ns) -}}
+  {{- with .metadata.annotations -}}
+    {{- $have = index . "caveconnectome.org/ray-upload-grants" | default "0" | int -}}
+  {{- end -}}
+{{- end -}}
+{{- if lt $have $need -}}
+{{- fail (printf `
+materializationengine: ray.upload=true, but Terraform has not granted the Ray
+service account what bulk uploads need (the %q namespace records
+upload grants version %d; this chart needs %d).
+
+Bulk upload RayJobs write to the upload bucket, start Cloud SQL imports and read
+Bigtable as the Ray service account. Those grants come from the
+terraform-google-cave local_kubernetes module, at a version that has
+enable_ray_upload. In the terragrunt kubernetes unit for this deployment, point
+source at that version and set:
+
+    enable_ray        = true
+    enable_ray_upload = true
+
+then apply it (--source-update makes terragrunt fetch the new module version):
+
+    terragrunt apply --source-update
+
+That adds the grants, records them on the namespace, and sets ray.upload in the
+regenerated ray.defaults.yaml. Then re-run this release.
+
+To install without Ray uploads:      --set ray.upload=false
+To skip this check (not advised):    --set ray.preflight=false
+` $ns $have $need) -}}
+{{- end -}}
 {{- end -}}
 
 {{- end -}}
