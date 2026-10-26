@@ -110,6 +110,11 @@ data:
                       mountPath: /tmp/ray
                   env:
                     {{- include "materializationengine.appEnv" . | nindent 20 }}
+                    # Ray pods run as root; CloudVolume finds its tokens (cave-secret.json, for
+                    # graphene segmentation) under $HOME/.cloudvolume/secrets, which is mounted at
+                    # /home/nginx as in the celery pods. Without this HOME is /root.
+                    - name: HOME
+                      value: /home/nginx
                     {{- include "materializationengine.dataEnv" . | nindent 20 }}
                     {{- if $ray.upload }}
                     {{- include "materializationengine.rayUploadEnv" . | nindent 20 }}
@@ -196,6 +201,11 @@ data:
                         mountPath: /tmp/ray
                     env:
                       {{- include "materializationengine.appEnv" . | nindent 22 }}
+                      # Ray pods run as root; CloudVolume finds its tokens (cave-secret.json, for
+                      # graphene segmentation) under $HOME/.cloudvolume/secrets, which is mounted at
+                      # /home/nginx as in the celery pods. Without this HOME is /root.
+                      - name: HOME
+                        value: /home/nginx
                       {{- include "materializationengine.dataEnv" . | nindent 22 }}
                       {{- if $ray.upload }}
                       {{- include "materializationengine.rayUploadEnv" . | nindent 22 }}
