@@ -237,6 +237,15 @@ spec:
               value: {{ .Values.ray.namespace | quote }}
             - name: RAY_JOB_MAX_WORKERS
               value: {{ .Values.ray.maxWorkers | default 20 | quote }}
+            # Bulk uploads as RayJobs instead of the celery chain (off by default).
+            - name: RAY_UPLOAD
+              value: {{ .Values.ray.upload | default false | quote }}
+            {{- if .Values.ray.upload }}
+            - name: UPLOAD_RAY_MAX_WORKERS
+              value: {{ .Values.ray.uploadMaxWorkers | default .Values.ray.maxWorkers | default 20 | quote }}
+            - name: UPLOAD_RAY_ACTIVE_DEADLINE_SECONDS
+              value: {{ .Values.ray.uploadActiveDeadlineSeconds | default 259200 | quote }}
+            {{- end }}
             {{- end }}
             {{- if (include "materializationengine.uwsgiConfigEffective" .) }}
             {{- $u := .Values.materialize.uwsgi | default dict }}

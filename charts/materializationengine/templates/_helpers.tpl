@@ -121,7 +121,9 @@ along with the Bigtable target and the pychunkedgraph read endpoint.
 - name: BIGTABLE_PROJECT
   value: {{ .Values.cluster.bigtableProject | default .Values.cluster.googleProject | quote }}
 - name: BIGTABLE_INSTANCE
-  value: {{ .Values.cluster.bigtableInstance | default "" | quote }}
+  # same default as the celery templates (and terraform's bigtable_instance_name):
+  # empty made root id lookups ask for projects/<p>/instances//tables/<pcg table>
+  value: {{ .Values.cluster.bigtableInstance | default "pychunkedgraph" | quote }}
 - name: LOCAL_SERVER_URL
   value: {{ dig "pychunkedgraphReadServiceUrl" "http://pychunkedgraph-read-service/" $m | quote }}
 - name: CLOUDVOLUME_PARALLEL
@@ -162,3 +164,67 @@ used to set HOME, which cloudvolume needs to find ~/.cloudvolume/secrets.
 {{- define "materializationengine.asNginx" -}}
 env HOME=/home/nginx USER=nginx LOGNAME=nginx setpriv --reuid=nginx --regid=nginx --init-groups
 {{- end }}
+
+
+{{/*
+materializationengine.rayCloudsqlProxy -- the cloud-sql-proxy native sidecar of Ray
+pods (head, and workers that reach the database), as an initContainers list item.
+Authenticates with the Ray service account key (ray-google-cloud-key).
+*/}}
+{{- define "materializationengine.rayCloudsqlProxy" -}}
+- name: cloudsql-proxy
+  image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.23.0
+  restartPolicy: Always
+  args:
+    - "--port=3306"
+    - "--credentials-file=/secrets/cloudsql/google-secret.json"
+    - "--max-sigterm-delay=3600s"
+    - "{{ .Values.cloudsql.projectId | default .Values.cluster.googleProject }}:{{ .Values.cluster.googleRegion }}:{{ .Values.cloudsql.sqlInstanceName }}"
+  env:
+    {{- include "materializationengine.cloudsqlProxyEnv" . | nindent 4 }}
+  ports:
+    - containerPort: 9801
+      protocol: TCP
+  resources:
+    requests:
+      memory: 8Mi
+      cpu: 10m
+  securityContext:
+    runAsUser: 2
+    allowPrivilegeEscalation: false
+  startupProbe:
+    httpGet: { path: /startup, port: 9801, scheme: HTTP }
+    failureThreshold: 60
+    periodSeconds: 1
+    timeoutSeconds: 10
+  volumeMounts:
+    - name: google-cloud-key
+      mountPath: /secrets/cloudsql
+      readOnly: true
+  lifecycle:
+    preStop:
+      exec:
+        command: ["sh", "-c", "curl -f -X POST http://localhost:9092/quitquitquit || kill -15 1"]
+{{- end -}}
+
+{{/*
+materializationengine.rayUploadEnv -- settings of the bulk upload RayJob driver and its
+workers (ray.upload). Empty unless ray.upload is on.
+*/}}
+{{- define "materializationengine.rayUploadEnv" -}}
+{{- $ray := .Values.ray | default dict }}
+{{- if $ray.upload }}
+- name: UPLOAD_STATE_DATABASE
+  value: {{ dig "uploadStateDatabase" "upload_state" .Values.materialize | quote }}
+- name: UPLOAD_RAY_MAX_IN_FLIGHT
+  value: {{ $ray.uploadMaxInFlight | default 32 | quote }}
+{{- with $ray.uploadFaultInject }}
+# Testing only: the driver exits at this point (e.g. "after:upload_to_db",
+# "spatial_chunk:200") as a lost head pod would.
+- name: UPLOAD_FAULT_INJECT_ENABLED
+  value: "true"
+- name: UPLOAD_FAULT_INJECT
+  value: {{ . | quote }}
+{{- end }}
+{{- end }}
+{{- end -}}
