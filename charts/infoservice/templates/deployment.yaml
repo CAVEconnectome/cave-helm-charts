@@ -8,10 +8,6 @@ metadata:
   name: infoservice
 spec:
   replicas: {{ .Values.infoservice.replicas | default 1 }}
-  annotations:
-      checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
-      checksum/secrets: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
-      checksum/cloudsql: {{ include (print $.Template.BasePath "/cloudsql_secret.yaml") . | sha256sum }}
   selector:
     matchLabels:
       app: infoservice
@@ -19,6 +15,10 @@ spec:
     metadata:
       labels:
         app: infoservice
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secrets: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        checksum/cloudsql: {{ include (print $.Template.BasePath "/cloudsql_secret.yaml") . | sha256sum }}
     spec:
       volumes:
         - name: cloudsql-instance-credentials-volume
