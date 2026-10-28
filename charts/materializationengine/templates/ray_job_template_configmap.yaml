@@ -58,6 +58,33 @@ data:
       # runs, but it means a hung job pins mesh-pool open until this fires.
       activeDeadlineSeconds: {{ $ray.activeDeadlineSeconds | default 86400 }}
       backoffLimit: {{ $ray.backoffLimit | default 1 }}
+      # The submitter pod runs `ray job submit` and follows the job's logs. KubeRay
+      # treats its exit as the job's, so a preempted submitter tears down the
+      # RayCluster and starts a new attempt (a 337M-row upload lost an in-flight
+      # GIST index build this way). Its default template has no nodeSelector,
+      # so it lands on mesh-pool; standardPool for the same reason as the head.
+      # KubeRay fills in the command and the dashboard address env.
+      submitterPodTemplate:
+        spec:
+          restartPolicy: Never
+          nodeSelector:
+            cloud.google.com/gke-nodepool: {{ .Values.cluster.standardPool }}
+          tolerations:
+            - key: "pool"
+              operator: "Equal"
+              value: "{{ .Values.cluster.standardPool }}"
+              effect: "NoSchedule"
+          containers:
+            - name: ray-job-submitter
+              image: {{ .Values.cluster.dockerRegistry }}/materializationengine:{{ $tag }}
+              resources:
+                # KubeRay's defaults for its own submitter template
+                requests:
+                  cpu: 500m
+                  memory: 200Mi
+                limits:
+                  cpu: "1"
+                  memory: 1Gi
       rayClusterSpec:
         # Must match the ray package installed in the image below.
         rayVersion: {{ $ray.rayVersion | required ".Values.ray.rayVersion is required." | quote }}
