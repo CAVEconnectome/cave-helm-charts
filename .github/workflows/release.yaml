@@ -41,7 +41,12 @@ jobs:
         uses: azure/setup-helm@v3
 
       - name: Run chart-releaser
-        uses: helm/chart-releaser-action@v1.5.0
+        # v1.5.0 installs cr v1.5.0, whose release asset GitHub now serves as an HTTP 504
+        # HTML page ("gzip: stdin: not in gzip format"); cr v1.7.0 downloads. The cr
+        # version is pinned so a change in the action's default cannot break releases.
+        uses: helm/chart-releaser-action@v1.7.0
+        with:
+          version: v1.7.0
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           CR_SKIP_EXISTING: "true"
