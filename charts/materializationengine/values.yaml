@@ -522,6 +522,17 @@ gmp:
 # Requires the KubeRay operator (installed by Terraform, enable_ray = true).
 # Values below are normally supplied by ray.defaults.yaml, rendered from
 # modules/local_kubernetes/templates/ray.tpl.
+# One-off maintenance work (pg_repack) runs as a Kubernetes Job per request instead of on
+# the workflow Celery queue, whose deployment KEDA scales to zero under a long task. Needs
+# ray.enabled (for the api's ServiceAccount); without it repacks stay on Celery.
+# Set under materialize: (materialize.maintenanceJobs):
+#   maintenanceJobs:
+#     enabled: true                    # default true when ray.enabled
+#     activeDeadlineSeconds: 172800    # 2 days; a repack of minnie's synapse table takes ~3 h
+#     ttlSecondsAfterFinished: 604800  # keep finished Jobs (and their pod logs) 7 days
+#     cpu: 250m                        # the pg_repack client; the work happens in Postgres
+#     memory: 1Gi
+
 ray:
   enabled: false
 

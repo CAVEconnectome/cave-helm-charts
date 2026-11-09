@@ -188,6 +188,11 @@ spec:
           configMap:
             name: materializationengine-rayjob-template
         {{- end }}
+        {{- if and .Values.ray.enabled (dig "maintenanceJobs" "enabled" true .Values.materialize) }}
+        - name: maintenance-job-template
+          configMap:
+            name: materializationengine-maintenance-job-template
+        {{- end }}
       containers:
         - name: materialize
           image: {{ .Values.cluster.dockerRegistry }}/materializationengine:{{ $tag }}
@@ -214,7 +219,22 @@ spec:
               mountPath: /etc/materializationengine/ray
               readOnly: true
             {{- end }}
+            {{- if and .Values.ray.enabled (dig "maintenanceJobs" "enabled" true .Values.materialize) }}
+            - name: maintenance-job-template
+              mountPath: /etc/materializationengine/jobs
+              readOnly: true
+            {{- end }}
           env:
+            {{- if and .Values.ray.enabled (dig "maintenanceJobs" "enabled" true .Values.materialize) }}
+            # pg_repack runs as a Kubernetes Job (materializationengine/k8s_jobs.py)
+            # instead of on the autoscaled workflow Celery queue.
+            - name: MAINTENANCE_JOBS_ENABLED
+              value: "true"
+            - name: MAINTENANCE_JOB_TEMPLATE_PATH
+              value: /etc/materializationengine/jobs/maintenance-job-template.yaml
+            - name: MAINTENANCE_JOB_NAMESPACE
+              value: {{ .Release.Namespace | quote }}
+            {{- end }}
             {{- if .Values.ray.enabled }}
             # Wiring for materializationengine/ray/submitter.py. The pod spec
             # itself lives in the mounted template, so nothing about pools,
