@@ -113,6 +113,14 @@ data:
                   value: /home/nginx/.cloudvolume/secrets/cave-secret.json
                 - name: LOCAL_SERVER_URL
                   value: {{ .Values.materialize.pychunkedgraphReadServiceUrl | default "http://pychunkedgraph-read-service/" }}
+                # create_app imports materializationengine/throttle.py, which reads these at
+                # import time (int(None) fails without them). Same values as celery-producer.
+                - name: QUEUE_LENGTH_LIMIT
+                  value: "5000"
+                - name: QUEUES_TO_THROTTLE
+                  value: process
+                - name: THROTTLE_QUEUES
+                  value: "true"
               resources:
                 requests:
                   cpu: {{ $mj.cpu | default "250m" | quote }}
