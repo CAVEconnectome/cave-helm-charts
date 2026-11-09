@@ -40,12 +40,40 @@ jobs:
       - name: Install Helm
         uses: azure/setup-helm@v3
 
+      # The action downloads cr with a bare `curl -sSL` of the GitHub release URL, with no
+      # retry or check. Since 2026-11-09 that URL often answers HTTP 504 with an HTML page
+      # (for v1.5.0, v1.6.1 and v1.7.0 alike), which then fails to untar ("gzip: stdin:
+      # not in gzip format"). The same asset downloads through the API, which is what
+      # `gh release download` uses. So install cr here -- retried, checksum-verified --
+      # into the directory the action checks; finding it, the action skips its download.
+      - name: Install chart-releaser
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CR_VERSION: v1.7.0
+        run: |
+          set -euo pipefail
+          v="${CR_VERSION#v}"
+          tarball="chart-releaser_${v}_linux_amd64.tar.gz"
+          for attempt in 1 2 3 4 5; do
+            if gh release download "$CR_VERSION" --repo helm/chart-releaser --clobber \
+                 --pattern "$tarball" --pattern checksums.txt \
+               && grep " ${tarball}\$" checksums.txt | sha256sum -c -; then
+              break
+            fi
+            if [ "$attempt" = 5 ]; then echo "could not download cr $CR_VERSION" >&2; exit 1; fi
+            sleep $((attempt * 15))
+          done
+          dir="$RUNNER_TOOL_CACHE/cr/$CR_VERSION/$(uname -m)"
+          mkdir -p "$dir"
+          tar -xzf "$tarball" -C "$dir"
+          rm -f "$tarball" checksums.txt
+          "$dir/cr" version
+
       - name: Run chart-releaser
-        # v1.5.0 installs cr v1.5.0, whose release asset GitHub now serves as an HTTP 504
-        # HTML page ("gzip: stdin: not in gzip format"); cr v1.7.0 downloads. The cr
-        # version is pinned so a change in the action's default cannot break releases.
         uses: helm/chart-releaser-action@v1.7.0
         with:
+          # must match the install step: the action looks for cr in
+          # $RUNNER_TOOL_CACHE/cr/<version>/<arch> and downloads only if it is missing
           version: v1.7.0
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
