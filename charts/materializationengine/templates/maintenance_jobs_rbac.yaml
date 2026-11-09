@@ -1,0 +1,39 @@
+{{- if and .Values.ray.enabled (dig "maintenanceJobs" "enabled" true .Values.materialize) }}
+{{/*
+Lets the api create and observe maintenance Jobs (pg_repack) in the release namespace.
+See maintenance_job_template_configmap.yaml for why these are Jobs.
+
+Bound to the api's ServiceAccount, materialize-ray-submitter (ray_rbac.yaml), which is
+why the feature needs ray.enabled. Pods, logs and events are read-only, so the api can
+say why a Job failed (OOMKilled, evicted, deadline) without being able to change it.
+*/}}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: materialize-maintenance-jobs
+  labels:
+    app: materialize
+rules:
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create", "get", "list", "watch", "delete"]
+  - apiGroups: [""]
+    resources: ["pods", "pods/log", "events"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: materialize-maintenance-jobs
+  labels:
+    app: materialize
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: materialize-maintenance-jobs
+subjects:
+  - kind: ServiceAccount
+    name: materialize-ray-submitter
+    namespace: {{ .Release.Namespace }}
+{{- end }}

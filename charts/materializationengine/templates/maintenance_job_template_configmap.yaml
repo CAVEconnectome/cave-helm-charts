@@ -1,0 +1,164 @@
+{{- if and .Values.ray.enabled (dig "maintenanceJobs" "enabled" true .Values.materialize) }}
+{{- $raw := .Values.materialize.tag | default .Values.materialize.version | default .Chart.AppVersion -}}
+{{- $tag := ternary $raw (printf "v%s" $raw) (hasPrefix "v" $raw) -}}
+{{- $mj := .Values.materialize.maintenanceJobs | default dict -}}
+{{/*
+The Job skeleton for one-off maintenance work (pg_repack), as the api submits it.
+
+materializationengine/k8s_jobs.py loads this, patches in the module to run
+(MAINTENANCE_JOB_MODULE), its arguments (MAINTENANCE_JOB_ARGS), generateName and
+labels, and creates the Job. Everything environmental lives here.
+
+Why a Job and not the workflow Celery queue: KEDA scales that queue's deployment on
+queue length and in-flight tasks, and a long task acked at its start counts as
+neither. On 2026-11-09 it scaled celery-producer to zero 37 minutes into a repack of
+minnie's synapse table; the 100-minute grace period then ran out and killed
+pg_repack, leaving its half-built copy behind. A Job pod is owned by nothing that
+scales, is marked safe-to-evict false for the cluster autoscaler, runs on the
+non-preemptible standard pool, and is never retried (backoffLimit 0): a pg_repack
+that died must be cleaned up before it can run again.
+
+The pod mirrors celery-producer's (the worker that ran repacks before): same
+config, secrets, environment and cloud-sql-proxy, so a repack sees the database
+exactly as it did. The proxy is a native sidecar, so the Job completes when the
+main container exits.
+
+Gated on ray.enabled only for the api's ServiceAccount (materialize-ray-submitter,
+from ray_rbac.yaml); maintenance_jobs_rbac.yaml grants it Job permissions.
+*/}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: materializationengine-maintenance-job-template
+  labels:
+    app: materialize
+data:
+  maintenance-job-template.yaml: |
+    apiVersion: batch/v1
+    kind: Job
+    metadata:
+      generateName: materialize-maintenance-
+      namespace: {{ .Release.Namespace }}
+      labels:
+        app: materialize-maintenance
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: {{ $mj.activeDeadlineSeconds | default 172800 }}
+      ttlSecondsAfterFinished: {{ $mj.ttlSecondsAfterFinished | default 604800 }}
+      template:
+        metadata:
+          labels:
+            app: materialize-maintenance
+          annotations:
+            cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+        spec:
+          restartPolicy: Never
+          tolerations:
+            - key: "pool"
+              operator: "Equal"
+              value: "{{ .Values.cluster.standardPool }}"
+              effect: "NoSchedule"
+          nodeSelector:
+            cloud.google.com/gke-nodepool: {{ .Values.cluster.standardPool }}
+          volumes:
+            - name: materializationengine-config-volume
+              configMap:
+                name: materializationengine-config
+            - name: google-cloud-key
+              secret:
+                secretName: materialize-google-cloud-key
+            - name: cloudsql-instance-credentials-volume
+              secret:
+                secretName: mat-cloudsql-google-cloud-key
+          containers:
+            - name: job
+              image: {{ .Values.cluster.dockerRegistry }}/materializationengine:{{ $tag }}
+              command: ["/bin/sh"]
+              args:
+                - -c
+                - exec {{ include "materializationengine.asNginx" . }} sh -c 'exec python -m "$MAINTENANCE_JOB_MODULE"'
+              volumeMounts:
+                - name: materializationengine-config-volume
+                  mountPath: /app/materializationengine/instance/
+                - name: google-cloud-key
+                  mountPath: /home/nginx/.cloudvolume/secrets
+              env:
+                - name: MATERIALIZATION_ENGINE_SETTINGS
+                  value: /app/materializationengine/instance/config.cfg
+                - name: REDIS_SERVICE_HOST
+                  value: {{ .Values.materialize.redis.host }}
+                - name: REDIS_HOST
+                  value: {{ .Values.materialize.redis.host }}
+                - name: REDIS_PORT
+                  value: "{{ .Values.materialize.redis.port }}"
+                - name: REDIS_PASSWORD
+                  value: {{ .Values.materialize.redis.password | default "" | quote }}
+                - name: BIGTABLE_PROJECT
+                  value: {{ .Values.cluster.bigtableProject | default .Values.cluster.googleProject | quote }}
+                - name: BIGTABLE_INSTANCE
+                  value: {{ .Values.cluster.bigtableInstance | default "pychunkedgraph" | quote }}
+                # create_app wires up Celery; nothing is sent to the broker from a Job.
+                - name: CELERY_BROKER_URL
+                  value: redis://:{{ .Values.materialize.redis.password }}@{{ .Values.materialize.redis.host }}:{{ .Values.materialize.redis.port }}/0
+                - name: GOOGLE_APPLICATION_CREDENTIALS
+                  value: /home/nginx/.cloudvolume/secrets/google-secret.json
+                - name: AUTH_URI
+                  value: {{ .Values.cluster.globalServer }}/auth
+                - name: STICKY_AUTH_URL
+                  value: {{ .Values.cluster.globalServer }}/sticky_auth
+                - name: AUTH_URL
+                  value: {{ .Values.cluster.globalServer }}/auth
+                - name: DAF_CREDENTIALS
+                  value: /home/nginx/.cloudvolume/secrets/cave-secret.json
+                - name: LOCAL_SERVER_URL
+                  value: {{ .Values.materialize.pychunkedgraphReadServiceUrl | default "http://pychunkedgraph-read-service/" }}
+                # create_app imports materializationengine/throttle.py, which reads these at
+                # import time (int(None) fails without them). Same values as celery-producer.
+                - name: QUEUE_LENGTH_LIMIT
+                  value: "5000"
+                - name: QUEUES_TO_THROTTLE
+                  value: process
+                - name: THROTTLE_QUEUES
+                  value: "true"
+              resources:
+                requests:
+                  cpu: {{ $mj.cpu | default "250m" | quote }}
+                  memory: {{ $mj.memory | default "1Gi" | quote }}
+          initContainers:
+            - name: cloudsql-proxy
+              image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.23.0
+              restartPolicy: Always
+              args:
+                - "--port=3306"
+                - "--credentials-file=/secrets/cloudsql/google-secret.json"
+                - "--max-sigterm-delay=60s"
+                - "{{ .Values.cloudsql.projectId | default .Values.cluster.googleProject }}:{{ .Values.cluster.googleRegion }}:{{ .Values.cloudsql.sqlInstanceName }}"
+              env:
+                - name: CSQL_PROXY_HEALTH_CHECK
+                  value: "true"
+                - name: CSQL_PROXY_HTTP_PORT
+                  value: "9801"
+                - name: CSQL_PROXY_HTTP_ADDRESS
+                  value: 0.0.0.0
+                - name: CSQL_PROXY_STRUCTURED_LOGS
+                  value: "true"
+              resources:
+                requests:
+                  memory: 8Mi
+                  cpu: 10m
+              securityContext:
+                runAsUser: 2
+                allowPrivilegeEscalation: false
+              startupProbe:
+                failureThreshold: 60
+                httpGet:
+                  path: /startup
+                  port: 9801
+                periodSeconds: 1
+                timeoutSeconds: 10
+              volumeMounts:
+                - name: cloudsql-instance-credentials-volume
+                  mountPath: /secrets/cloudsql
+                  readOnly: true
+{{- end }}
