@@ -287,6 +287,15 @@ entries:
     version: 0.1.0
   catalog:
   - apiVersion: v2
+    appVersion: 0.1.2
+    created: "2026-11-11T06:48:10.095867939Z"
+    description: A Helm chart for CAVE Catalog service on Kubernetes
+    digest: 49c9b45e688b50baf9976e1aaf24473f0c61cec1532834331aeef8ef3e711183
+    name: catalog
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/catalog-0.1.2/catalog-0.1.2.tgz
+    version: 0.1.2
+  - apiVersion: v2
     appVersion: 0.1.1
     created: "2026-11-11T06:23:59.309986974Z"
     description: A Helm chart for CAVE Catalog service on Kubernetes
@@ -3378,4 +3387,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2026-11-11T06:23:59.310699571Z"
+generated: "2026-11-11T06:48:10.09649452Z"
