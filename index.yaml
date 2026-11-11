@@ -285,6 +285,16 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/authinfo-0.1.0/authinfo-0.1.0.tgz
     version: 0.1.0
+  catalog:
+  - apiVersion: v2
+    appVersion: 0.1.0
+    created: "2026-11-11T04:47:01.041450631Z"
+    description: A Helm chart for CAVE Catalog service on Kubernetes
+    digest: 61bd78bd4c594a04e1e6ccd5f8347a99759a3528586dfb7b1dd699ccb335a3f1
+    name: catalog
+    urls:
+    - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/catalog-0.1.0/catalog-0.1.0.tgz
+    version: 0.1.0
   cavecanary:
   - apiVersion: v2
     appVersion: 0.4.4
@@ -3359,4 +3369,4 @@ entries:
     urls:
     - https://github.com/CAVEconnectome/cave-helm-charts/releases/download/tourguide-0.2.1/tourguide-0.2.1.tgz
     version: 0.2.1
-generated: "2026-11-09T07:55:27.596453116Z"
+generated: "2026-11-11T04:47:01.043047786Z"
