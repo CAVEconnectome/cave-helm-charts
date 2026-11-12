@@ -5,9 +5,11 @@ kind: ConfigMap
 metadata:
   name: catalog-config
 data:
-  AUTH_SERVICE_URL: "{{ .Values.cluster.globalServer }}/auth"
-  MAT_ENGINE_URL: "{{ .Values.cluster.globalServer }}/materialize"
-  CAVECLIENT_SERVER_ADDRESS: "{{ .Values.cluster.globalServer }}"
+  AUTH_SERVICE_URL: "https://{{ .Values.cluster.globalServer }}/auth"
+  # this cluster's own materialization engine, over cluster DNS (the catalog appends
+  # /api/v2/datastack/...); catalog.matEngineUrl overrides it
+  MAT_ENGINE_URL: {{ .Values.catalog.matEngineUrl | default "http://materialize-service.default.svc.cluster.local/materialize" | quote }}
+  CAVECLIENT_SERVER_ADDRESS: "https://{{ .Values.cluster.globalServer }}"
   AUTH_ENABLED: "true"
   DATASTACKS: {{ .Values.catalog.datastacks | toJson | quote }}
   LOG_LEVEL: {{ .Values.catalog.logLevel | default "ERROR" | quote }}

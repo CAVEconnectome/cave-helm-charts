@@ -9,6 +9,9 @@ catalog:
     - name: cave-secret.json
       value: ""
   logLevel: "ERROR"
+  # The materialization engine the catalog checks tables and versions against. Empty:
+  # this cluster's own, http://materialize-service.default.svc.cluster.local/materialize
+  matEngineUrl: ""
   resources:
     requests:
       memory: "256Mi"
