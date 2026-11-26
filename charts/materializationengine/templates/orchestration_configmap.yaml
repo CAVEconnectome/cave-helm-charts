@@ -20,7 +20,7 @@ data:
     GLOBAL_SERVER_URL = "https://{{ .Values.cluster.globalServer }}"
     LOCAL_SERVER_URL = "https://{{ .Values.cluster.environment | default "local" }}.{{ .Values.cluster.domainName }}"
     TESTING = False
-    SQLALCHEMY_DATABASE_URI = "postgres://{{ .Values.cloudsql.username}}:{{ .Values.cloudsql.password}}@127.0.0.1:3306/annotation"
+    SQLALCHEMY_DATABASE_URI = "postgresql://{{ .Values.cloudsql.username}}:{{ .Values.cloudsql.password}}@127.0.0.1:3306/annotation"
     REDIS_HOST = "{{ .Values.materialize.redis.host}}"
     REDIS_PORT = "{{ .Values.materialize.redis.port}}"
     REDIS_PASSWORD = "{{ .Values.materialize.redis.password}}"
